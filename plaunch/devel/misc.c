@@ -140,6 +140,9 @@ char *treeview_getitemname(HWND treeview, HTREEITEM item) {
 	TVITEM tvi;
 	char *buf, *name;
 
+	if (!item)
+		return NULL;
+
 	buf = (char *)malloc(BUFSIZE);
 	memset(buf, 0, BUFSIZE);
 
@@ -159,6 +162,9 @@ char *treeview_getitemname(HWND treeview, HTREEITEM item) {
 char *treeview_getitempath(HWND treeview, HTREEITEM item) {
 	char *buf, *path, *iname, *pname;
 	HTREEITEM parent, curitem;
+
+	if (!item)
+		return NULL;
 
 	buf = (char *)malloc(BUFSIZE);
 	memset(buf, 0, BUFSIZE);
@@ -182,6 +188,54 @@ char *treeview_getitempath(HWND treeview, HTREEITEM item) {
 	free(buf);
 
 	return path;
+};
+
+char *first_name(char *path) {
+	char *p;
+
+	p = path;
+
+	while (*p != '\0' && *p != '\\')
+		p++;
+
+	return p;
+};
+
+static HTREEITEM _treeview_getitemfrompath(HWND treeview, HTREEITEM parent, char *path) {
+	char *fname, *name, *iname;
+	HTREEITEM child;
+
+	if (!path)
+		return parent;
+
+	name = (char *)malloc(BUFSIZE);
+	memset(name, 0, BUFSIZE);
+	fname = first_name(path);
+	memmove(name, path, fname - path);
+	child = TreeView_GetChild(treeview, parent);
+
+	if (!child)
+		return parent;
+
+	do {
+		iname = treeview_getitemname(treeview, child);
+		if (!strcmp(name, iname)) {
+			free(iname);
+			if (fname[0] == '\0')
+				return child;
+			else
+				return _treeview_getitemfrompath(treeview, child, fname + 1);
+		};
+		free(iname);
+	} while (child = TreeView_GetNextSibling(treeview, child));
+
+	free(name);
+
+	return NULL;
+};
+
+HTREEITEM treeview_getitemfrompath(HWND treeview, char *path) {
+	return _treeview_getitemfrompath(treeview, TVI_ROOT, path);
 };
 
 int menu_callback(char *name, char *path, 
@@ -382,6 +436,9 @@ int is_folder(char *name) {
 	char *buf;
 	int ret;
 
+	if (!name)
+		return 0;
+
 	buf = (char *)malloc(BUFSIZE);
 	sprintf(buf, "%s\\%s", REGROOT, name);
 
@@ -429,7 +486,15 @@ int read_config(struct _config *cfg) {
 	config->hotkeys[config->nhotkeys].destination = (char *)WM_WINDOWLIST;
 	config->nhotkeys++;
 
-	config->dragdrop = reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLEDRAGDROP, TRUE);
+	if (reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLEDRAGDROP, TRUE))
+		config->options |= OPTION_ENABLEDRAGDROP;
+	else
+		config->options &= !OPTION_ENABLEDRAGDROP;
+
+	if (reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLESAVECURSOR, TRUE))
+		config->options |= OPTION_ENABLESAVECURSOR;
+	else
+		config->options &= !OPTION_ENABLESAVECURSOR;
 
 	extract_hotkeys(cfg, "");
 
@@ -466,10 +531,17 @@ int save_config(struct _config *cfg, int what) {
 	};
 
 	if (what & CFG_SAVE_DRAGDROP) {
-		if (config->dragdrop == TRUE)
+		if (config->options & OPTION_ENABLEDRAGDROP)
 			reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLEDRAGDROP);
 		else
-			reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLEDRAGDROP, config->dragdrop);
+			reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLEDRAGDROP, 0);
+	};
+
+	if (what & CFG_SAVE_SAVECURSOR) {
+		if (config->options & OPTION_ENABLESAVECURSOR)
+			reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLESAVECURSOR);
+		else
+			reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLESAVECURSOR, 0);
 	};
 
 	return TRUE;

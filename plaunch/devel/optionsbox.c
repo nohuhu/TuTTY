@@ -15,6 +15,7 @@
 #define	ID_OPTIONS_LB_HOTKEY_EDIT	127
 #define ID_OPTIONS_BUTTON_STARTUP	128
 #define ID_OPTIONS_BUTTON_DRAGDROP	129
+#define ID_OPTIONS_BUTTON_SAVECUR	130
 
 #define PLAUNCH_AUTO_STARTUP	"Software\\Microsoft\\Windows\\CurrentVersion\\Run"
 
@@ -52,9 +53,13 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 
 		CheckDlgButton(hwnd, ID_OPTIONS_BUTTON_STARTUP, check);
 
-		check = config->dragdrop ? BST_CHECKED : BST_UNCHECKED;
+		check = config->options & OPTION_ENABLEDRAGDROP ? BST_CHECKED : BST_UNCHECKED;
 
 		CheckDlgButton(hwnd, ID_OPTIONS_BUTTON_DRAGDROP, check);
+
+		check = config->options & OPTION_ENABLESAVECURSOR ? BST_CHECKED : BST_UNCHECKED;
+
+		CheckDlgButton(hwnd, ID_OPTIONS_BUTTON_SAVECUR, check);
 
 		SendMessage(ppedit, (UINT)EM_SETLIMITTEXT, (WPARAM)BUFSIZE, 0);
 
@@ -124,8 +129,19 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 
 				check = IsDlgButtonChecked(hwnd, ID_OPTIONS_BUTTON_DRAGDROP);
 
-				config->dragdrop = check > 0 ? TRUE : FALSE;
+				config->options = 
+					check > 0 ? 
+						config->options | OPTION_ENABLEDRAGDROP : 
+						config->options ^ OPTION_ENABLEDRAGDROP;
 				what |= CFG_SAVE_DRAGDROP;
+
+				check = IsDlgButtonChecked(hwnd, ID_OPTIONS_BUTTON_SAVECUR);
+
+				config->options =
+					check > 0 ?
+						config->options | OPTION_ENABLESAVECURSOR :
+						config->options ^ OPTION_ENABLESAVECURSOR;
+				what |= CFG_SAVE_SAVECURSOR;
 
 				save_config(config, what);
 
@@ -196,10 +212,10 @@ void do_optionsbox(void) {
 	tmpl = (LPDLGTEMPLATE)GlobalAlloc(GMEM_ZEROINIT, BUFSIZE * 2);
 	ptr = dialogtemplate_create(tmpl, WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU |
 								DS_CENTER | DS_MODALFRAME,
-								0, 0, 229, 150, "PuTTY Launcher Options", 12, NULL,
+								0, 0, 229, 167, "PuTTY Launcher Options", 13, NULL,
 								8, "MS Sans Serif");
 	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | BS_GROUPBOX,
-								7, 7, 215, 136, NULL, ID_OPTIONS_GROUPBOX);
+								7, 7, 215, 153, NULL, ID_OPTIONS_GROUPBOX);
 	ptr = dialogtemplate_addstatic(ptr, WS_CHILD | WS_VISIBLE,
 								16, 17, 169, 9, "&Path to PuTTY or PuTTYtel executable:",
 								ID_OPTIONS_PUTTYPATH_STATIC);
@@ -223,12 +239,15 @@ void do_optionsbox(void) {
 								16, 91, 200, 9, "&Run PuTTY Launcher automatically at startup?",
 								ID_OPTIONS_BUTTON_STARTUP);
 	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX,
-								16, 105, 200, 9, "&Enable tree-view items drag&&drop in Launch Box?",
+								16, 105, 200, 9, "Enable tree-view items &drag&&drop in Launch Box?",
 								ID_OPTIONS_BUTTON_DRAGDROP);
+	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX,
+								16, 119, 200, 9, "Enable remembering cursor position in Launch Box?",
+								ID_OPTIONS_BUTTON_SAVECUR);
 	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
-								61, 121, 50, 14, "OK", IDOK);
+								61, 138, 50, 14, "OK", IDOK);
 	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-								118, 121, 50, 14, "Cancel", IDCANCEL);
+								118, 138, 50, 14, "Cancel", IDCANCEL);
 
 	DialogBoxIndirect(config->hinst, (LPDLGTEMPLATE)tmpl, NULL, OptionsBoxProc);
 

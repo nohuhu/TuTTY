@@ -52,7 +52,7 @@ void do_aboutbox(void) {
 								7, 62, 70, 14, "View &License...", ID_LICENSE);
 	ptr = dialogtemplate_addstatic(ptr, WS_CHILD | WS_VISIBLE | SS_CENTER,
 								7, 7, 146, 50,
-								"PuTTY launcher && session manager\n"
+								"PuTTY Launcher && Session Manager\n"
 								"\n"
 								"Version " APPVERSION ", " __DATE__ " " __TIME__ "\n"
 								"\n"

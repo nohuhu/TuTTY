@@ -300,10 +300,10 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 		osv.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 		GetVersionEx(&osv);
 
-#ifdef WINDOWS_NT351_COMPATIBLE
 		config->version_major = osv.dwMajorVersion;
 		config->version_minor = osv.dwMinorVersion;
 
+#ifdef WINDOWS_NT351_COMPATIBLE
 		config->have_shell = (config->version_major >= 4);
 #endif /* WINDOWS_NT351_COMPATIBLE */
 
@@ -333,7 +333,9 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 #endif /* WINDOWS_NT351_COMPATIBLE */
 			GetSystemImageLists(shell32, &large_list, &small_list)) {
 			ImageList_GetIconSize(small_list, &cx, &cy);
-			config->image_list = ImageList_Create(cx, cy, ILC_COLOR8 | ILC_MASK, 3, 3);
+			config->image_list = ImageList_Create(cx, cy, 
+				ILC_MASK | (config->version_major >= 5 ? ILC_COLOR32 : ILC_COLOR8),
+				3, 0);
 
 			icon = ImageList_ExtractIcon(0, small_list, IMG_FOLDER_CLOSED);
 			config->img_closed = ImageList_AddIcon(config->image_list, icon);

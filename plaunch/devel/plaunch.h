@@ -18,13 +18,14 @@
 
 #define BUFSIZE 2048
 
-#define WM_XUSER		(WM_USER + 0x2000)
-#define WM_SYSTRAY		(WM_XUSER + 6)
-#define WM_SYSTRAY2		(WM_XUSER + 7)
-#define WM_REFRESHTV	(WM_XUSER + 8)
-#define WM_HOTKEYCHANGE	(WM_XUSER + 9)
-#define WM_LAUNCHBOX	(WM_XUSER + 10)
-#define WM_WINDOWLIST	(WM_XUSER + 11)
+#define WM_XUSER			(WM_USER + 0x2000)
+#define WM_SYSTRAY			(WM_XUSER + 6)
+#define WM_SYSTRAY2			(WM_XUSER + 7)
+#define WM_REFRESHTV		(WM_XUSER + 8)
+#define WM_REFRESHBUTTONS	(WM_XUSER + 9)
+#define WM_HOTKEYCHANGE		(WM_XUSER + 10)
+#define WM_LAUNCHBOX		(WM_XUSER + 11)
+#define WM_WINDOWLIST		(WM_XUSER + 12)
 
 #define IDM_CLOSE	    0x0010
 #define IDM_LAUNCHBOX	0x0020
@@ -54,6 +55,9 @@
 #define HOTKEY_ACTION_LAUNCH	0x02
 #define HOTKEY_ACTION_EDIT		0x03
 
+#define OPTION_ENABLEDRAGDROP	0x0001
+#define OPTION_ENABLESAVECURSOR	0x0002
+
 struct _config {
 	HINSTANCE hinst;
 	HWND hwnd_mainwindow;
@@ -70,10 +74,10 @@ struct _config {
 		int action;
 		char *destination;
 	} hotkeys[256];
-	int dragdrop;
-#ifdef WINDOWS_NT351_COMPATIBLE
+	int options;
 	int version_major;
 	int version_minor;
+#ifdef WINDOWS_NT351_COMPATIBLE
 	int have_shell;
 #endif /* WINDOWS_NT351_COMPATIBLE */
 } *config;

@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /Zp4 /W3 /O1 /I "c:\usr\apps\vc98\include" /D "NDEBUG" /D "MINIRTL" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D _WIN32_IE=0x0200 /D "NO_PARSE_CMD_LINE" /FD /c
+# ADD CPP /nologo /G3 /Gr /Zp4 /W3 /O1 /I "c:\usr\apps\vc98\include" /D "NDEBUG" /D "MINIRTL" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /FD /c
 # SUBTRACT CPP /YX
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -71,7 +71,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /Zp4 /W3 /Gm /GX /ZI /Od /I "c:\usr\apps\vc98\include" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D _WIN32_IE=0x0200 /FR /YX /FD /GZ /c
+# ADD CPP /nologo /Zp4 /W3 /Gm /GX /ZI /Od /I "c:\usr\apps\vc98\include" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -96,6 +96,10 @@ LINK32=link.exe
 # Begin Source File
 
 SOURCE=.\aboutbox.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\debug.c
 # End Source File
 # Begin Source File
 
@@ -141,6 +145,10 @@ SOURCE=.\windowlistbox.c
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
+# Begin Source File
+
+SOURCE=.\debug.h
+# End Source File
 # Begin Source File
 
 SOURCE=.\dlgtmpl.h

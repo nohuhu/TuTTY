@@ -12,6 +12,8 @@ int sessioncmp(const char *a, const char *b);
 #define ISEXPANDED		"IsExpanded"
 #define HOTKEY			"PLaunchHotKey"
 
+char *reg_make_path(char *parent, char *path);
+
 int reg_copy_tree(char *keyfrom, char *keyto);
 
 int reg_delete_v(char *keyname, char *valname);

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "registry.h"
 #include "misc.h"
+#include "debug.h"
 
 #define BUFSIZE			2048
 
@@ -86,6 +87,21 @@ static void stupid_sort(char **strings, int count) {
 			};
 		};
 	};
+};
+
+char *reg_make_path(char *parent, char *path) {
+	char *buf;
+
+	if (!path)
+		return NULL;
+
+	buf = (char *)malloc(BUFSIZE);
+	if (parent)
+		sprintf(buf, "%s\\%s\\%s", REGROOT, parent, path);
+	else
+		sprintf(buf, "%s\\%s", REGROOT, path);
+
+	return buf;
 };
 
 int reg_read_i(char *keyname, char *valname, int defval) {
@@ -238,7 +254,7 @@ int reg_delete_k(char *keyname) {
 	return (err == ERROR_SUCCESS);
 };
 
-int reg_copy_tree(char *from, char *to) {
+static int _reg_copy_tree(char *from, char *to) {
 	HKEY key1, key2;
 	char *f, *t, *name;
 	LPBYTE data;
@@ -247,19 +263,12 @@ int reg_copy_tree(char *from, char *to) {
 	if (!from || !to)
 		return FALSE;
 
-	f = (char *)malloc(BUFSIZE);
-	mungestr(from, f);
-
-	if (RegOpenKeyEx(HKEY_CURRENT_USER, f, 0, KEY_READ, &key1) != ERROR_SUCCESS) {
-		free(f);
+	if (RegOpenKeyEx(HKEY_CURRENT_USER, from, 0, KEY_READ, &key1) != ERROR_SUCCESS) {
 		return FALSE;
 	};
 
-	mungestr(to, f);
-
-	if (RegCreateKeyEx(HKEY_CURRENT_USER, f, 0, NULL, REG_OPTION_NON_VOLATILE,
+	if (RegCreateKeyEx(HKEY_CURRENT_USER, to, 0, NULL, REG_OPTION_NON_VOLATILE,
 					KEY_ALL_ACCESS, NULL, &key2, &size) != ERROR_SUCCESS) {
-		free(f);
 		RegCloseKey(key1);
 		return FALSE;
 	};
@@ -267,12 +276,12 @@ int reg_copy_tree(char *from, char *to) {
 	if (RegQueryInfoKey(key1, NULL, NULL, NULL, &subkeys, 
 						NULL, NULL, &values, NULL, 
 						NULL, NULL, NULL) != ERROR_SUCCESS) {
-		free(f);
 		RegCloseKey(key1);
 		RegCloseKey(key2);
 		return FALSE;
 	};
 
+	f = (char *)malloc(BUFSIZE);
 	memset(f, 0, BUFSIZE);
 	t = (char *)malloc(BUFSIZE);
 	memset(t, 0, BUFSIZE);
@@ -285,7 +294,7 @@ int reg_copy_tree(char *from, char *to) {
 						NULL, NULL, NULL, NULL) == ERROR_SUCCESS) {
 			sprintf(f, "%s\\%s", from, name);
 			sprintf(t, "%s\\%s", to, name);
-			if (!reg_copy_tree(f, t)) {
+			if (!_reg_copy_tree(f, t)) {
 				free(f);
 				free(t);
 				free(name);
@@ -319,6 +328,21 @@ int reg_copy_tree(char *from, char *to) {
 	free(name);
 
 	return TRUE;
+};
+
+int reg_copy_tree(char *from, char *to) {
+	char *f, *t;
+	int ret;
+
+	f = (char *)malloc(BUFSIZE);
+	mungestr(from, f);
+	t = (char *)malloc(BUFSIZE);
+	mungestr(to, t);
+	ret = _reg_copy_tree(f, t);
+	free(t);
+	free(f);
+
+	return ret;
 };
 
 static int reg_delete_callback(char *name, char *path, int isfolder, int mode,
