@@ -10,7 +10,7 @@
 
 static WNDPROC oldwindowproc;
 
-static char *key_name(UINT modifiers, UINT vkey) {
+char *key_name(UINT modifiers, UINT vkey) {
 	char *buf, *buf2, key;
 
 	buf = (char *)malloc(BUFSIZE);
@@ -166,7 +166,7 @@ static int CALLBACK HotKeyControlProc(HWND hwnd, UINT msg,
 			};
 
 			if (!modifiers ||
-				(modf < 2) ||
+				((modf < 2) && !(modifiers & MOD_WIN)) ||
 				(vkey <= 0x30 || vkey >= 0x5a)) {
 				SetWindowLong(hwnd, GWL_USERDATA, oldhotkey);
 				SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM)"");

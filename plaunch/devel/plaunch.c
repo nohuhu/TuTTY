@@ -9,9 +9,10 @@
 
 #include "plaunch.h"
 #include "entry.h"
-#include "session.h"
 #include "dlgtmpl.h"
 #include "misc.h"
+#include "registry.h"
+#include "hotkey.h"
 
 #define IMG_FOLDER_OPEN	    4
 #define IMG_FOLDER_CLOSED   3
@@ -45,11 +46,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 #ifdef WINDOWS_NT351_COMPATIBLE
 	case WM_INITMENUPOPUP:
 		if (!config->have_shell && (HMENU)wParam == config->systray_menu) {
-			struct session *root;
-
-			root = session_get_root();
-			config->systray_menu = menu_refresh(config->systray_menu, root);
-			session_free(root);
+			config->systray_menu = menu_refresh(config->systray_menu, "");
 		};
 		break;
 #endif /* WINDOWS_NT351_COMPATIBLE */
@@ -64,12 +61,12 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 		break;
 	case WM_SYSTRAY2:
 		if (!menuinprogress) {
-			struct session *root;
+//			struct session *root;
 
 			menuinprogress = 1;
-			root = session_get_root();
+//			root = session_get_root();
 
-			config->systray_menu = menu_refresh(config->systray_menu, root);
+			config->systray_menu = menu_refresh(config->systray_menu, "");
 
 			SetForegroundWindow(hwnd);
 			ret = TrackPopupMenu(config->systray_menu,
@@ -79,36 +76,26 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 			PostMessage(hwnd, WM_NULL, 0, 0);
 
 			if (ret > IDM_SESSION_BASE && ret < IDM_SESSION_MAX) {
-				struct session *s;
+				MENUITEMINFO mii;
 
-				s = session_find_by_id(root, ret - IDM_SESSION_BASE);
+				memset(&mii, 0, sizeof(MENUITEMINFO));
+				mii.cbSize = sizeof(MENUITEMINFO);
+				mii.fMask = MIIM_DATA;
+				if (GetMenuItemInfo(config->systray_menu, ret, FALSE, &mii) &&
+					mii.dwItemData != 0) {
+					char *s, *buf;
 
-				if (s) {
-					char *p;
+					s = (char *)mii.dwItemData;
+					buf = malloc(strlen(s) + 9);
+					sprintf(buf, "-load \"%s\"", s);
 
-					p = session_get_full_path(s);
+					ShellExecute(hwnd, "open", config->putty_path,
+								 buf, _T(""), SW_SHOWNORMAL);
 
-					if (p) {
-						char *buf;
-
-						buf = malloc(strlen(p) + 9);
-						sprintf(buf, "-load \"%s\"", p);
-
-						ShellExecute(hwnd, "open", config->putty_path,
-									 buf, _T(""), SW_SHOWNORMAL);
-
-						free(buf);
-						free(p);
-					} else {
-						ShellExecute(hwnd, "open", config->putty_path,
-									 _T(""), _T(""), SW_SHOWNORMAL);
-					};
+					free(buf);
 				};
 			} else
 				SendMessage(hwnd, WM_COMMAND, (WPARAM)ret, 0);
-
-			if (root)
-				session_free(root);
 
 			menuinprogress = 0;
 		}
@@ -127,30 +114,17 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 					case HOTKEY_ACTION_LAUNCH:
 					case HOTKEY_ACTION_EDIT:
 						{
-							char *buf, *path;
-							struct session *root, *s;
+							char *buf;
 
-							root = session_get_root();
-							s = session_find_by_hotkey(root, config->hotkeys[i].hotkey, TRUE);
-
-							if (!s) {
-								session_free(root);
-
-								break;
-							};
-
-							path = session_get_full_path(s);
 							buf = (char *)malloc(BUFSIZE);
 							sprintf(buf, 
 								config->hotkeys[i].action == HOTKEY_ACTION_LAUNCH ?
 								"-load \"%s\"" :
 								"-edit \"%s\"",
-								path);
+								config->hotkeys[i].destination);
 							ShellExecute(hwnd, "open", config->putty_path,
 										 buf, _T(""), SW_SHOWNORMAL);
-							free(path);
 							free(buf);
-							session_free(root);
 						};
 						break;
 					};
@@ -161,9 +135,10 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	case WM_HOTKEYCHANGE:
 		{
 			UnregisterHotKey(hwnd, wParam);
-			RegisterHotKey(hwnd, wParam, 
-						LOWORD(config->hotkeys[wParam].hotkey),
-						HIWORD(config->hotkeys[wParam].hotkey));
+			if (config->hotkeys[wParam].hotkey)
+				RegisterHotKey(hwnd, wParam, 
+					LOWORD(config->hotkeys[wParam].hotkey),
+					HIWORD(config->hotkeys[wParam].hotkey));
 		};
 		break;
 	case WM_LAUNCHBOX:
@@ -179,16 +154,16 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 			LPMEASUREITEMSTRUCT mis;
 			HDC hdc;
 			SIZE size;
-			struct session *s;
+			char *name;
 
 			mis = (LPMEASUREITEMSTRUCT)lParam;
-			s = (struct session *)mis->itemData;
+			name = lastname((char *)mis->itemData);
 
-			if (!s || !s->name)
+			if (!name)
 				return FALSE;
 
 			hdc = GetDC(hwnd);
-			GetTextExtentPoint32(hdc, s->name, strlen(s->name), &size);
+			GetTextExtentPoint32(hdc, name, strlen(name), &size);
 			mis->itemWidth = size.cx + config->iconx + 7 + GetSystemMetrics(SM_CXMENUCHECK);
 			if (config->icony > size.cy)
 				mis->itemHeight = config->icony + 2;
@@ -204,13 +179,14 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 			LPDRAWITEMSTRUCT dis;
 			HICON icon;
 			SIZE size;
-			struct session *s;
+			char *name, *path;
 			int selected = 0, x, y;
 
 			dis = (LPDRAWITEMSTRUCT)lParam;
-			s = (struct session *)dis->itemData;
+			path = (char *)dis->itemData;
+			name = lastname(path);
 
-			if (!s || !s->name)
+			if (!name)
 				return FALSE;
 
 			if (dis->itemState & ODS_SELECTED) {
@@ -219,18 +195,18 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 				selected = TRUE;
 			};
 
-			GetTextExtentPoint32(dis->hDC, s->name, strlen(s->name), &size);
+			GetTextExtentPoint32(dis->hDC, name, strlen(name), &size);
 
 			x = dis->rcItem.left + config->iconx + 7;
 			y = dis->rcItem.top + 
 				(int)((dis->rcItem.bottom - dis->rcItem.top - size.cy) / 2);
 
-			ExtTextOut(dis->hDC, x, y, ETO_OPAQUE, &dis->rcItem, s->name, strlen(s->name), NULL);
+			ExtTextOut(dis->hDC, x, y, ETO_OPAQUE, &dis->rcItem, name, strlen(name), NULL);
 			
 			x = dis->rcItem.left + 2;
 			y = dis->rcItem.top + 1;
 
-			if (s->type) {
+			if (is_folder(path)) {
 				if (selected)
 					icon = ImageList_ExtractIcon(0, config->image_list, config->img_open);
 				else
@@ -451,10 +427,33 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 								i, 
 								LOWORD(config->hotkeys[i].hotkey), 
 								HIWORD(config->hotkeys[i].hotkey))) {
-				char *err;
+				char *err, *key, *action, *destination;
 				err = malloc(BUFSIZE);
-				sprintf(err, "Cannot register '%c' hotkey!", 
-					(char)HIWORD(config->hotkeys[i].hotkey));
+				key = key_name(LOWORD(config->hotkeys[i].hotkey),
+					HIWORD(config->hotkeys[i].hotkey));
+				switch (config->hotkeys[i].action) {
+				case HOTKEY_ACTION_MESSAGE:
+					action = "bringing up";
+					switch ((int)config->hotkeys[i].destination) {
+					case WM_LAUNCHBOX:
+						destination = "Launch Box";
+						break;
+					case WM_WINDOWLIST:
+						destination = "Window List";
+						break;
+					};
+					break;
+				case HOTKEY_ACTION_LAUNCH:
+					action = "launching";
+					destination = config->hotkeys[i].destination;
+					break;
+				case HOTKEY_ACTION_EDIT:
+					action = "editing";
+					destination = config->hotkeys[i].destination;
+					break;
+				};
+				sprintf(err, "Cannot register '%s' hotkey for %s \"%s\"!", 
+					key, action, destination);
 				MessageBox(config->hwnd_mainwindow, err, "Error", MB_OK | MB_ICONERROR);
 				free(err);
 			};
@@ -474,6 +473,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 
 		for (i = 0; i < config->nhotkeys; i++) {
 			UnregisterHotKey(config->hwnd_mainwindow, i);
+			if (i > 1 && config->hotkeys[i].destination)
+				free(config->hotkeys[i].destination);
 		};
 	}
 

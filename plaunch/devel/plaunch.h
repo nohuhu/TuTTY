@@ -68,8 +68,9 @@ struct _config {
 	struct _hotkey_action {
 		LONG hotkey;
 		int action;
-		int destination;
+		char *destination;
 	} hotkeys[256];
+	int dragdrop;
 #ifdef WINDOWS_NT351_COMPATIBLE
 	int version_major;
 	int version_minor;

@@ -16,23 +16,23 @@
 #include "entry.h"
 #endif /* _DEBUG && MINIRTL */
 
-#define DEFAULTSETTINGS "Default Settings"
+#define DEFAULTSETTINGS	"Default Settings"
 
 /*
  * session item structure. pretty simple, as it goes.
  */
 
-#define STYPE_SESSION   0
-#define STYPE_FOLDER    1
+#define STYPE_SESSION	0
+#define STYPE_FOLDER	1
 
 struct session {
     int id;
-    int type;                              /* 0: a session, 1: a folder */
-    int isexpanded;                        /* is this folder view expanded by default? (used in PLaunch) */
-        int nhotkeys;                      /* number of this session's hot keys. */
-        int     hotkeys[2];                        /* hotkeys for this session. 0th for launch, 1st for edit */
-    char *name;                            /* session/folder name without path */
-    int nchildren;                         /* number of children */
+    int type;				   /* 0: a session, 1: a folder */
+    int isexpanded;			   /* is this folder view expanded by default? (used in PLaunch) */
+	int nhotkeys;			   /* number of this session's hot keys. */
+	int	hotkeys[2];			   /* hotkeys for this session. 0th for launch, 1st for edit */
+    char *name;				   /* session/folder name without path */
+    int nchildren;			   /* number of children */
     struct session **children; /* array of children sessions */
     struct session *parent;    /* parent to this session */
 };
@@ -143,7 +143,7 @@ struct session *session_copy(struct session *s, char *name);
  * all ok, NULL on error.
  */
 
-int session_rename(struct session *s, char *name);
+struct session *session_rename(struct session *s, char *name);
 
 /*
  * this is the main wrapper: it returns pointer to

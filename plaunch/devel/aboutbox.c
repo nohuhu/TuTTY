@@ -19,7 +19,7 @@ static int CALLBACK AboutProc(HWND hwnd, UINT msg,
 	case WM_COMMAND:
 		switch (LOWORD(wParam)) {
 		case IDOK:
-			DestroyWindow(hwnd);
+			EndDialog(hwnd, 0);
 			return FALSE;
 		case ID_LICENSE:
 			EnableWindow(hwnd, FALSE);
@@ -28,9 +28,6 @@ static int CALLBACK AboutProc(HWND hwnd, UINT msg,
 			SetActiveWindow(hwnd);
 			return FALSE;
 		}
-		return FALSE;
-	case WM_CLOSE:
-		DestroyWindow(hwnd);
 		return FALSE;
     }
 

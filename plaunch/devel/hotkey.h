@@ -11,6 +11,8 @@
 
 #define HK_CHANGE	0x9000
 
+char *key_name(UINT modifiers, UINT vkey);
+
 int make_hotkey(HWND editbox, LONG defhotkey);
 int unmake_hotkey(HWND editbox);
 

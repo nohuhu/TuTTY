@@ -1,8 +1,8 @@
 #include "plaunch.h"
-#include "session.h"
 #include "dlgtmpl.h"
 #include "misc.h"
 #include "hotkey.h"
+#include "registry.h"
 
 #define ID_LAUNCHBOX_TREEVIEW_STATIC		100
 #define ID_LAUNCHBOX_TREEVIEW_GROUPBOX		101
@@ -34,12 +34,18 @@
  */
 
 int CALLBACK treeview_compare(LPARAM p1, LPARAM p2, LPARAM sort) {
-	struct session *s1 =
-		(struct session *)p1;
-	struct session *s2 = 
-		(struct session *)p2;
+	int ret;
+	char *item1, *item2;
 
-	return session_compare(s1, s2);
+	item1 = treeview_getitemname((HWND)sort, (HTREEITEM)p1);
+	item2 = treeview_getitemname((HWND)sort, (HTREEITEM)p2);
+
+	ret = sessioncmp(item1, item2);
+
+	free(item1);
+	free(item2);
+
+	return 0;
 };
 
 /*
@@ -49,7 +55,7 @@ int CALLBACK treeview_compare(LPARAM p1, LPARAM p2, LPARAM sort) {
 char *treeview_find_unused_name(HWND treeview, HTREEITEM parent, char *name) {
 	TVITEM tvi;
 	HTREEITEM child;
-	char *oname, *cname;
+	char *oname, *cname, *ret;
 	int i = 0;
 	
 	oname = (char *)malloc(BUFSIZE);
@@ -75,7 +81,9 @@ char *treeview_find_unused_name(HWND treeview, HTREEITEM parent, char *name) {
 	};
 
 	free(cname);
-	return oname;
+	ret = dupstr(oname);
+	free(oname);
+	return ret;
 };
 
 /*
@@ -85,8 +93,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 								  WPARAM wParam, LPARAM lParam) {
 	static HWND treeview = NULL, launchhotkey = NULL, edithotkey = NULL;
 	static HMENU context_menu = NULL;
-	static int tvctrl, cut_or_copy = 0;
-	static struct session *root;
+	static int cut_or_copy = 0;
 	static HTREEITEM editing_now = NULL;
 	static HTREEITEM copying_now = NULL;
 	static HIMAGELIST draglist = NULL;
@@ -122,9 +129,14 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			ScreenToClient(hwnd, &pt);
 
 			treeview = CreateWindowEx(WS_EX_CLIENTEDGE, WC_TREEVIEW, "",
-										WS_CHILD | WS_VISIBLE |
+										WS_CHILD | 
+#ifdef WINDOWS_NT351_COMPATIBLE
+										(config->have_shell ? 0 : WS_BORDER) |
+#endif WINDOWS_NT351_COMPATIBLE
+										WS_VISIBLE |
 										WS_TABSTOP | TVS_HASLINES |
-										TVS_DISABLEDRAGDROP | TVS_HASBUTTONS |
+										(config->dragdrop ? 0 :	TVS_DISABLEDRAGDROP) | 
+										TVS_HASBUTTONS |
 										TVS_LINESATROOT | TVS_SHOWSELALWAYS | 
 										TVS_EDITLABELS,
 										pt.x, pt.y,
@@ -132,22 +144,9 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 										hwnd, NULL, config->hinst, NULL);
 			font = SendMessage(hwnd, WM_GETFONT, 0, 0);
 			SendMessage(treeview, WM_SETFONT, font, MAKELPARAM(TRUE, 0));
-			tvctrl = GetDlgCtrlID(treeview);
 
 			if (config->image_list)
 				TreeView_SetImageList(treeview, config->image_list, TVSIL_NORMAL);
-		}
-
-		/*
-		 * Set up the tree view contents.
-		 */
-		{
-			HTREEITEM hfirst = NULL;
-
-			root = session_get_root();
-			hfirst = treeview_addsession(treeview, TVI_ROOT, root);
-
-			TreeView_SelectItem(treeview, TreeView_GetFirstVisible(treeview));
 		}
 
 		/*
@@ -168,7 +167,8 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			AppendMenu(context_menu, MF_STRING, IDM_CTXM_CRTSES, "New sessi&on");
 		}
 
-		SetWindowLong(hwnd, GWL_USERDATA, 1);
+		SendMessage(hwnd, WM_REFRESHTV, 0, 0);
+
 		SetForegroundWindow(hwnd);
 		SetActiveWindow(hwnd);
 		SetFocus(treeview);
@@ -219,25 +219,19 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 				TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, 0, hwnd, NULL))
 				PostMessage(hwnd, WM_COMMAND, msg, MAKELPARAM(item, 0));
 
-			return TRUE;
+			return FALSE;
 		}
+		break;
 	case WM_REFRESHTV:
 		/*
 		 * Refresh the tree view contents.
 		 */
 		{
-			HTREEITEM hfirst = NULL;
-
 			TreeView_DeleteAllItems(treeview);
-			session_free(root);
-
-			root = session_get_root();
-			hfirst = treeview_addsession(treeview, TVI_ROOT, root);
-
-			TreeView_SelectItem(treeview, TreeView_GetFirstVisible(treeview));
-
-			break;
+			treeview_addtree(treeview, TVI_ROOT, "");
+			TreeView_SelectSetFirstVisible(treeview, TreeView_GetRoot(treeview));
 		}
+		break;
 	case WM_MOUSEMOVE:
 		{
 			HTREEITEM target;
@@ -264,15 +258,13 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		break;
 	case WM_LBUTTONUP:
 	case WM_RBUTTONUP:
-		{
-			if (dragging_now) {
-				ImageList_EndDrag();
-				ReleaseCapture();
-				ShowCursor(TRUE);
-				dragging_now = FALSE;
-				draglist = NULL;
-			};
-		}
+		if (dragging_now) {
+			ImageList_EndDrag();
+			ReleaseCapture();
+			ShowCursor(TRUE);
+			dragging_now = FALSE;
+			draglist = NULL;
+		};
 		break;
 	case WM_COMMAND:
 		switch (HIWORD(wParam)) {
@@ -294,32 +286,32 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			break;
 		case ID_LAUNCHBOX_HOTKEY_BUTTON_SET:
 			{
-				TVITEM item;
-				struct session *s;
+				HTREEITEM item;
+				char *path, *buf, *valname;
 				int i, j, found, hotkey;
 
-				item.hItem = TreeView_GetSelection(treeview);
-				item.mask = TVIF_PARAM;
-				TreeView_GetItem(treeview, &item);
-				s = (struct session *)item.lParam;
-
-				if (!s)
-					return FALSE;
+				item = TreeView_GetSelection(treeview);
+				path = treeview_getitempath(treeview, item);
+				buf = (char *)malloc(BUFSIZE);
+				sprintf(buf, "%s\\%s", REGROOT, path);
+				valname = (char *)malloc(BUFSIZE);
 
 				for (i = 0; i < 2; i++) {
 					if (SendMessage(i == 0 ? 
 							launchhotkey :
 						edithotkey, EM_GETMODIFY, 0, 0)) {
 						hotkey = get_hotkey(i == 0 ? launchhotkey :	edithotkey);
-						s->hotkeys[i] = hotkey;
-						s->nhotkeys = 2;
-						session_set_hotkey(s, i, hotkey);
+						sprintf(valname, "%s%d", HOTKEY, i);
+						if (hotkey)
+							reg_write_i(buf, valname, hotkey);
+						else
+							reg_delete_v(buf, valname);
 						found = FALSE;
 						for (j = 0; j < config->nhotkeys; j++) {
 							if (config->hotkeys[j].action == (i == 0 ?
 																HOTKEY_ACTION_LAUNCH :
 																HOTKEY_ACTION_EDIT) &&
-								config->hotkeys[j].destination == s->id) {
+								!strcmp(config->hotkeys[j].destination, path)) {
 								found = TRUE;
 								config->hotkeys[j].hotkey = hotkey;
 								SendMessage(config->hwnd_mainwindow, WM_HOTKEYCHANGE, j, 0);
@@ -331,13 +323,18 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 																		HOTKEY_ACTION_LAUNCH :
 																		HOTKEY_ACTION_EDIT);
 							config->hotkeys[config->nhotkeys].hotkey = hotkey;
-							config->hotkeys[config->nhotkeys].destination = s->id;
+							config->hotkeys[config->nhotkeys].destination = dupstr(path);
 							config->nhotkeys++;
 							SendMessage(config->hwnd_mainwindow, WM_HOTKEYCHANGE,
 										config->nhotkeys - 1, 0);
 						};
 					};
 				};
+
+				free(valname);
+				free(buf);
+				free(path);
+
 				EnableWindow(GetDlgItem(hwnd, ID_LAUNCHBOX_HOTKEY_BUTTON_SET), FALSE);
 
 				return FALSE;
@@ -346,58 +343,43 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			{
 				if (editing_now) {
 					TreeView_EndEditLabelNow(treeview, FALSE);
-					return TRUE;
+					return FALSE;
 				};
 			};
 		case ID_LAUNCHBOX_EDIT:
 			{
-				TVITEM item;
-				struct session *s;
-				char *p;
+				HTREEITEM item;
+				char *path, *buf;
 
 				if (!TreeView_GetCount(treeview)) {
 					EndDialog(hwnd, 0);
 					return FALSE;
 				};
 
-				item.hItem = TreeView_GetSelection(treeview);
-				item.mask = TVIF_PARAM;
-				TreeView_GetItem(treeview, &item);
-				s = (struct session *)item.lParam;
+				item = TreeView_GetSelection(treeview);
+				path = treeview_getitempath(treeview, item);
 
-				if (!s) {
+				if (!path) {
 					EndDialog(hwnd, 0);
 					return FALSE;
 				};
 
-				if (s->type) {
-					TreeView_Expand(treeview, item.hItem, TVE_TOGGLE);
+				if (is_folder(path)) {
+					TreeView_Expand(treeview, item, TVE_TOGGLE);
 					return FALSE;
 				};
 
-				p = session_get_full_path(s);
+				buf = malloc(strlen(path) + 9);
 
-				if (p) {
-					char *buf;
+				sprintf(buf, (wParam == IDOK) ? 
+								"-load \"%s\"" :
+								"-edit \"%s\"", path);
 
-					buf = malloc(strlen(s->name) + 9);
+				ShellExecute(hwnd, "open", config->putty_path,
+							buf, _T(""), SW_SHOWNORMAL);
 
-					if (wParam == IDOK)
-						sprintf(buf, "-load \"%s\"", s->name);
-					else 
-						sprintf(buf, "-edit \"%s\"", s->name);
-
-					ShellExecute(hwnd, "open", config->putty_path,
-								buf, _T(""), SW_SHOWNORMAL);
-					free(buf);
-					free(p);
-				} else {
-					ShellExecute(hwnd, "open", config->putty_path,
-								_T(""), _T(""), SW_SHOWNORMAL);
-				};
-
-				if (root)
-					root = session_free(root);
+				free(buf);
+				free(path);
 
 				EndDialog(hwnd, 0);
 
@@ -407,12 +389,8 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			{
 				if (editing_now) {
 					TreeView_EndEditLabelNow(treeview, TRUE);
-					return TRUE;
+					return FALSE;
 				};
-			};
-			{
-				if (root)
-					root = session_free(root);
 
 				EndDialog(hwnd, 0);
 
@@ -432,37 +410,34 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		case ID_LAUNCHBOX_DELETE:
 		case IDM_CTXM_DELETE:
 			{
-				TVITEM item;
-				struct session *s;
-				char *buf;
+				HTREEITEM item;
+				char *buf, *name, *path;
 
-				item.hItem = TreeView_GetSelection(treeview);
-				item.mask = TVIF_PARAM;
-				TreeView_GetItem(treeview, &item);
-				s = (struct session *)item.lParam;
+				item = TreeView_GetSelection(treeview);
+				name = treeview_getitemname(treeview, item);
+				path = treeview_getitempath(treeview, item);
 
 				buf = (char *)malloc(BUFSIZE);
 
-				sprintf(buf, "Are you sure you want to delete the \"%s\"", s->name);
+				sprintf(buf, "Are you sure you want to delete the \"%s\"", name);
 
-				if (s && s->type)
+				if (is_folder(path))
 					strcat(buf, " folder and all its contents?");
 				else
 					strcat(buf, " session?");
 
-				if (MessageBox(hwnd, buf, 
-					"Confirmation required", 
-					MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION) != IDYES ||
-					!session_delete(s)) {
-					free(buf);
-					return FALSE;
+				if (MessageBox(hwnd, buf, "Confirmation required", 
+					MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION) == IDYES) {
+					sprintf(buf, "%s\\%s", REGROOT, path);
+					if (reg_delete_tree(buf))
+						TreeView_DeleteItem(treeview, item);
 				};
 
 				free(buf);
+				free(path);
+				free(name);
 
-				SendMessage(hwnd, WM_REFRESHTV, 0, 0);
-
-				return TRUE;
+				return FALSE;
 			}
 		case ID_LAUNCHBOX_NEW_FOLDER:
 		case IDM_CTXM_CRTFLD:
@@ -470,190 +445,159 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		case IDM_CTXM_CRTSES:
 			{
 				HTREEITEM tv_curitem, tv_parent, tv_newitem;
-				TVITEM tvi;
-				TVINSERTSTRUCT tvins;
 				TVSORTCB tscb;
-				struct session *ses_curitem, *ses_parent, *ses_newitem;
 				int type;
+				char *cur_path, *parent_path, *buf, *name;
 
 				type = (wParam == ID_LAUNCHBOX_NEW_FOLDER ||
 						wParam == IDM_CTXM_CRTFLD) ?
-						STYPE_FOLDER :
-						STYPE_SESSION;
+						1 :
+						0;
 
-				tv_curitem = tvi.hItem = TreeView_GetSelection(treeview);
-				tvi.mask = TVIF_PARAM;
-				TreeView_GetItem(treeview, &tvi);
-				ses_curitem = (struct session *)tvi.lParam;
-
-				if (!ses_curitem)
-					return FALSE;
-
-				tv_parent = TreeView_GetParent(treeview, tv_curitem);
-
-				if (ses_curitem->type) {
-					ses_parent = ses_curitem;
-					tv_parent = tv_curitem;
-				} else if (tv_parent) {
-					ses_parent = ses_curitem->parent;
-					tv_parent = tv_parent;
-				} else {
-					ses_parent = root;
-					tv_parent = NULL;
-				};
-
-				ses_newitem = session_create(type, type ? NEWFOLDER : NEWSESSION, ses_parent);
-
-				if (!ses_newitem)
-					return FALSE;
-
-				ses_parent->children = 
-					session_insert(ses_parent->children, &ses_parent->nchildren, ses_newitem);
-
-				tvins.item.mask = TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE |
-					(type ? TVIF_CHILDREN : 0);
-				tvins.item.pszText = ses_newitem->name;
-				tvins.item.cchTextMax = strlen(ses_newitem->name);
-				tvins.item.lParam = (LPARAM)ses_newitem;
-				if (type)
-					tvins.item.cChildren = type;
-				tvins.item.iImage = tvins.item.iSelectedImage = 
-					type ? config->img_closed : config->img_session;
-				tvins.hInsertAfter = tv_parent;
-				tvins.hParent = tv_parent;
-				tv_newitem = TreeView_InsertItem(treeview, &tvins);
-
-				SetFocus(treeview);
-
-				tscb.hParent = tv_parent;
-				tscb.lpfnCompare = treeview_compare;
-				tscb.lParam = 0;
-				TreeView_SortChildrenCB(treeview, &tscb, FALSE);
-
-				TreeView_EnsureVisible(treeview, tv_newitem);
-				TreeView_SelectItem(treeview, tv_newitem);
-				TreeView_EditLabel(treeview, tv_newitem);
-
-				return TRUE;
-			};
-		case IDM_CTXM_CUT:
-			copying_now = TreeView_GetSelection(treeview);
-			TreeView_SelectDropTarget(treeview, copying_now);
-			cut_or_copy = 1; // cut
-
-			EnableMenuItem(context_menu, IDM_CTXM_CUT, MF_GRAYED);
-			EnableMenuItem(context_menu, IDM_CTXM_COPY, MF_GRAYED);
-			EnableMenuItem(context_menu, IDM_CTXM_PASTE, MF_ENABLED);
-			DrawMenuBar(hwnd);
-
-			return TRUE;
-		case IDM_CTXM_COPY:
-			copying_now = TreeView_GetSelection(treeview);
-			cut_or_copy = 2; // copy
-
-			EnableMenuItem(context_menu, IDM_CTXM_CUT, MF_GRAYED);
-			EnableMenuItem(context_menu, IDM_CTXM_COPY, MF_GRAYED);
-			EnableMenuItem(context_menu, IDM_CTXM_PASTE, MF_ENABLED);
-			DrawMenuBar(hwnd);
-
-			return TRUE;
-		case IDM_CTXM_PASTE:
-			{
-				TVITEM tvi;
-				TVSORTCB tscb;
-				HTREEITEM tv_parent, tv_curitem, tv_newitem, tv_copyitem;
-				struct session *ses_parent, *ses_curitem, *ses_newitem, *ses_copyitem;
-				char *path, *to, *to_path;
-				int success = 0;
-
-				tv_copyitem = copying_now;
-				memset(&tvi, 0, sizeof(TVITEM));
-				tvi.hItem = tv_copyitem;
-				tvi.mask = TVIF_PARAM;
-				TreeView_GetItem(treeview, &tvi);
-				ses_copyitem = (struct session *)tvi.lParam;
-
-				memset(&tvi, 0, sizeof(TVITEM));
 				tv_curitem = TreeView_GetSelection(treeview);
-				tvi.hItem = tv_curitem;
-				tvi.mask = TVIF_PARAM;
-				TreeView_GetItem(treeview, &tvi);
-				ses_curitem = (struct session *)tvi.lParam;
-
+				cur_path = treeview_getitempath(treeview, tv_curitem);
 				tv_parent = TreeView_GetParent(treeview, tv_curitem);
 
-				if (ses_curitem->type) {
-					ses_parent = ses_curitem;
+				if (is_folder(cur_path)) {
 					tv_parent = tv_curitem;
+					parent_path = dupstr(cur_path);
 				} else if (tv_parent) {
-					ses_parent = ses_curitem->parent;
 					tv_parent = tv_parent;
+					parent_path = treeview_getitempath(treeview, tv_parent);
 				} else {
-					ses_parent = root;
-					tv_parent = NULL;
+					tv_parent = TVI_ROOT;
+					parent_path = NULL;
 				};
 
-				path = session_get_full_path(ses_parent);
-				to = treeview_find_unused_name(treeview, tv_parent,
-					ses_copyitem->name);
-				to_path = (char *)malloc(BUFSIZE);
-				if (path) {
-					strcpy(to_path, path);
-					strcat(to_path, "\\");
-				} else
-					strcpy(to_path, "");
-				strcat(to_path, to);
+				name = treeview_find_unused_name(treeview, tv_parent,
+					(type ? NEWFOLDER : NEWSESSION));
 
-				switch (cut_or_copy) {
-				case 1: // cut
-					success = session_rename(ses_copyitem, to_path);
-					break;
-				case 2: // copy
-					success = session_copy(ses_copyitem, to_path);
-					break;
-				};
+				buf = (char *)malloc(BUFSIZE);
+				if (parent_path)
+					sprintf(buf, "%s\\%s\\%s", REGROOT, parent_path, name);
+				else
+					sprintf(buf, "%s\\%s", REGROOT, name);
 
-				if (success) {
-					ses_newitem = session_duplicate(ses_copyitem);
-					if (ses_newitem->name)
-						free(ses_newitem->name);
-					ses_newitem->name = (char *)malloc(strlen(to) + 1);
-					strcpy(ses_newitem->name, to);
-					ses_newitem->parent = ses_parent;
-					ses_parent->children = 
-						session_insert(ses_parent->children, 
-							&ses_parent->nchildren, 
-							ses_newitem);
-					if (cut_or_copy == 1) {
-						ses_copyitem->parent->children =
-							session_remove(ses_copyitem->parent->children,
-							&ses_copyitem->parent->nchildren,
-							ses_copyitem);
-						session_free(ses_copyitem);
-					};
+				if (reg_write_i(buf, ISFOLDER, type)) {
+					if (type)
+						reg_write_i(buf, ISEXPANDED, 0);
+					else
+						reg_delete_v(buf, ISFOLDER);
 
-					tv_newitem = treeview_addsession(treeview, tv_parent, ses_newitem);
-
-					if (cut_or_copy == 1)
-						TreeView_DeleteItem(treeview, copying_now);
+					tv_newitem = treeview_additem(treeview, tv_parent, config,
+						name, type);
 
 					SetFocus(treeview);
 
 					tscb.hParent = tv_parent;
 					tscb.lpfnCompare = treeview_compare;
-					tscb.lParam = 0;
+					tscb.lParam = (LPARAM)treeview;
+					TreeView_SortChildrenCB(treeview, &tscb, FALSE);
+
+					TreeView_EnsureVisible(treeview, tv_newitem);
+					TreeView_SelectItem(treeview, tv_newitem);
+					TreeView_EditLabel(treeview, tv_newitem);
+				};
+
+				free(buf);
+				free(parent_path);
+				free(cur_path);
+				free(name);
+
+				return FALSE;
+			};
+		case IDM_CTXM_CUT:
+		case IDM_CTXM_COPY:
+			copying_now = TreeView_GetSelection(treeview);
+
+			cut_or_copy = (wParam == IDM_CTXM_CUT ?
+							1 : // cut
+							2); // copy
+
+			EnableMenuItem(context_menu, IDM_CTXM_CUT, MF_GRAYED);
+			EnableMenuItem(context_menu, IDM_CTXM_COPY, MF_GRAYED);
+			EnableMenuItem(context_menu, IDM_CTXM_PASTE, MF_ENABLED);
+
+			return TRUE;
+		case IDM_CTXM_PASTE:
+			{
+				TVSORTCB tscb;
+				HTREEITEM tv_parent, tv_curitem, tv_newitem, tv_copyitem;
+				char *copy_name, *copy_path, *cur_path, *parent_path, *to_name, 
+					*from_path, *to_path;
+				int isfolder, success = 0;
+
+				tv_copyitem = copying_now;
+				tv_curitem = TreeView_GetSelection(treeview);
+				tv_parent = TreeView_GetParent(treeview, tv_curitem);
+
+				cur_path = treeview_getitempath(treeview, tv_curitem);
+
+				if (is_folder(cur_path)) {
+					tv_parent = tv_curitem;
+					parent_path = dupstr(cur_path);
+				} else if (tv_parent) {
+					tv_parent = tv_parent;
+					parent_path = treeview_getitempath(treeview, tv_parent);
+				} else {
+					tv_parent = TVI_ROOT;
+					parent_path = NULL;
+				};
+
+				copy_name = treeview_getitemname(treeview, tv_copyitem);
+				copy_path = treeview_getitempath(treeview, tv_copyitem);
+				isfolder = is_folder(copy_path);
+				to_name = treeview_find_unused_name(treeview, tv_parent, copy_name);
+				from_path = (char *)malloc(BUFSIZE);
+				sprintf(from_path, "%s\\%s", REGROOT, copy_path);
+				to_path = (char *)malloc(BUFSIZE);
+				if (parent_path)
+					sprintf(to_path, "%s\\%s\\%s", REGROOT, parent_path, to_name);
+				else
+					sprintf(to_path, "%s\\%s", REGROOT, to_name);
+
+				switch (cut_or_copy) {
+				case 1: // cut
+					success = reg_move_tree(from_path, to_path);
+					break;
+				case 2: // copy
+					success = reg_copy_tree(from_path, to_path);
+					break;
+				};
+
+				free(from_path);
+				free(parent_path);
+				free(cur_path);
+				free(copy_name);
+				free(copy_path);
+
+				if (success) {
+					tv_newitem = treeview_additem(treeview, tv_parent, config,
+						to_name, isfolder);
+					if (isfolder)
+						treeview_addtree(treeview, tv_newitem, to_path);
+					else {
+						// by default, clear all hotkeys
+						reg_delete_v(to_path, HOTKEY "0");
+						reg_delete_v(to_path, HOTKEY "1");
+					};
+
+					if (cut_or_copy == 1)
+						TreeView_DeleteItem(treeview, tv_copyitem);
+
+					SetFocus(treeview);
+
+					tscb.hParent = tv_parent;
+					tscb.lpfnCompare = treeview_compare;
+					tscb.lParam = (LPARAM)treeview;
 					TreeView_SortChildrenCB(treeview, &tscb, FALSE);
 
 					TreeView_EnsureVisible(treeview, tv_newitem);
 					TreeView_SelectItem(treeview, tv_newitem);
 				};
 
-				if (to)
-					free(to);
-				if (path)
-					free(path);
-				if (to_path)
-					free(to_path);
+				free(to_name);
+				free(to_path);
 
 				copying_now = NULL;
 				cut_or_copy = 0;
@@ -697,12 +641,12 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 
 					if (tv->itemNew.cChildren) {
 						int isexpanded, wasexpanded;
-						struct session *s;
+						char *path, *buf;
 
 						wasexpanded = (tv->itemOld.state & TVIS_EXPANDED) ? TRUE : FALSE;
 						isexpanded = (tv->itemNew.state & TVIS_EXPANDED) ? TRUE : FALSE;
 
-						s = (struct session *)tv->itemNew.lParam;
+						path = treeview_getitempath(treeview, tv->itemNew.hItem);
 
 						tv->itemNew.iImage = isexpanded ? 
 								config->img_open : 
@@ -712,10 +656,11 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 								config->img_closed;
 						TreeView_SetItem(treeview, &tv->itemNew);
 
-						if (s->isexpanded != isexpanded) {
-							s->isexpanded = isexpanded;
-							session_set_expanded(s, isexpanded);
-						};
+						buf = (char *)malloc(BUFSIZE);
+						sprintf(buf, "%s\\%s", REGROOT, path);
+						reg_write_i(buf, ISEXPANDED, isexpanded);
+						free(buf);
+						free(path);
 
 						return FALSE;
 					};
@@ -724,11 +669,14 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			case TVN_SELCHANGED:
 				{
 					LPNMTREEVIEW tv = (LPNMTREEVIEW)lParam;
-					int boolean, flag, lhotkey, ehotkey;
-					struct session *s = 
-						(struct session *)tv->itemNew.lParam;
+					int boolean, flag, lhotkey, ehotkey, isfolder;
+					char *name, *path, *buf;
 
-					if (s && s->name && !strcmp(s->name, DEFAULTSETTINGS)) {
+					name = treeview_getitemname(treeview, tv->itemNew.hItem);
+					path = treeview_getitempath(treeview, tv->itemNew.hItem);
+					isfolder = is_folder(path);
+
+					if (!strcmp(name, DEFAULTSETTINGS)) {
 						boolean = FALSE;
 						flag = MF_GRAYED;
 						lhotkey = 0;
@@ -736,17 +684,24 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 					} else {
 						boolean = TRUE;
 						flag = MF_ENABLED;
-						lhotkey = s->hotkeys[0];
-						ehotkey = s->hotkeys[1];
+						buf = (char *)malloc(BUFSIZE);
+						sprintf(buf, "%s\\%s", REGROOT, path);
+						lhotkey = reg_read_i(buf, HOTKEY "0", 0);
+						ehotkey = reg_read_i(buf, HOTKEY "1", 0);
+						free(buf);
 					};
+
+					free(path);
+					free(name);
 
 					set_hotkey(launchhotkey, lhotkey);
 					set_hotkey(edithotkey, ehotkey);
 					EnableWindow(GetDlgItem(hwnd, ID_LAUNCHBOX_DELETE), boolean);
 					EnableWindow(GetDlgItem(hwnd, ID_LAUNCHBOX_RENAME), boolean);
-					EnableWindow(launchhotkey, boolean);
-					EnableWindow(edithotkey, boolean);
+					EnableWindow(launchhotkey, boolean && !isfolder);
+					EnableWindow(edithotkey, boolean && !isfolder);
 					EnableWindow(GetDlgItem(hwnd, ID_LAUNCHBOX_HOTKEY_BUTTON_SET), FALSE);
+					EnableWindow(GetDlgItem(hwnd, ID_LAUNCHBOX_EDIT), !isfolder);
 
 					if (!cut_or_copy) {
 						EnableMenuItem(context_menu, IDM_CTXM_CUT, flag);
@@ -759,57 +714,69 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			case TVN_BEGINLABELEDIT:
 				{
 					LPNMTVDISPINFO di = (LPNMTVDISPINFO)lParam;
-					struct session *s =
-						(struct session *)di->item.lParam;
+					char *name;
 
-					if (s->name && !strcmp(s->name, DEFAULTSETTINGS)) {
+					name = treeview_getitemname(treeview, di->item.hItem);
+					if (!strcmp(name, DEFAULTSETTINGS)) {
 						TreeView_EndEditLabelNow(treeview, TRUE);
-						return TRUE;
+						free(name);
+						return FALSE;
 					} else {
 						editing_now = di->item.hItem;
-
+						free(name);
 						return FALSE;
 					};
 				};
 			case TVN_ENDLABELEDIT:
 				{
 					LPNMTVDISPINFO di = (LPNMTVDISPINFO)lParam;
-
 					editing_now = NULL;
 
 					if (di->item.pszText) {
-						struct session *s = 
-							(struct session *)di->item.lParam;
+						HTREEITEM item, parent;
+						char *path, *parent_path, *from, *to;
 
-						if (session_rename(s, di->item.pszText)) {
+						item = di->item.hItem;
+						parent = TreeView_GetParent(treeview, item);
+						if (parent)
+							parent_path = treeview_getitempath(treeview, parent);
+						else
+							parent_path = NULL;
+
+						path = treeview_getitempath(treeview, item);
+
+						from = (char *)malloc(BUFSIZE);
+						sprintf(from, "%s\\%s", REGROOT, path);
+						to = (char *)malloc(BUFSIZE);
+						if (parent_path)
+							sprintf(to, "%s\\%s\\%s", REGROOT, parent_path, di->item.pszText);
+						else
+							sprintf(to, "%s\\%s", REGROOT, di->item.pszText);
+
+						if (reg_move_tree(from, to)) {
 							TVSORTCB tscb;
 
 							TreeView_SetItem(treeview, &di->item);
 
 							tscb.hParent = TreeView_GetParent(treeview, &di->item);
 							tscb.lpfnCompare = treeview_compare;
-							tscb.lParam = 0;
+							tscb.lParam = (LPARAM)treeview;
 							TreeView_SortChildrenCB(treeview, &tscb, FALSE);
 
 							TreeView_EnsureVisible(treeview, &di->item);
 							TreeView_SelectItem(treeview, &di->item);
 
-							return TRUE;
+							return FALSE;
 						} else {
 							TreeView_EditLabel(treeview, di->item.hItem);
 							return FALSE;
 						};
 						
 					} else {
-						struct session *s =
-							(struct session *)di->item.lParam;
-
-						if (!s->name || s->name[0] == '\0')
-							TreeView_EditLabel(treeview, di->item.hItem);
-
 						return FALSE;
 					};
 				};
+				break;
 			case TVN_BEGINDRAG:
 			case TVN_BEGINRDRAG:
 				{
@@ -834,9 +801,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 				return FALSE;
 			};
 		};
-    default:
-		return FALSE;
-    }
+	};
     return FALSE;
 }
 

@@ -1,6 +1,6 @@
 #include "plaunch.h"
 #include "misc.h"
-#include "session.h"
+#include "registry.h"
 
 typedef BOOL (WINAPI * SHGIL_PROC)	(HIMAGELIST *phLarge, HIMAGELIST *phSmall);
 typedef BOOL (WINAPI * FII_PROC)	(BOOL fFullInit);
@@ -43,116 +43,206 @@ void FreeSystemImageLists(HMODULE hShell32) {
     hShell32 = 0;
 };
 
-HTREEITEM treeview_addsession(HWND hwndTV, HTREEITEM _parent, struct session *s) {
-    TVITEM tvi; 
-    TVINSERTSTRUCT tvins; 
-    HTREEITEM parent = TVI_ROOT;
-    HTREEITEM prev = TVI_FIRST;
-    HTREEITEM hti, ret = NULL;
-    int i;
+#define	ISFOLDER	"IsFolder"
+#define	ISEXPANDED	"IsExpanded"
 
-    if (s == NULL)
-		return NULL;
+char *lastname(char *in) {
+    char *p;
 
-    /*
-     * Insert this session itself, if it is not a root.
-     */
-    if (s->parent != NULL) {
-		parent = _parent;
-		tvi.mask = TVIF_TEXT | TVIF_PARAM | TVIF_CHILDREN | 
-				   TVIF_IMAGE | TVIF_SELECTEDIMAGE;
-		tvi.pszText = s->name; 
-		tvi.cchTextMax = strlen(s->name); 
-		tvi.lParam = (LPARAM)s; 
-		tvi.cChildren = s->type;
+    if (in == "")
+		return in;
+    
+    p = &in[strlen(in)];
 
-		if (tvi.cChildren) {
-			tvi.iImage = config->img_closed;
-			tvi.iSelectedImage = config->img_closed;
-		} else {
-			tvi.iImage = config->img_session;
-			tvi.iSelectedImage = config->img_session;
-		};
+    while (p >= in && *p != '\\')
+		*p--;
 
-		tvins.item = tvi; 
-		tvins.hInsertAfter = prev; 
-		tvins.hParent = parent; 
-
-		hti = TreeView_InsertItem(hwndTV, &tvins);
-		parent = hti;
-
-		if (!ret)
-			ret = hti;
-	};
-
-    for (i = 0; i < s->nchildren; i++) {
-		if (s->children[i]->type) {
-			treeview_addsession(hwndTV, parent, s->children[i]);
-
-			if (s->children[i]->isexpanded)
-				TreeView_Expand(hwndTV, hti, TVE_EXPAND);
-		} else {
-			tvi.mask = TVIF_TEXT | TVIF_PARAM | TVIF_CHILDREN | 
-					TVIF_IMAGE | TVIF_SELECTEDIMAGE;
-			tvi.pszText = s->children[i]->name; 
-			tvi.cchTextMax = strlen(s->children[i]->name); 
-			tvi.lParam = (LPARAM)s->children[i]; 
-			tvi.cChildren = s->children[i]->type;
-
-			if (tvi.cChildren) {
-				tvi.iImage = config->img_closed;
-				tvi.iSelectedImage = config->img_closed;
-			} else {
-				tvi.iImage = config->img_session;
-				tvi.iSelectedImage = config->img_session;
-			};
-
-			tvins.item = tvi; 
-			tvins.hInsertAfter = prev; 
-			tvins.hParent = parent; 
-
-			hti = TreeView_InsertItem(hwndTV, &tvins);
-
-		};
-
-		if (!ret)
-			ret = hti;
-	};
-
-    return ret;
-}
-
-HMENU menu_addsession(HMENU menu, struct session *s) {
-    HMENU newmenu;
-    int i;
-
-    if (!s)
-		return menu;
-
-    if (s->name[0] != '\0')
-		newmenu = CreateMenu();
-    else
-		newmenu = menu;
-
-    for (i = 0; i < s->nchildren; i++) {
-		if (s->children[i]->type) {
-			HMENU add_menu;
-
-			add_menu = menu_addsession(newmenu, s->children[i]);
-			InsertMenu(newmenu, 0, MF_OWNERDRAW | MF_POPUP | MF_BYPOSITION,
-				(UINT)add_menu, (LPCSTR)s->children[i]);
-		} else {
-			InsertMenu(newmenu, 0, MF_OWNERDRAW | MF_ENABLED | MF_BYPOSITION,
-				IDM_SESSION_BASE + s->children[i]->id,
-				(LPCSTR)s->children[i]);
-		};
-    };
-
-    return newmenu;
+    return p + 1;
 };
 
-HMENU menu_refresh(HMENU menu, struct session *root) {
+HTREEITEM treeview_additem(HWND treeview, HTREEITEM parent, struct _config *cfg,
+						   char *name, int isfolder) {
+	HTREEITEM hti;
+	TVITEM tvi;
+	TVINSERTSTRUCT tvins;
+
+	tvi.mask = TVIF_TEXT | TVIF_CHILDREN | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
+	tvi.pszText = name; 
+	tvi.cchTextMax = strlen(name); 
+	tvi.cChildren = isfolder;
+
+	if (tvi.cChildren) {
+		tvi.iImage = cfg->img_closed;
+		tvi.iSelectedImage = cfg->img_closed;
+	} else {
+		tvi.iImage = cfg->img_session;
+		tvi.iSelectedImage = cfg->img_session;
+	};
+
+	tvins.item = tvi; 
+	tvins.hParent = parent; 
+	tvins.hInsertAfter = TVI_FIRST;
+
+	hti = TreeView_InsertItem(treeview, &tvins);
+
+	memset(&tvi, 0, sizeof(TVITEM));
+	tvi.hItem = hti;
+	tvi.mask = TVIF_HANDLE | TVIF_PARAM;
+	tvi.lParam = (LPARAM)hti;
+	TreeView_SetItem(treeview, &tvi);
+
+	return hti;
+};
+
+int treeview_callback(char *name, char *path, 
+					  int isfolder, int mode, 
+					  void *priv1, void *priv2, void *priv3) {
+	HWND treeview;
+	HTREEITEM hti;
+	int isexpanded;
+	char *buf;
+
+	switch (mode) {
+	case REG_MODE_PREPROCESS:
+		return (int)treeview_additem((HWND)priv2, (HTREEITEM)priv1,
+				(struct _config *)priv3, name, isfolder);
+	case REG_MODE_POSTPROCESS:
+		{
+			int ret;
+
+			if (!isfolder)
+				return 0;
+
+			hti = (HTREEITEM)priv1;
+			treeview = (HWND)priv2;
+
+			buf = (char *)malloc(BUFSIZE);
+			sprintf(buf, "%s\\%s", REGROOT, path);
+			isexpanded = reg_read_i(buf, ISEXPANDED, 0);
+			free(buf);
+
+			if (isfolder && isexpanded)
+				ret = TreeView_Expand(treeview, hti, TVE_EXPAND);
+
+			return (int)hti;
+		};
+	};
+	return 0;
+};
+
+HTREEITEM treeview_addtree(HWND hwndTV, HTREEITEM _parent, char *root) {
+	reg_walk_over_tree(root, treeview_callback, _parent, hwndTV, config);
+
+	return _parent;
+};
+
+char *treeview_getitemname(HWND treeview, HTREEITEM item) {
+	TVITEM tvi;
+	char *buf, *name;
+
+	buf = (char *)malloc(BUFSIZE);
+	memset(buf, 0, BUFSIZE);
+
+	memset(&tvi, 0, sizeof(TVITEM));
+	tvi.mask = TVIF_HANDLE | TVIF_TEXT;
+	tvi.hItem = item;
+	tvi.pszText = buf;
+	tvi.cchTextMax = BUFSIZE;
+	TreeView_GetItem(treeview, &tvi);
+
+	name = dupstr(buf);
+	free(buf);
+
+	return name;
+};
+
+char *treeview_getitempath(HWND treeview, HTREEITEM item) {
+	char *buf, *path, *iname, *pname;
+	HTREEITEM parent, curitem;
+
+	buf = (char *)malloc(BUFSIZE);
+	memset(buf, 0, BUFSIZE);
+	path = (char *)malloc(BUFSIZE);
+	memset(path, 0, BUFSIZE);
+	iname = treeview_getitemname(treeview, item);
+	strcpy(path, iname);
+	free(iname);
+	curitem = item;
+
+	while (parent = TreeView_GetParent(treeview, curitem)) {
+		pname = treeview_getitemname(treeview, parent);
+		strcpy(buf, pname);
+		strcat(buf, "\\");
+		strcat(buf, path);
+		strcpy(path, buf);
+		free(pname);
+		curitem = parent;
+	};
+
+	free(buf);
+
+	return path;
+};
+
+int menu_callback(char *name, char *path, 
+				  int isfolder, int mode, 
+				  void *priv1, void *priv2, void *priv3) {
+	HMENU menu;
+	HMENU add_menu;
+	static int id = 0;
+	int ret;
+	DWORD err;
+
+	if (mode == REG_MODE_POSTPROCESS)
+		return 0;
+
+	menu = (HMENU)priv1;
+
+	if (isfolder) {
+		add_menu = CreatePopupMenu();
+		ret = InsertMenu(menu, 0, MF_OWNERDRAW | MF_POPUP | MF_BYPOSITION,
+				(UINT)add_menu, dupstr(path));
+		if (!ret)
+			err = GetLastError();
+		return (int)add_menu;
+	} else {
+		ret = InsertMenu(menu, 0, MF_OWNERDRAW | MF_ENABLED | MF_BYPOSITION,
+				IDM_SESSION_BASE + id, dupstr(path));
+		if (!ret)
+			err = GetLastError();
+		id++;
+		return 0;
+	};
+};
+
+HMENU menu_addsession(HMENU menu, char *root) {
+	reg_walk_over_tree(root, menu_callback, menu, NULL, NULL);
+
+	return menu;
+};
+
+void menu_free(HMENU menu) {
 	int i;
+	MENUITEMINFO mii;
+	HMENU submenu;
+
+	for (i = GetMenuItemCount(menu); i > 0; i--) {
+		submenu = GetSubMenu(menu, 0);
+		memset(&mii, 0, sizeof(MENUITEMINFO));
+		mii.cbSize = sizeof(MENUITEMINFO);
+		mii.fMask = MIIM_DATA;
+		if (GetMenuItemInfo(menu, 0, TRUE, &mii) &&
+			mii.dwItemData != 0)
+			free((char *)mii.dwItemData);
+		DeleteMenu(menu, 0, MF_BYPOSITION);
+		if (submenu) {
+			menu_free(submenu);
+			DestroyMenu(submenu);
+		};
+	};
+};
+
+HMENU menu_refresh(HMENU menu, char *root) {
 	HMENU m;
 
 	m = CreatePopupMenu();
@@ -160,13 +250,12 @@ HMENU menu_refresh(HMENU menu, struct session *root) {
 	AppendMenu(m, MF_ENABLED, IDM_OPTIONSBOX, "&Options...");
 	AppendMenu(m, MF_ENABLED, IDM_ABOUT, "&About...");
 
-	for (i = GetMenuItemCount(menu); i > 0; i--)
-		DeleteMenu(menu, 0, MF_BYPOSITION);
+	menu_free(menu);
 	menu = menu_addsession(menu, root);
 	AppendMenu(menu, MF_SEPARATOR, 0, 0);
 	AppendMenu(menu, MF_ENABLED, IDM_LAUNCHBOX, "&Session manager...");
 	AppendMenu(menu, MF_ENABLED, IDM_WINDOWLIST, "&Window list...");
-	AppendMenu(menu, MF_POPUP, (UINT)m, "&Miscellaneous");
+	AppendMenu(menu, MF_POPUP, (UINT)m, "&More");
 #ifdef WINDOWS_NT351_COMPATIBLE
 	if (config->have_shell)
 #endif /* WINDOWS_NT351_COMPATIBLE */
@@ -252,149 +341,135 @@ int AddTrayIcon(HWND hwnd) {
     return res;
 }
 
-#define REGISTRY_ROOT	"Software\\SimonTatham\\PuTTY\\PLaunch"
-#define REG_PUTTY_PATH	"PuTTYPath"
-#define REG_HOTKEY_LB	"HotKeyLaunchBox"
-#define REG_HOTKEY_WL	"HotKeyWindowList"
+int hotkeys_callback(char *name, char *path, int isfolder, int mode,
+					 void *priv1, void *priv2, void *priv3) {
+	struct _config *cfg = (struct _config *)priv2;
+	char *buf1, *buf2;
+	int i, hotkey;
 
-static int extract_hotkeys(struct _config *cfg, struct session *root) {
-	int i;
+	if (mode == REG_MODE_POSTPROCESS)
+		return 0;
 
-	if (!root)
-		return FALSE;
+	buf1 = (char *)malloc(BUFSIZE);
+	buf2 = (char *)malloc(BUFSIZE);
 
-	for (i = 0; i < root->nchildren; i++) {
-		if (!root->children[i])
-			continue;
-		if (root->children[i]->type)
-			return extract_hotkeys(cfg, root->children[i]);
-		else if (root->children[i]->nhotkeys) {
-			int j;
+	sprintf(buf1, "%s\\%s", REGROOT, path);
 
-			for (j = 0; j < root->children[i]->nhotkeys; j++) {
-				if (root->children[i]->hotkeys[j]) {
-					cfg->hotkeys[cfg->nhotkeys].action = HOTKEY_ACTION_LAUNCH + j;
-					cfg->hotkeys[cfg->nhotkeys].hotkey = root->children[i]->hotkeys[j];
-					cfg->hotkeys[cfg->nhotkeys].destination = root->children[i]->id;
-					cfg->nhotkeys++;
-				};
-			};
+	for (i = 0; i < 2; i++) {
+		sprintf(buf2, "%s%d", HOTKEY, i);
+		hotkey = reg_read_i(buf1, buf2, 0);
+		if (hotkey) {
+			cfg->hotkeys[cfg->nhotkeys].action = HOTKEY_ACTION_LAUNCH + i;
+			cfg->hotkeys[cfg->nhotkeys].hotkey = hotkey;
+			cfg->hotkeys[cfg->nhotkeys].destination = dupstr(path);
+			cfg->nhotkeys++;
 		};
 	};
+
+	free(buf2);
+	free(buf1);
+
+	return 0;
+};
+
+static int extract_hotkeys(struct _config *cfg, char *root) {
+	reg_walk_over_tree(root, hotkeys_callback, NULL, config, NULL);
 
 	return TRUE;
 };
 
-int read_config(struct _config *cfg) {
-	HKEY key;
-	DWORD type, size, value;
+int is_folder(char *name) {
 	char *buf;
-	struct session *root;
+	int ret;
+
+	buf = (char *)malloc(BUFSIZE);
+	sprintf(buf, "%s\\%s", REGROOT, name);
+
+	ret = reg_read_i(buf, ISFOLDER, 0);
+
+	free(buf);
+
+	return ret;
+};
+
+int read_config(struct _config *cfg) {
+	char *buf;
+	int hk;
 
 	if (!cfg)
 		return FALSE;
 
-	RegOpenKeyEx(HKEY_CURRENT_USER, REGISTRY_ROOT, 0, KEY_READ, &key);
+	buf = reg_read_s(PLAUNCH_REGISTRY_ROOT, PLAUNCH_PUTTY_PATH, NULL);
 
-	buf = (char *)malloc(BUFSIZE);
-	size = BUFSIZE;
-	if (RegQueryValueEx(key, 
-						REG_PUTTY_PATH, 
-						NULL, 
-						&type, 
-						(LPBYTE)buf, 
-						&size) == ERROR_SUCCESS) {
-		if (config->putty_path)
-			free(config->putty_path);
-		config->putty_path = (char *)malloc(size + 1);
-		strcpy(config->putty_path, buf);
-	} else {
-		if (config->putty_path)
-			free(config->putty_path);
+	if (config->putty_path)
+		free(config->putty_path);
+
+	if (buf)
+		config->putty_path = dupstr(buf);
+	else
 		config->putty_path = get_putty_path();
-	};
-	free(buf);
 
-	size = sizeof(DWORD);
+	hk = reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_LB, 0);
 
-	if (RegQueryValueEx(key,
-						REG_HOTKEY_LB,
-						NULL,
-						&type,
-						(LPBYTE)&value,
-						&size) == ERROR_SUCCESS) {
-		config->hotkeys[config->nhotkeys].action = HOTKEY_ACTION_MESSAGE;
-		config->hotkeys[config->nhotkeys].hotkey = value;
-		config->hotkeys[config->nhotkeys].destination = WM_LAUNCHBOX;
-		config->nhotkeys++;
-	} else {
-		config->hotkeys[config->nhotkeys].action = HOTKEY_ACTION_MESSAGE;
-		config->hotkeys[config->nhotkeys].hotkey = MAKELPARAM(MOD_WIN, 'P');
-		config->hotkeys[config->nhotkeys].destination = WM_LAUNCHBOX;
-		config->nhotkeys++;
-	};
+	if (hk == 0)
+		hk = MAKELPARAM(MOD_WIN, 'P');
 
-	if (RegQueryValueEx(key,
-						REG_HOTKEY_WL,
-						NULL,
-						&type,
-						(LPBYTE)&value,
-						&size) == ERROR_SUCCESS) {
-		config->hotkeys[config->nhotkeys].action = HOTKEY_ACTION_MESSAGE;
-		config->hotkeys[config->nhotkeys].hotkey = value;
-		config->hotkeys[config->nhotkeys].destination = WM_WINDOWLIST;
-		config->nhotkeys++;
-	} else {
-		config->hotkeys[config->nhotkeys].action = HOTKEY_ACTION_MESSAGE;
-		config->hotkeys[config->nhotkeys].hotkey = MAKELPARAM(MOD_WIN, 'W');
-		config->hotkeys[config->nhotkeys].destination = WM_WINDOWLIST;
-		config->nhotkeys++;
-	};
+	config->hotkeys[config->nhotkeys].action = HOTKEY_ACTION_MESSAGE;
+	config->hotkeys[config->nhotkeys].hotkey = hk;
+	config->hotkeys[config->nhotkeys].destination = (char *)WM_LAUNCHBOX;
+	config->nhotkeys++;
 
-	RegCloseKey(key);
+	hk = reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_WL, 0);
 
-	root = session_get_root();
-	extract_hotkeys(cfg, root);
-	session_free(root);
+	if (hk == 0)
+		hk = MAKELPARAM(MOD_WIN, 'W');
+
+	config->hotkeys[config->nhotkeys].action = HOTKEY_ACTION_MESSAGE;
+	config->hotkeys[config->nhotkeys].hotkey = hk;
+	config->hotkeys[config->nhotkeys].destination = (char *)WM_WINDOWLIST;
+	config->nhotkeys++;
+
+	config->dragdrop = reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLEDRAGDROP, TRUE);
+
+	extract_hotkeys(cfg, "");
 
 	return TRUE;
 };
 
 int save_config(struct _config *cfg, int what) {
-	HKEY key;
-	DWORD value;
 	char *buf;
 
 	if (!cfg || !what)
 		return FALSE;
 
-	RegCreateKeyEx(HKEY_CURRENT_USER, REGISTRY_ROOT, 0, NULL, 
-				REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &key, &value);
-
 	if (what & CFG_SAVE_PUTTY_PATH) {
 		buf = get_putty_path();
 		if (!strcmp(buf, config->putty_path))
-			RegDeleteValue(key, REG_PUTTY_PATH);
+			reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_PUTTY_PATH);
 		else
-			RegSetValueEx(key, REG_PUTTY_PATH, 0, REG_SZ, 
-						config->putty_path, strlen(config->putty_path));
+			reg_write_s(PLAUNCH_REGISTRY_ROOT, PLAUNCH_PUTTY_PATH, config->putty_path);
 		free(buf);
 	};
 
 	if (what & CFG_SAVE_HOTKEY_LB) {
 		if (config->hotkeys[0].hotkey == MAKELPARAM(MOD_WIN, 'P'))
-			RegDeleteValue(key, REG_HOTKEY_LB);
+			reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_LB);
 		else
-			RegSetValueEx(key, REG_HOTKEY_LB, 0, REG_DWORD, 
-						(char *)&config->hotkeys[0].hotkey, sizeof(DWORD));
+			reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_LB, config->hotkeys[0].hotkey);
 	};
 
 	if (what & CFG_SAVE_HOTKEY_WL) {
 		if (config->hotkeys[1].hotkey == MAKELPARAM(MOD_WIN, 'W'))
-			RegDeleteValue(key, REG_HOTKEY_WL);
+			reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_WL);
 		else
-			RegSetValueEx(key, REG_HOTKEY_WL, 0, REG_DWORD,
-						(char *)&config->hotkeys[1].hotkey, sizeof(DWORD));
+			reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_WL, config->hotkeys[1].hotkey);
+	};
+
+	if (what & CFG_SAVE_DRAGDROP) {
+		if (config->dragdrop == TRUE)
+			reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLEDRAGDROP);
+		else
+			reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLEDRAGDROP, config->dragdrop);
 	};
 
 	return TRUE;
