@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /Gr /Zp4 /W3 /O1 /I "c:\usr\apps\vc98\include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "MINIRTL" /FD /c
+# ADD CPP /nologo /Gr /Zp4 /W3 /O1 /I "c:\usr\apps\vc98\include" /D "NDEBUG" /D "MINIRTL" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D _WIN32_IE=0x0200 /FD /c
 # SUBTRACT CPP /YX
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -71,8 +71,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "c:\usr\apps\vc98\include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /FR /FD /GZ /c
-# SUBTRACT CPP /YX
+# ADD CPP /nologo /Gr /Zp4 /W3 /Gm /GX /ZI /Od /I "c:\usr\apps\vc98\include" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D _WIN32_IE=0x0200 /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
@@ -82,7 +81,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib /nologo /subsystem:windows /debug /debugtype:cv /machine:I386
+# SUBTRACT LINK32 /incremental:no /pdbtype:<none>
 
 !ENDIF 
 
@@ -95,6 +95,10 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
+SOURCE=.\aboutbox.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\dlgtmpl.c
 # End Source File
 # Begin Source File
@@ -103,11 +107,35 @@ SOURCE=.\entry.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\hotkey.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\launchbox.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\licensebox.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\misc.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\optionsbox.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\plaunch.c
 # End Source File
 # Begin Source File
 
 SOURCE=.\session.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\windowlistbox.c
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -120,6 +148,14 @@ SOURCE=.\dlgtmpl.h
 # Begin Source File
 
 SOURCE=.\entry.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\hotkey.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\misc.h
 # End Source File
 # Begin Source File
 

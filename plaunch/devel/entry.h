@@ -7,6 +7,9 @@
 
 #if !defined(_DEBUG) && defined(MINIRTL)
 
+#define WIN32_LEAN_AND_MEAN
+#define NO_PARSE_CMD_LINE
+
 #include <shlwapi.h>
 
 #define	sprintf	wsprintf

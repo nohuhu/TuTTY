@@ -26,16 +26,19 @@
 //
 //	Define wrappers around c-heap-management
 //
+
+HANDLE __ApplicationHeap;
+
 #ifdef __cplusplus
 
 void * __cdecl operator new(unsigned int s)
 {
-    return HeapAlloc( GetProcessHeap(), 0, s );
+    return HeapAlloc( __ApplicationHeap, 0, s );
 }
 
 void __cdecl operator delete( void * p )
 {
-    HeapFree( GetProcessHeap(), 0, p );
+    HeapFree( __ApplicationHeap, 0, p );
 }
 
 extern "C" void * __cdecl	malloc(size_t size);
@@ -43,8 +46,6 @@ extern "C" void   __cdecl	free(void * p);
 extern "C" int    __cdecl	WinMainCRTStartup();
 
 #endif	// __cplusplus
-
-HANDLE __ApplicationHeap;
 
 void * __cdecl malloc(size_t size)
 {
