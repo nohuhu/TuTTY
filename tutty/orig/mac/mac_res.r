@@ -1,4 +1,4 @@
-/* $Id: mac_res.r,v 1.41 2004/08/30 13:23:23 simon Exp $ */
+/* $Id: mac_res.r 4787 2004-11-16 15:27:00Z simon $ */
 /*
  * Copyright (c) 1999, 2002, 2003 Ben Harris
  * All rights reserved.

@@ -1,4 +1,4 @@
-/* $Id: macstore.c,v 1.19 2003/04/01 18:10:25 simon Exp $ */
+/* $Id: macstore.c 4787 2004-11-16 15:27:00Z simon $ */
 
 /*
  * macstore.c: Macintosh-specific impementation of the interface

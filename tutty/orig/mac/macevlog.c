@@ -1,4 +1,4 @@
-/* $Id: macevlog.c,v 1.8 2003/05/04 14:18:18 simon Exp $ */
+/* $Id: macevlog.c 4787 2004-11-16 15:27:00Z simon $ */
 /*
  * Copyright (c) 2003 Ben Harris
  * All rights reserved.

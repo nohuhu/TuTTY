@@ -1,4 +1,4 @@
-/* $Id: macresid.h,v 1.16 2003/04/18 13:09:08 ben Exp $ */
+/* $Id: macresid.h 4787 2004-11-16 15:27:00Z simon $ */
 
 /*
  * macresid.h -- Mac resource IDs

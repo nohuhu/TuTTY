@@ -1,4 +1,4 @@
-/* $Id: macdlg.c,v 1.18 2003/04/05 15:01:16 ben Exp $ */
+/* $Id: macdlg.c 4787 2004-11-16 15:27:00Z simon $ */
 /*
  * Copyright (c) 2002 Ben Harris
  * All rights reserved.

@@ -1,4 +1,4 @@
-/* $Id: macucs.c,v 1.7 2003/04/05 22:12:44 ben Exp $ */
+/* $Id: macucs.c 4787 2004-11-16 15:27:00Z simon $ */
 
 #include <stdio.h>
 #include <stdlib.h>

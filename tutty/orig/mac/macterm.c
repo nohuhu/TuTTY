@@ -1,4 +1,4 @@
-/* $Id: macterm.c,v 1.76 2004/06/20 17:07:37 jacob Exp $ */
+/* $Id: macterm.c 4787 2004-11-16 15:27:00Z simon $ */
 /*
  * Copyright (c) 1999 Simon Tatham
  * Copyright (c) 1999, 2002 Ben Harris

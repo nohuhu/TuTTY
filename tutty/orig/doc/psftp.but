@@ -1,4 +1,4 @@
-\versionid $Id: psftp.but,v 1.6.2.1 2004/10/24 18:30:31 jacob Exp $
+\versionid $Id: psftp.but 4787 2004-11-16 15:27:00Z simon $
 
 \C{psftp} Using PSFTP to transfer files securely
 

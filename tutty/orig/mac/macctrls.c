@@ -1,4 +1,4 @@
-/* $Id: macctrls.c,v 1.42 2003/05/10 20:51:39 ben Exp $ */
+/* $Id: macctrls.c 4787 2004-11-16 15:27:00Z simon $ */
 /*
  * Copyright (c) 2003 Ben Harris
  * All rights reserved.
