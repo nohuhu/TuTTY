@@ -25,6 +25,7 @@
 #define IDM_CTXM_CRTFLD						0x0105
 #define IDM_CTXM_CRTSES						0x0106
 #define IDM_CTXM_RENAME						0x0107
+#define	IDM_CTXM_CANCEL						0x0108
 
 #define NEWFOLDER	"New Folder"
 #define NEWSESSION	"New Session"
@@ -100,11 +101,11 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 								  WPARAM wParam, LPARAM lParam) {
 	static HWND treeview = NULL, launchhotkey = NULL, edithotkey = NULL;
 	static HMENU context_menu = NULL;
-	static int cut_or_copy = 0;
+	static unsigned int cut_or_copy = 0;
 	static HTREEITEM editing_now = NULL;
 	static HTREEITEM copying_now = NULL;
+	static HTREEITEM dragging_now = NULL;
 	static HIMAGELIST draglist = NULL;
-	static int dragging_now = FALSE;
 
 	switch (msg) {
 	case WM_INITDIALOG:
@@ -339,8 +340,8 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 //					ScreenToClient(treeview, &hit.pt);
 
 					if ((hit.pt.y >= 0) && (hit.pt.y <= height / 2))
-//						visible = TreeView_GetPrevVisible(treeview, target);
-						visible = TreeView_GetNextItem(treeview, target, TVGN_PREVIOUS);
+						visible = TreeView_GetPrevVisible(treeview, target);
+//						visible = TreeView_GetNextItem(treeview, target, TVGN_PREVIOUS);
 					else if ((hit.pt.y >= r.bottom - height / 2) && (hit.pt.y <= r.bottom))
 						visible = TreeView_GetNextVisible(treeview, target);
 //						visible = TreeView_GetNextItem(treeview, target, TVGN_NEXT);
@@ -351,6 +352,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 					ImageList_DragShowNolock(FALSE);
 //					TreeView_SetInsertMark(treeview, target, TRUE);
 					TreeView_SelectDropTarget(treeview, target);
+//					TreeView_SelectItem(treeview, target);
 					ImageList_DragShowNolock(TRUE);
 				};
 			};
@@ -359,12 +361,72 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 	case WM_LBUTTONUP:
 	case WM_RBUTTONUP:
 		if (dragging_now) {
+			HTREEITEM target;
+			TVHITTESTINFO hit;
+
 //			TreeView_SetInsertMark(treeview, NULL, TRUE);
 			ImageList_EndDrag();
 			ReleaseCapture();
 			ShowCursor(TRUE);
-			dragging_now = FALSE;
+			copying_now = dragging_now;
+			dragging_now = NULL;
+			ImageList_Destroy(draglist);
 			draglist = NULL;
+
+			hit.pt.x = LOWORD(lParam);
+			hit.pt.y = HIWORD(lParam);
+
+			if ((target = TreeView_HitTest(treeview, &hit))) {
+				switch (msg) {
+				case WM_LBUTTONUP:
+					cut_or_copy = 1; // cut;
+					break;
+				case WM_RBUTTONUP:
+					{
+						HMENU menu;
+						RECT r;
+						int ret, height, flags;
+
+						menu = CreatePopupMenu();
+						AppendMenu(menu, MF_STRING, IDCANCEL, "Cancel");
+						AppendMenu(menu, MF_SEPARATOR, 0, 0);
+						AppendMenu(menu, MF_STRING, IDM_CTXM_COPY, "Copy here");
+						AppendMenu(menu, MF_STRING, IDM_CTXM_CUT, "Move here");
+
+						GetClientRect(treeview, &r);
+						height = TreeView_GetItemHeight(treeview);
+
+						flags = TPM_RIGHTBUTTON | TPM_RETURNCMD | TPM_LEFTALIGN;
+						if ((hit.pt.y >= 0) && (hit.pt.y <= height))
+							flags |= TPM_TOPALIGN;
+						else if ((hit.pt.y >= (r.bottom - height)) && (hit.pt.y <= r.bottom))
+							flags |= TPM_BOTTOMALIGN;
+						ClientToScreen(treeview, &hit.pt);
+
+						if (ret = TrackPopupMenu(menu, flags, 
+							hit.pt.x, hit.pt.y, 0, hwnd, NULL)) {
+							switch (ret) {
+							case IDCANCEL:
+								copying_now = NULL;
+								return FALSE;
+							case IDM_CTXM_COPY:
+								cut_or_copy = 2; // copy
+								break;
+							case IDM_CTXM_CUT:
+								cut_or_copy = 1; // cut
+								break;
+							};
+						} else {
+							copying_now = NULL;
+							return FALSE;
+						};
+					};
+					break;
+				};
+				TreeView_SelectItem(treeview, target);
+				SendMessage(hwnd, WM_COMMAND, (WPARAM)IDM_CTXM_PASTE, 0);
+				return FALSE;
+			};
 		};
 		break;
 	case WM_COMMAND:
@@ -565,11 +627,40 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 				EnableMenuItem(context_menu, IDM_CTXM_COPY, MF_GRAYED);
 				EnableMenuItem(context_menu, IDM_CTXM_PASTE, MF_ENABLED);
 
-				memset(&item, 0, sizeof(TVITEM));
-				item.mask = TVIF_HANDLE | TVIF_STATE;
-				item.state = item.stateMask = TVIS_CUT;
-				item.hItem = copying_now;
-				TreeView_SetItem(treeview, &item);
+				if (cut_or_copy == 1) {
+					memset(&item, 0, sizeof(TVITEM));
+					item.mask = TVIF_HANDLE | TVIF_STATE;
+					item.state = item.stateMask = TVIS_CUT;
+					item.hItem = copying_now;
+					TreeView_SetItem(treeview, &item);
+					ModifyMenu(context_menu, IDM_CTXM_UNDO, MF_STRING | MF_BYCOMMAND,
+								IDM_CTXM_CANCEL, "Cancel Cut");
+				} else if (cut_or_copy == 2)
+					ModifyMenu(context_menu, IDM_CTXM_UNDO, MF_STRING | MF_BYCOMMAND,
+								IDM_CTXM_CANCEL, "Cancel Copy");
+			};
+			break;
+		case IDM_CTXM_CANCEL:
+			{
+				TVITEM item;
+
+				if (cut_or_copy == 1) {
+					memset(&item, 0, sizeof(TVITEM));
+					item.mask = TVIF_HANDLE | TVIF_STATE;
+					item.state = 0;
+					item.stateMask = TVIS_CUT;
+					item.hItem = copying_now;
+					TreeView_SetItem(treeview, &item);
+				};
+
+				EnableMenuItem(context_menu, IDM_CTXM_CUT, MF_ENABLED);
+				EnableMenuItem(context_menu, IDM_CTXM_COPY, MF_ENABLED);
+				EnableMenuItem(context_menu, IDM_CTXM_PASTE, MF_GRAYED);
+				ModifyMenu(context_menu, IDM_CTXM_CANCEL, MF_STRING | MF_BYCOMMAND,
+							IDM_CTXM_UNDO, "Undo");
+
+				copying_now = NULL;
+				cut_or_copy = 0;
 			};
 			break;
 		case ID_LAUNCHBOX_NEW_FOLDER:
@@ -674,6 +765,10 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 					EnableMenuItem(context_menu, IDM_CTXM_CUT, MF_ENABLED);
 					EnableMenuItem(context_menu, IDM_CTXM_COPY, MF_ENABLED);
 					EnableMenuItem(context_menu, IDM_CTXM_PASTE, MF_GRAYED);
+					ModifyMenu(context_menu, IDM_CTXM_CANCEL, MF_STRING | MF_BYCOMMAND,
+								IDM_CTXM_UNDO, (cut_or_copy == 1 ?
+												"Undo Cut" :
+												"Undo Copy"));
 				};
 			};
 		};
@@ -809,7 +904,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 					ShowCursor(FALSE);
 					SetCapture(hwnd);
 
-					dragging_now = TRUE;
+					dragging_now = nmtv->itemNew.hItem;
 				};
 				break;
 			};

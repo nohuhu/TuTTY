@@ -1,4 +1,5 @@
 #include "hotkey.h"
+#include "misc.h"
 
 #define CONTROL_KEY "Ctrl"
 #define ALT_KEY "Alt"
@@ -11,7 +12,7 @@
 static WNDPROC oldwindowproc;
 
 char *key_name(UINT modifiers, UINT vkey) {
-	char *buf, *buf2, key;
+	char *buf, *buf2, *ret, key;
 
 	buf = (char *)malloc(BUFSIZE);
 	memset(buf, 0, BUFSIZE);
@@ -41,12 +42,15 @@ char *key_name(UINT modifiers, UINT vkey) {
 		free(buf2);
 	} else if (vkey >= VK_F1 && vkey <= VK_F24) {
 		buf2 = (char *)malloc(BUFSIZE);
-		sprintf(buf2, "F%d", (int)(vkey - VK_F1 + 1));
+		sprintf(buf2, "F%d", (unsigned int)(vkey - VK_F1 + 1));
 		strcat(buf, buf2);
 		free(buf2);
 	};
 
-	return buf;
+	ret = dupstr(buf);
+	free(buf);
+
+	return ret;
 };
 
 static int CALLBACK HotKeyControlProc(HWND hwnd, UINT msg,
@@ -69,9 +73,6 @@ static int CALLBACK HotKeyControlProc(HWND hwnd, UINT msg,
 			char *buf;
 
 			firstmessage = TRUE;
-
-//			if (wParam < 0x30 || (wParam > 0x5a && wParam < 0x70))
-//				return TRUE;
 
 			modifiers = 0;
 			vkey = wParam;
@@ -123,8 +124,7 @@ static int CALLBACK HotKeyControlProc(HWND hwnd, UINT msg,
 				SetWindowLong(hwnd, GWL_USERDATA, hotkey);
 				SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM)"None");
 				SendMessage(hwnd, EM_SETMODIFY, (WPARAM)TRUE, 0);
-				SendMessage(GetParent(hwnd),
-							WM_COMMAND,
+				SendMessage(GetParent(hwnd), WM_COMMAND,
 							MAKEWPARAM(GetDlgCtrlID(hwnd), HK_CHANGE),
 							(LPARAM)hwnd);
 
@@ -144,9 +144,6 @@ static int CALLBACK HotKeyControlProc(HWND hwnd, UINT msg,
 
 				return FALSE;
 			};
-
-//			if (wParam < 0x30 || (wParam > 0x5a && wParam < 0x70))
-//				return TRUE;
 
 			if (GetAsyncKeyState(VK_SHIFT)) {
 				modifiers |= MOD_SHIFT;
@@ -169,7 +166,7 @@ static int CALLBACK HotKeyControlProc(HWND hwnd, UINT msg,
 				((modf < 2) && !(modifiers & MOD_WIN)) ||
 				(vkey <= 0x30 || vkey >= 0x5a)) {
 				SetWindowLong(hwnd, GWL_USERDATA, oldhotkey);
-				SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM)"");
+				SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM)"None");
 				SendMessage(hwnd, EM_SETMODIFY, (WPARAM)FALSE, 0);
 				return TRUE;
 			};
@@ -194,9 +191,8 @@ static int CALLBACK HotKeyControlProc(HWND hwnd, UINT msg,
 
 			return FALSE;
 		};
-	default:
-		return CallWindowProc(oldwindowproc, hwnd, msg, wParam, lParam);
 	};
+	return CallWindowProc(oldwindowproc, hwnd, msg, wParam, lParam);
 };
 
 int make_hotkey(HWND editbox, LONG defhotkey) {

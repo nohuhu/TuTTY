@@ -116,8 +116,7 @@ int treeview_callback(char *name, char *path,
 			hti = (HTREEITEM)priv1;
 			treeview = (HWND)priv2;
 
-			buf = (char *)malloc(BUFSIZE);
-			sprintf(buf, "%s\\%s", REGROOT, path);
+			buf = reg_make_path(NULL, path);
 			isexpanded = reg_read_i(buf, ISEXPANDED, 0);
 			free(buf);
 
@@ -190,7 +189,7 @@ char *treeview_getitempath(HWND treeview, HTREEITEM item) {
 	return path;
 };
 
-char *first_name(char *path) {
+static char *firstname(char *path) {
 	char *p;
 
 	p = path;
@@ -210,7 +209,7 @@ static HTREEITEM _treeview_getitemfrompath(HWND treeview, HTREEITEM parent, char
 
 	name = (char *)malloc(BUFSIZE);
 	memset(name, 0, BUFSIZE);
-	fname = first_name(path);
+	fname = firstname(path);
 	memmove(name, path, fname - path);
 	child = TreeView_GetChild(treeview, parent);
 
@@ -238,14 +237,13 @@ HTREEITEM treeview_getitemfrompath(HWND treeview, char *path) {
 	return _treeview_getitemfrompath(treeview, TVI_ROOT, path);
 };
 
-int menu_callback(char *name, char *path, 
+static int menu_callback(char *name, char *path, 
 				  int isfolder, int mode, 
 				  void *priv1, void *priv2, void *priv3) {
 	HMENU menu;
 	HMENU add_menu;
 	static int id = 0;
 	int ret;
-	DWORD err;
 
 	if (mode == REG_MODE_POSTPROCESS)
 		return 0;
@@ -256,14 +254,10 @@ int menu_callback(char *name, char *path,
 		add_menu = CreatePopupMenu();
 		ret = InsertMenu(menu, 0, MF_OWNERDRAW | MF_POPUP | MF_BYPOSITION,
 				(UINT)add_menu, dupstr(path));
-		if (!ret)
-			err = GetLastError();
 		return (int)add_menu;
 	} else {
 		ret = InsertMenu(menu, 0, MF_OWNERDRAW | MF_ENABLED | MF_BYPOSITION,
 				IDM_SESSION_BASE + id, dupstr(path));
-		if (!ret)
-			err = GetLastError();
 		id++;
 		return 0;
 	};
@@ -300,7 +294,7 @@ HMENU menu_refresh(HMENU menu, char *root) {
 	HMENU m;
 
 	m = CreatePopupMenu();
-	AppendMenu(m, MF_ENABLED, IDM_BACKREST, "&Backup/Restore...");
+//	AppendMenu(m, MF_ENABLED, IDM_BACKREST, "&Backup/Restore...");
 	AppendMenu(m, MF_ENABLED, IDM_OPTIONSBOX, "&Options...");
 	AppendMenu(m, MF_ENABLED, IDM_ABOUT, "&About...");
 
@@ -404,10 +398,9 @@ int hotkeys_callback(char *name, char *path, int isfolder, int mode,
 	if (mode == REG_MODE_POSTPROCESS)
 		return 0;
 
-	buf1 = (char *)malloc(BUFSIZE);
 	buf2 = (char *)malloc(BUFSIZE);
 
-	sprintf(buf1, "%s\\%s", REGROOT, path);
+	buf1 = reg_make_path(NULL, path);
 
 	for (i = 0; i < 2; i++) {
 		sprintf(buf2, "%s%d", HOTKEY, i);
@@ -439,11 +432,8 @@ int is_folder(char *name) {
 	if (!name)
 		return 0;
 
-	buf = (char *)malloc(BUFSIZE);
-	sprintf(buf, "%s\\%s", REGROOT, name);
-
+	buf = reg_make_path(NULL, name);
 	ret = reg_read_i(buf, ISFOLDER, 0);
-
 	free(buf);
 
 	return ret;
