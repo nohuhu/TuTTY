@@ -352,7 +352,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		/*
 		 * Create a popup context menu and fill it with elements.
 		 */
-		{
+		if (!context_menu) {
 			context_menu = CreatePopupMenu();
 			AppendMenu(context_menu, MF_STRING | MF_GRAYED, IDM_CTXM_UNDO, "&Undo");
 			AppendMenu(context_menu, MF_SEPARATOR, 0, "");
@@ -902,6 +902,8 @@ static int CALLBACK WindowListBoxProc(HWND hwnd, UINT msg,
 	static int nwindows;
 	static HWND *handles;
 	static HWND listbox;
+	static HWND hidebutton, showbutton, killbutton;
+	static HMENU context_menu = NULL;
 
     switch (msg) {
     case WM_INITDIALOG:
@@ -910,6 +912,9 @@ static int CALLBACK WindowListBoxProc(HWND hwnd, UINT msg,
 					(LPARAM) LoadIcon(hinst, MAKEINTRESOURCE(IDI_MAINICON)));
 
 		listbox = GetDlgItem(hwnd, ID_WINDOWLISTLISTBOX);
+		hidebutton = GetDlgItem(hwnd, ID_WINDOWLISTHIDE);
+		showbutton = GetDlgItem(hwnd, ID_WINDOWLISTSHOW);
+		killbutton = GetDlgItem(hwnd, ID_WINDOWLISTKILL);
 
 		handles = NULL;
 		windowlist = NULL;
@@ -918,14 +923,44 @@ static int CALLBACK WindowListBoxProc(HWND hwnd, UINT msg,
 
 		SendMessage(listbox, (UINT)LB_SETCURSEL, 0, 0);
 
+		if (!context_menu) {
+			context_menu = CreatePopupMenu();
+			AppendMenu(context_menu, MF_STRING | MF_GRAYED, ID_WINDOWLISTHIDE, "&Hide");
+			AppendMenu(context_menu, MF_STRING | MF_GRAYED, ID_WINDOWLISTSHOW, "&Show");
+			AppendMenu(context_menu, MF_SEPARATOR, 0, "");
+			AppendMenu(context_menu, MF_STRING, ID_WINDOWLISTKILL, "&Kill");
+		};
+
 		SetForegroundWindow(hwnd);
 		SetActiveWindow(hwnd);
 		SetFocus(listbox);
+		SendMessage(hwnd, WM_COMMAND, MAKEWPARAM(0, LBN_SELCHANGE), (LPARAM)listbox);
+
 		return FALSE;
 	case WM_COMMAND:
 		if (HIWORD(wParam) == LBN_DBLCLK &&
 			(HWND)lParam == listbox) {
 			SendMessage(hwnd, WM_COMMAND, (WPARAM)IDOK, 0);
+
+			return FALSE;
+		} else if (HIWORD(wParam) == LBN_SELCHANGE &&
+			(HWND)lParam == listbox) {
+			int item = SendMessage(listbox, LB_GETCURSEL, 0, 0);
+
+			if (item == LB_ERR)
+				return FALSE;
+			else if (IsWindowVisible(handles[item])) {
+				EnableWindow(hidebutton, TRUE);
+				EnableWindow(showbutton, FALSE);
+				EnableMenuItem(context_menu, ID_WINDOWLISTHIDE, MF_ENABLED);
+				EnableMenuItem(context_menu, ID_WINDOWLISTSHOW, MF_GRAYED);
+			} else {
+				EnableWindow(hidebutton, FALSE);
+				EnableWindow(showbutton, TRUE);
+				EnableMenuItem(context_menu, ID_WINDOWLISTHIDE, MF_GRAYED);
+				EnableMenuItem(context_menu, ID_WINDOWLISTSHOW, MF_ENABLED);
+			};
+
 			return FALSE;
 		};
 		switch (wParam) {
@@ -957,7 +992,7 @@ static int CALLBACK WindowListBoxProc(HWND hwnd, UINT msg,
 				SendMessage(listbox, (UINT)LB_SETCURSEL, i, 0);
 			};
 			break;
-		case ID_WINDOWLISTCLOSE:
+		case ID_WINDOWLISTKILL:
 			if (handles) {
 				i = SendMessage(listbox, (UINT)LB_GETCURSEL, 0, 0);
 
@@ -993,6 +1028,65 @@ static int CALLBACK WindowListBoxProc(HWND hwnd, UINT msg,
 			
 			return FALSE;
 		};
+		break;
+	case WM_CONTEXTMENU:
+		{
+			RECT rc;
+			POINT pt;
+			DWORD msg;
+			int item, top, bottom, flags;
+
+			pt.x = ((int)(short)LOWORD(lParam));
+			pt.y = ((int)(short)HIWORD(lParam));
+
+			item = SendMessage(listbox, LB_GETCURSEL, 0, 0);
+			top = SendMessage(listbox, LB_GETTOPINDEX, 0, 0);
+			GetClientRect(listbox, &rc);
+			bottom = top + 
+				(int)((rc.bottom - rc.top) / 
+					SendMessage(listbox, LB_GETITEMHEIGHT, (WPARAM)0, 0));
+
+			if (pt.x == -1 && pt.y == -1) {
+				if (item < top || item > bottom)
+					SendMessage(listbox, LB_SETTOPINDEX, (WPARAM)item, 0);
+				SendMessage(listbox, LB_GETITEMRECT, (WPARAM)item, (LPARAM)&rc);
+				pt.x = rc.left + iconx;
+				if ((bottom - item) < 6)
+					pt.y = rc.top;
+				else
+					pt.y = rc.bottom;
+			} else {
+				ScreenToClient(listbox, &pt);
+				GetClientRect(listbox, (LPRECT)&rc);
+
+				if (PtInRect((LPRECT)&rc, pt)) {
+					item = SendMessage(listbox, LB_ITEMFROMPOINT, 0, MAKELPARAM(pt.x, pt.y));
+
+					if (HIWORD(item))
+						return FALSE;
+
+					if (item < top || item > bottom)
+						SendMessage(listbox, LB_SETTOPINDEX, (WPARAM)item, 0);
+
+					SendMessage(listbox, LB_SETCURSEL, item, 0);
+					SendMessage(hwnd, WM_COMMAND, 
+						MAKEWPARAM(0, LBN_SELCHANGE), (LPARAM)listbox);
+				};
+			};
+
+			flags = TPM_LEFTALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD;
+			if ((bottom - item) < 6)
+				flags |= TPM_BOTTOMALIGN;
+			else
+				flags |= TPM_TOPALIGN;
+
+			ClientToScreen(listbox, &pt);
+
+			if (msg = TrackPopupMenuEx(context_menu, flags, pt.x, pt.y, hwnd, NULL))
+				PostMessage(hwnd, WM_COMMAND, msg, MAKELPARAM(item, 0));
+
+			return TRUE;
+		}
 	case WM_VKEYTOITEM:
 		switch (LOWORD(wParam)) {
 		case 'H':
@@ -1002,7 +1096,7 @@ static int CALLBACK WindowListBoxProc(HWND hwnd, UINT msg,
 			SendMessage(hwnd, WM_COMMAND, (WPARAM)ID_WINDOWLISTSHOW, 0);
 			return -2;
 		case VK_DELETE:
-			SendMessage(hwnd, WM_COMMAND, (WPARAM)ID_WINDOWLISTCLOSE, 0);
+			SendMessage(hwnd, WM_COMMAND, (WPARAM)ID_WINDOWLISTKILL, 0);
 			SetFocus(listbox);
 			return -2;
 		default:
@@ -1034,9 +1128,9 @@ void do_windowlistbox(void) {
 	ptr = dialogtemplate_addstatic(ptr, WS_CHILD | WS_VISIBLE | SS_LEFT,
 								7, 3, 169, 8, "&Running PuTTY or PuTTYtel sessions:",
 								ID_WINDOWLISTSTATIC);
-	ptr = dialogtemplate_addlistbox(ptr, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP |
-								LBS_HASSTRINGS | LBS_NOTIFY | LBS_DISABLENOSCROLL |
-								LBS_USETABSTOPS | LBS_WANTKEYBOARDINPUT,
+	ptr = dialogtemplate_addlistbox(ptr, WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_BORDER | 
+								WS_TABSTOP | LBS_HASSTRINGS | LBS_NOTIFY | 
+								LBS_DISABLENOSCROLL | LBS_USETABSTOPS | LBS_WANTKEYBOARDINPUT,
 								7, 15, 169, 132, NULL, ID_WINDOWLISTLISTBOX);
 	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
 								183, 21, 50, 14, "Switch to", IDOK);
@@ -1047,7 +1141,7 @@ void do_windowlistbox(void) {
 	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
 								183, 93, 50, 14, "&Show", ID_WINDOWLISTSHOW);
 	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-								183, 109, 50, 14, "&Close", ID_WINDOWLISTCLOSE);
+								183, 109, 50, 14, "&Kill", ID_WINDOWLISTKILL);
 
 	SetForegroundWindow(hwnd);
 	DialogBoxIndirect(hinst, (LPDLGTEMPLATE)tmpl, NULL, WindowListBoxProc);
