@@ -1,4 +1,4 @@
-\versionid $Id: using.but,v 1.32 2004/09/22 22:15:25 jacob Exp $
+\versionid $Id: using.but 4787 2004-11-16 15:27:00Z simon $
 
 \C{using} Using PuTTY
 
@@ -175,17 +175,25 @@ PuTTY can also be configured to send this when Ctrl-Z is typed; see
 
 In an SSH connection, the following special commands are available:
 
-\b \I{Break, SSH special command}Break
-
-\lcont{
-Optional extension; may not be supported by server. PuTTY requests the
-server's default break length.
-}
-
 \b \I{IGNORE message, SSH special command}\I{No-op, in SSH}IGNORE message
 
 \lcont{
 Should have no effect.
+}
+
+\b \I{Break, SSH special command}Break
+
+\lcont{
+Only available in SSH-2, and only during a session. Optional
+extension; may not be supported by server. PuTTY requests the server's
+default break length.
+}
+
+\b \I{Signal, SSH special command}Signals (SIGINT, SIGTERM etc)
+
+\lcont{
+Only available in SSH-2, and only during a session. Sends various
+POSIX signals. Not honoured by all servers.
 }
 
 \S2{using-newsession} Starting new sessions
@@ -196,10 +204,13 @@ sessions:
 \b Selecting \i{\q{New Session}} will start a completely new
 instance of PuTTY, and bring up the configuration box as normal.
 
-\b Selecting \i{\q{Duplicate Session}} will start a session with
-precisely the same options as your current one - connecting to the
-same host using the same protocol, with all the same terminal
-settings and everything.
+\b Selecting \i{\q{Duplicate Session}} will start a session in a
+new window with precisely the same options as your current one -
+connecting to the same host using the same protocol, with all the
+same terminal settings and everything.
+
+\b In an inactive window, selecting \i{\q{Restart Session}} will
+do the same as \q{Duplicate Session}, but in the current window.
 
 \b The \i{\q{Saved Sessions} submenu} gives you quick access to any
 sets of stored session details you have previously saved. See
@@ -278,15 +289,17 @@ See \k{config-logging} for more details and options.
 \H{using-translation} Altering your \i{character set} configuration
 
 If you find that special characters (\i{accented characters}, for
-example) are not being displayed correctly in your PuTTY session, it
-may be that PuTTY is interpreting the characters sent by the server
-according to the wrong \e{character set}. There are a lot of
-different character sets available, so it's entirely possible for
-this to happen.
+example, or \i{line-drawing characters}) are not being displayed
+correctly in your PuTTY session, it may be that PuTTY is interpreting
+the characters sent by the server according to the wrong \e{character
+set}. There are a lot of different character sets available, so it's
+entirely possible for this to happen.
 
 If you click \q{Change Settings} and look at the \i{\q{Translation}
-panel}, you should see a large number of character sets which you
-can select. Now all you need is to find out which of them you want!
+panel}, you should see a large number of character sets which you can
+select, and other related options. Now all you need is to find out
+which of them you want! (See \k{config-translation} for more
+information.)
 
 \H{using-x-forwarding} Using \i{X11 forwarding} in SSH
 
@@ -304,9 +317,10 @@ does do.
 
 You should then tick the \q{Enable X11 forwarding} box in the
 Tunnels panel (see \k{config-ssh-x11}) before starting your SSH
-session. The \q{X display location} box reads \c{localhost:0} by
-default, which is the usual display location where your X server
-will be installed. If that needs changing, then change it.
+session. The \q{X display location} box is blank by default, which
+means that PuTTY will try to use a sensible default such as \c{:0},
+which is the usual display location where your X server will be
+installed. If that needs changing, then change it.
 
 Now you should be able to log in to the SSH server as normal. To
 check that X forwarding has been successfully negotiated during
@@ -691,6 +705,24 @@ pseudo-terminal} checkbox in the SSH panel of the PuTTY
 configuration box (see \k{config-ssh-pty}).
 
 These options are not available in the file transfer tools PSCP and
+PSFTP.
+
+\S2{using-cmdline-noshell} \I{-N-upper}\c{-N}: suppress starting a
+shell or command
+
+The \c{-N} option prevents PuTTY from attempting to start a shell or
+command on the remote server. You might want to use this option if
+you are only using the SSH connection for port forwarding, and your
+user account on the server does not have the ability to run a shell.
+
+This feature is only available in SSH protocol version 2 (since the
+version 1 protocol assumes you will always want to run a shell).
+
+This option is equivalent to the \q{Don't start a shell or command
+at all} checkbox in the SSH panel of the PuTTY configuration box
+(see \k{config-ssh-noshell}).
+
+This option is not available in the file transfer tools PSCP and
 PSFTP.
 
 \S2{using-cmdline-compress} \I{-C-upper}\c{-C}: enable \i{compression}

@@ -1,4 +1,4 @@
-\versionid $Id: config.but,v 1.90 2004/09/22 22:15:25 jacob Exp $
+\versionid $Id: config.but 4787 2004-11-16 15:27:00Z simon $
 
 \C{config} Configuring PuTTY
 
@@ -74,10 +74,16 @@ name in the list box, and then press the \q{Load} button. Your saved
 settings should all appear in the configuration panel.
 
 \b To modify a saved session: first load it as described above. Then
-make the changes you want. Come back to the Session panel,
-single-click to select the session name in the list box, and press
+make the changes you want. Come back to the Session panel, and press
 the \q{Save} button. The new settings will be saved over the top of
-the old ones.
+the old ones
+
+\lcont{
+To save the new settings under a different name, you can enter the new
+name in the \q{Saved Sessions} box, or single-click to select a
+session name in the list box to overwrite that session. To save
+\q{Default Settings}, you must single-click the name before saving.
+}
 
 \b To start a saved session immediately: double-click on the session
 name in the list box.
@@ -104,15 +110,16 @@ Finally in the Session panel, there is an option labelled \q{Close
 Window on Exit}. This controls whether the PuTTY session window
 disappears as soon as the session inside it terminates. If you are
 likely to want to copy and paste text out of the session after it
-has terminated, you should arrange this option to be off.
+has terminated, or restart the session, you should arrange for this
+option to be off.
 
 \q{Close Window On Exit} has three settings. \q{Always} means always
 close the window on exit; \q{Never} means never close on exit
-(always leave the window open). The third setting, and the default
-one, is \q{Only on clean exit}. In this mode, a session which
-terminates normally will cause its window to close, but one which is
-aborted unexpectedly by network trouble or a confusing message from
-the server will leave the window up.
+(always leave the window open, but \I{inactive window}inactive). The
+third setting, and the default one, is \q{Only on clean exit}. In this
+mode, a session which terminates normally will cause its window to
+close, but one which is aborted unexpectedly by network trouble or a
+confusing message from the server will leave the window up.
 
 \H{config-logging} The Logging panel
 
@@ -148,8 +155,9 @@ connections), the SSH message packets sent over the encrypted
 connection are written to the log file. You might need this to debug
 a network-level problem, or more likely to send to the PuTTY authors
 as part of a bug report. \e{BE WARNED} that if you log in using a
-password, the password will appear in the log file, so be sure to
-edit it out before sending the log file to anyone else!
+password, the password can appear in the log file; see
+\k{config-logssh} for options that may help to remove sensitive
+material from the log file before you send it to anyone else.
 
 \S{config-logfilename} \q{Log file name}
 
@@ -197,6 +205,44 @@ open the existing log file and add data to the \e{end} of it.
 Finally (the default option), you might not want to have any
 automatic behaviour, but to ask the user every time the problem
 comes up.
+
+\S{config-logssh} Options specific to SSH packet logging
+
+These options only apply if SSH packet data is being logged.
+
+The following options allow particularly sensitive portions of
+unencrypted packets to be automatically left out of the log file.
+They are only intended to deter casual nosiness; an attacker could
+glean a lot of useful information from even these obfuscated logs
+(e.g., length of password).
+
+\S2{config-logssh-omitpw} \q{Omit known password fields}
+
+\cfg{winhelp-topic}{logging.ssh.omitpassword}
+
+When checked, password fields are removed from the log of transmitted
+packets. (This includes any user responses to challenge-response
+authentication methods such as \q{keyboard-interactive}.) This does
+not include X11 authentication data if using X11 forwarding.
+
+Note that this will only omit data that PuTTY \e{knows} to be a
+password. However, if you start another login session within your
+PuTTY session, for instance, any password used will appear in the
+clear in the packet log. The next option may be of use to protect
+against this.
+
+This option is enabled by default.
+
+\S2{config-logssh-omitdata} \q{Omit session data}
+
+\cfg{winhelp-topic}{logging.ssh.omitdata}
+
+When checked, all \q{session data} is omitted; this is defined as data
+in terminal sessions and in forwarded channels (TCP, X11, and
+authentication agent). This will usually substantially reduce the size
+of the resulting log file.
+
+This option is disabled by default.
 
 \H{config-terminal} The Terminal panel
 
@@ -452,6 +498,9 @@ If you do have the choice, we recommend configuring PuTTY to
 generate Control-? and configuring the server to expect it, because
 that allows applications such as \c{emacs} to use Control-H for
 help.
+
+(Typing \i{Shift-Backspace} will cause PuTTY to send whichever code
+isn't configured here as the default.)
 
 \S{config-homeend} Changing the action of the Home and End keys
 
@@ -824,47 +873,6 @@ If you find that accented characters are not showing up the way you
 expect them to, particularly if you're running BitchX, you could try
 disabling the remote character set configuration commands.
 
-\S{config-features-shaping} Disabling Arabic text shaping
-
-\cfg{winhelp-topic}{features.arabicshaping}
-
-PuTTY supports shaping of Arabic text, which means that if your
-server sends text written in the basic Unicode Arabic alphabet then
-it will convert it to the correct display forms before printing it
-on the screen.
-
-If you are using full-screen software which was not expecting this
-to happen (especially if you are not an Arabic speaker and you
-unexpectedly find yourself dealing with Arabic text files in
-applications which are not Arabic-aware), you might find that the
-display becomes corrupted. By ticking this box, you can disable
-Arabic text shaping so that PuTTY displays precisely the characters
-it is told to display.
-
-You may also find you need to disable bidirectional text display;
-see \k{config-features-bidi}.
-
-\S{config-features-bidi} Disabling bidirectional text display
-
-\cfg{winhelp-topic}{features.bidi}
-
-PuTTY supports bidirectional text display, which means that if your
-server sends text written in a language which is usually displayed
-from right to left (such as Arabic or Hebrew) then PuTTY will
-automatically flip it round so that it is displayed in the right
-direction on the screen.
-
-If you are using full-screen software which was not expecting this
-to happen (especially if you are not an Arabic speaker and you
-unexpectedly find yourself dealing with Arabic text files in
-applications which are not Arabic-aware), you might find that the
-display becomes corrupted. By ticking this box, you can disable
-bidirectional text display, so that PuTTY displays text from left to
-right in all situations.
-
-You may also find you need to disable Arabic text shaping;
-see \k{config-features-shaping}.
-
 \H{config-window} The Window panel
 
 The Window configuration panel allows you to control aspects of the
@@ -883,28 +891,22 @@ while a session is running.
 \cfg{winhelp-topic}{window.resize}
 
 These options allow you to control what happens when the user tries
-to resize the PuTTY window.
+to resize the PuTTY window using its window furniture.
 
-When you resize the PuTTY window, one of four things can happen:
+There are four options here:
 
-\b Nothing (if you have completely disabled resizes).
+\b \q{Change the number of rows and columns}: the font size will not
+change. (This is the default.)
 
-\b The font size can stay the same and the number of rows and
-columns in the terminal can change.
+\b \q{Change the size of the font}: the number of rows and columns in
+the terminal will stay the same, and the font size will change.
 
-\b The number of rows and columns in the terminal can stay the same,
-and the font size can change.
+\b \q{Change font size when maximised}: when the window is resized,
+the number of rows and columns will change, \e{except} when the window
+is maximised (or restored), when the font size will change.
 
-\b You can allow PuTTY to change \e{either} the terminal size or the
-font size. In this mode it will change the terminal size most of the
-time, but enlarge the font when you maximise the window.
-
-You can control which of these happens using the \q{Lock terminal
-size against resizing} and \q{Lock font size against resizing}
-options. If you lock both, the window will refuse to be resized at
-all. If you lock just the terminal size, the font size will change
-when you resize the window. If you lock just the font size, the
-terminal size will change when you resize the window.
+\b \q{Forbid resizing completely}: the terminal will refuse to be
+resized at all.
 
 \S{config-scrollback} Controlling scrollback
 
@@ -1160,11 +1162,22 @@ native keyboard layout is not US or UK.
 
 \cfg{winhelp-topic}{translation.linedraw}
 
-VT100-series terminals allow the server to send control sequences
-that shift temporarily into a separate character set for drawing
-lines and boxes. PuTTY has a variety of ways to support this
-capability. In general you should probably try lots of options until
-you find one that your particular font supports.
+VT100-series terminals allow the server to send control sequences that
+shift temporarily into a separate character set for drawing simple
+lines and boxes. However, there are a variety of ways in which PuTTY
+can attempt to find appropriate characters, and the right one to use
+depends on the locally configured font. In general you should probably
+try lots of options until you find one that your particular font
+supports.
+
+\b \q{Use Unicode line drawing code points} tries to use the box
+characters that are present in Unicode. For good Unicode-supporting
+fonts this is probably the most reliable and functional option.
+
+\b \q{Poor man's line drawing} assumes that the font \e{cannot}
+generate the line and box characters at all, so it will use the
+\c{+}, \c{-} and \c{|} characters to draw approximations to boxes.
+You should use this option if none of the other options works.
 
 \b \q{Font has XWindows encoding} is for use with fonts that have a
 special encoding, where the lowest 32 character positions (below the
@@ -1180,15 +1193,6 @@ different size depending on which character set you try to use.
 
 \b \q{Use font in OEM mode only} is more reliable than that, but can
 miss out other characters from the main character set.
-
-\b \q{Poor man's line drawing} assumes that the font \e{cannot}
-generate the line and box characters at all, so it will use the
-\c{+}, \c{-} and \c{|} characters to draw approximations to boxes.
-You should use this option if none of the other options works.
-
-\b \q{Unicode mode} tries to use the box characters that are present
-in Unicode. For good Unicode-supporting fonts this is probably the
-most reliable and functional option.
 
 \S{config-linedrawpaste} Controlling copy and paste of line drawing
 characters
@@ -1209,7 +1213,8 @@ layout in another program, for example.
 
 Note that this option only applies to line-drawing characters which
 \e{were} printed by using the VT100 mechanism. Line-drawing
-characters displayed using Unicode will paste as Unicode always.
+characters that were received as Unicode code points will paste as
+Unicode always.
 
 \H{config-selection} The Selection panel
 
@@ -1400,7 +1405,10 @@ colours (black, red, green, yellow, blue, magenta, cyan, and white).
 You can also modify the precise shades used for the bold versions of
 these colours; these are used to display bold text if you have
 selected \q{Bolded text is a different colour}, and can also be used
-if the server asks specifically to use them.
+if the server asks specifically to use them. (Note that \q{Default
+Bold Background} is \e{not} the background colour used for bold text;
+it is only used if the server specifically asks for a bold
+background.)
 
 \H{config-connection} The Connection panel
 
@@ -1421,7 +1429,7 @@ down the connection describing the terminal.
 PuTTY attempts to emulate the Unix \c{xterm} program, and by default
 it reflects this by sending \c{xterm} as a terminal-type string. If
 you find this is not doing what you want - perhaps the remote
-terminal reports \q{Unknown terminal type} - you could try setting
+system reports \q{Unknown terminal type} - you could try setting
 this to something different, such as \c{vt220}.
 
 If you're not sure whether a problem is due to the terminal type
@@ -1462,6 +1470,30 @@ specify what user name you want to log in as, without having to type
 it explicitly every time. (Some Telnet servers don't support this.)
 
 In this box you can type that user name.
+
+\S{config-environ} Setting environment variables on the server
+
+\cfg{winhelp-topic}{telnet.environ}
+
+The Telnet protocol provides a means for the client to pass
+environment variables to the server. Many Telnet servers have
+stopped supporting this feature due to security flaws, but PuTTY
+still supports it for the benefit of any servers which have found
+other ways around the security problems than just disabling the
+whole mechanism.
+
+Version 2 of the SSH protocol also provides a similar mechanism,
+which is easier to implement without security flaws. Newer SSH2
+servers are more likely to support it than older ones.
+
+This configuration data is not used in the SSHv1, rlogin or raw
+protocols.
+
+To add an environment variable to the list transmitted down the
+connection, you enter the variable name in the \q{Variable} box,
+enter its value in the \q{Value} box, and press the \q{Add} button.
+To remove one from the list, select it in the list box and press
+\q{Remove}.
 
 \S{config-keepalive} Using keepalives to prevent disconnection
 
@@ -1729,23 +1761,6 @@ configuration fields will be ignored.
 The Telnet panel allows you to configure options that only apply to
 Telnet sessions.
 
-\S{config-environ} Setting environment variables on the server
-
-\cfg{winhelp-topic}{telnet.environ}
-
-The Telnet protocol provides a means for the client to pass
-environment variables to the server. Many Telnet servers have
-stopped supporting this feature due to security flaws, but PuTTY
-still supports it for the benefit of any servers which have found
-other ways around the security problems than just disabling the
-whole mechanism.
-
-To add an environment variable to the list transmitted down the
-connection, you enter the variable name in the \q{Variable} box,
-enter its value in the \q{Value} box, and press the \q{Add} button.
-To remove one from the list, select it in the list box and press
-\q{Remove}.
-
 \S{config-oldenviron} \q{Handling of OLD_ENVIRON ambiguity}
 
 \cfg{winhelp-topic}{telnet.oldenviron}
@@ -1896,6 +1911,27 @@ Occasionally you might find you have a need to run a session \e{not}
 in a pseudo-terminal. In PuTTY, this is generally only useful for
 very specialist purposes; although in Plink (see \k{plink}) it is
 the usual way of working.
+
+\S{config-ssh-noshell} \q{Don't start a shell or command at all}
+
+\cfg{winhelp-topic}{ssh.noshell}
+
+If you tick this box, PuTTY will not attempt to run a shell or
+command after connecting to the remote server. You might want to use
+this option if you are only using the SSH connection for port
+forwarding, and your user account on the server does not have the
+ability to run a shell.
+
+This feature is only available in SSH protocol version 2 (since the
+version 1 protocol assumes you will always want to run a shell).
+
+This feature can also be enabled using the \c{-N} command-line
+option; see \k{using-cmdline-noshell}.
+
+If you use this feature in Plink, you will not be able to terminate
+the Plink process by any graceful means; the only way to kill it
+will be by pressing Control-C or sending a kill signal from another
+program.
 
 \S{config-ssh-comp} \q{Enable compression}
 
@@ -2067,10 +2103,10 @@ forwarding allows you to securely give those applications access to
 a local X display on your PC.
 
 To enable X11 forwarding, check the \q{Enable X11 forwarding} box.
-If your X display is not the primary display on your local machine
-(which it almost certainly will be unless you have deliberately
-arranged otherwise), you need to enter its location in the \q{X
-display location} box.
+If your X display is somewhere unusual, you will need to enter its
+location in the \q{X display location} box; if this is left blank,
+PuTTY try to find a sensible default in the environment, or use the
+primary local display (\c{:0}) if that fails.
 
 See \k{using-x-forwarding} for more information about X11
 forwarding.
