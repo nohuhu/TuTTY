@@ -22,13 +22,12 @@
 #define NEWSESSION			"New Session"
 
 #define	TAB_HOTKEYS			0
-#define	TAB_LIMITCONDITIONS	1
-#define	TAB_LIMITACTIONS	2
-#define	TAB_AUTOPROCESS		3
-#define	TAB_LAST			4
+#define	TAB_AUTOPROCESS		1
+#define	TAB_LAST			2
+#define	TAB_ACTIONS			2
 
 char * TAB_NAMES[] =
-	{ "Hot keys", "Limit conditions", "Limit actions", "Auto processing"};
+	{ "Hot Keys", "Limits && Auto Processing", "%s Actions"};
 
 typedef struct tag_dlghdr { 
     HWND hwndTab;       // tab control 
@@ -101,33 +100,34 @@ static unsigned int treeview_find_unused_name(HWND treeview, HTREEITEM parent,
 
 static int CALLBACK LaunchBoxChildProc(HWND hwnd, UINT msg,
 									   WPARAM wParam, LPARAM lParam) {
+static HBRUSH background, staticback;
 	switch (msg) {
 	case WM_INITDIALOG:
 		{
 			HWND parent;
-			HDC dc;
 			DLGHDR *hdr;
-			RECT r;
-			POINT pt;
-			unsigned int cx, cy;
 
 			parent = GetParent(hwnd);
 			hdr = (DLGHDR *)GetWindowLong(parent, GWL_USERDATA);
 
-			GetWindowRect(hwnd, &r);
-			cx = r.right - r.left;
-			cy = r.bottom - r.top;
-			pt.x = hdr->rcDisplay.left +
-				(((hdr->rcDisplay.right - hdr->rcDisplay.left) - cx) / 2);
-			SetWindowPos(hwnd, HWND_TOP, pt.x, hdr->rcDisplay.top,
-//						hdr->rcDisplay.right - hdr->rcDisplay.left, 
-//						hdr->rcDisplay.bottom - hdr->rcDisplay.top, 
-						0, 0, SWP_NOSIZE);
+			SetWindowPos(hwnd, HWND_TOP, hdr->rcDisplay.left, hdr->rcDisplay.top,
+						hdr->rcDisplay.right - hdr->rcDisplay.left, 
+						hdr->rcDisplay.bottom - hdr->rcDisplay.top, 
+						SWP_SHOWWINDOW);
 
-			dc = GetDC(hwnd);
-			SelectObject(dc, GetStockObject(WHITE_BRUSH));
+			background = GetStockObject(HOLLOW_BRUSH);
+//			staticback = GetStockObject(config->version_major >= 5 ? WHITE_BRUSH : LTGRAY_BRUSH);
 		};
 		break;
+	case WM_CTLCOLORDLG:
+		return (INT_PTR)background;
+//	case WM_CTLCOLORSTATIC:
+//	case WM_CTLCOLOREDIT:
+//	case WM_CTLCOLORBTN:
+//	case WM_CTLCOLORLISTBOX:
+//		SetBkMode((HDC)wParam, TRANSPARENT);
+//		return (INT_PTR)wParam;
+//		break;
 	};
 
 	return FALSE;
@@ -282,7 +282,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			memset(&item, 0, sizeof(TCITEM));
 			item.mask = TCIF_TEXT | TCIF_IMAGE;
 			item.iImage = -1;
-			for (i = 0; i < 2; i++) {
+			for (i = 0; i < 2 /*TAB_LAST*/; i++) {
 				HRSRC hrsrc;
 				HGLOBAL hglobal;
 
@@ -294,7 +294,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			};
 
 			TabCtrl_GetItemRect(tabview, 0, &r);
-			dlghdr->rcDisplay.top = pt.y + r.bottom + 9;
+			dlghdr->rcDisplay.top += (r.bottom - r.top) + 5;
 
 			SetWindowLong(hwnd, GWL_USERDATA, (LONG)dlghdr);
 

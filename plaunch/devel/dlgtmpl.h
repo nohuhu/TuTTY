@@ -9,33 +9,41 @@
 
 #include <windows.h>
 
-void *dialogtemplate_create(void *templt, DWORD style,
-							int x, int y, int cx, int cy,
-							char *caption, int controls, 
-							HMENU menu,
-							int fontsize, char *font);
+void *dialogtemplate_create_ex(void *templt, DWORD style, DWORD exstyle,
+							   int x, int y, int cx, int cy,
+							   char *caption, int controls,
+							   char *wclass, HMENU menu, int fontsize, char *font);
 
-void *dialogtemplate_addcontrol(void *tmpl, DWORD style,
+//#define dialogtemplate_create(tmpl, style, x, y, cx, cy, caption, controls) \
+//			dialogtemplate_create_ex(tmpl, style, 0, x, y, cx, cy, caption,
+//									 controls, 0, 0, 0, 0)
+
+void *dialogtemplate_addcontrol(void *tmpl, DWORD style, DWORD exstyle,
 								int x, int y, int cx, int cy,
-								char *caption, DWORD id, WORD wclass);
+								char *caption, DWORD id, char *wclass);
 
-#define dialogtemplate_addbutton(tmpl, style, x, y, cx, cy, caption, id) \
-			dialogtemplate_addcontrol(tmpl, style, x, y, cx, cy, caption, id, 0x0080)
+void *dialogtemplate_addbutton(void *tmpl, DWORD style, DWORD exstyle,
+							   int x, int y, int cx, int cy,
+							   char *caption, DWORD id);
 
-#define dialogtemplate_addeditbox(tmpl, style, x, y, cx, cy, caption, id) \
-			dialogtemplate_addcontrol(tmpl, style, x, y, cx, cy, caption, id, 0x0081)
+void *dialogtemplate_addeditbox(void *tmpl, DWORD style, DWORD exstyle,
+								int x, int y, int cx, int cy,
+								char *caption, DWORD id);
 
-#define dialogtemplate_addstatic(tmpl, style, x, y, cx, cy, caption, id) \
-			dialogtemplate_addcontrol(tmpl, style, x, y, cx, cy, caption, id, 0x0082)
+void *dialogtemplate_addstatic(void *tmpl, DWORD style, DWORD exstyle,
+							   int x, int y, int cx, int cy,
+							   char *caption, DWORD id);
 
-#define dialogtemplate_addlistbox(tmpl, style, x, y, cx, cy, caption, id) \
-			dialogtemplate_addcontrol(tmpl, style, x, y, cx, cy, caption, id, 0x0083)
+void *dialogtemplate_addlistbox(void *tmpl, DWORD style, DWORD exstyle,
+								int x, int y, int cx, int cy,
+								char *caption, DWORD id);
 
-#define dialogtemplate_addscrollbar(tmpl, style, x, y, cx, cy, caption, id) \
-			dialogtemplate_addcontrol(tmpl, style, x, y, cx, cy, caption, id, 0x0084)
+void *dialogtemplate_addscrollbar(void *tmpl, DWORD style, DWORD exstyle,
+								  int x, int y, int cx, int cy,
+								  char *caption, DWORD id);
 
-#define dialogtemplate_addcombobox(tmpl, style, x, y, cx, cy, caption, id) \
-			dialogtemplate_addcontrol(tmpl, style, x, y, cx, cy, caption, id, 0x0085)
-
+void *dialogtemplate_addcombobox(void *tmpl, DWORD style, DWORD exstyle,
+								 int x, int y, int cx, int cy,
+								 char *caption, DWORD id);
 
 #endif /* DLGTMPL_H */

@@ -1,7 +1,7 @@
 /*
  * Run-time dialog box template manipulation routines.
  *
- * (c) 2004 dwalin <dwalin@dwalin.ru>
+ * (c) 2004-2005 dwalin <dwalin@dwalin.ru>
  */
 
 #include "dlgtmpl.h"
@@ -19,11 +19,11 @@ static LPWORD lpwAlign(LPWORD lpIn) {
 }
 */
 
-void *dialogtemplate_create(void *templt, DWORD style,
-							int x, int y, int cx, int cy,
-							char *caption, int controls, 
-							HMENU menu,
-							int fontsize, char *font) {
+void *dialogtemplate_create_ex(void *templt, DWORD style, DWORD exstyle,
+							   int x, int y, int cx, int cy,
+							   char *caption, int controls, 
+							   char *wclass, HMENU menu,
+							   int fontsize, char *font) {
 	LPDLGTEMPLATE tmpl;
 	LPWORD lpw;
 	LPWSTR str;
@@ -35,6 +35,7 @@ void *dialogtemplate_create(void *templt, DWORD style,
 	tmpl = (LPDLGTEMPLATE)GlobalLock(templt);
 
 	tmpl->style = style;
+	tmpl->dwExtendedStyle = 0;
 	tmpl->cdit = controls;
 	tmpl->x = x;
 	tmpl->y = y;
@@ -64,29 +65,40 @@ void *dialogtemplate_create(void *templt, DWORD style,
 	return (void *)lpw;
 };
 
-void *dialogtemplate_addcontrol(void *tmpl, DWORD style,
+void *dialogtemplate_addcontrol(void *tmpl, DWORD style, DWORD exstyle,
 								int x, int y, int cx, int cy,
-								char *caption, DWORD id, WORD wclass) {
+								char *caption, DWORD id, char *wclass) {
 	LPDLGITEMTEMPLATE item;
 	LPWORD lpw;
 	LPWSTR str;
 	int nchar, len;
 
 	lpw = (LPWORD)tmpl;
-    (ULONG)lpw +=3;
-    (ULONG)lpw >>=2;
-    (ULONG)lpw <<=2;
+    (ULONG)lpw += 3;
+    (ULONG)lpw >>= 2;
+    (ULONG)lpw <<= 2;
 	item = (LPDLGITEMTEMPLATE)lpw;
 	item->x = x;
 	item->y = y;
 	item->cx = cx;
 	item->cy = cy;
 	item->style = style;
+	item->dwExtendedStyle = 0;
 	item->id = (WORD)id;
 	
 	lpw = (LPWORD)(item + 1);
-	*lpw++ = 0xFFFF;
-	*lpw++ = wclass;
+
+	if (wclass == NULL)
+		*lpw++ = 0;
+	else if (HIWORD(wclass) == 0xffff) {
+		*lpw++ = 0xffff;
+		*lpw++ = (WORD)(LOWORD(wclass));
+	} else {
+		str = (LPWSTR)lpw;
+		len = MultiByteToWideChar(CP_ACP, 0, wclass, -1, NULL, 0) + 1;
+		nchar = MultiByteToWideChar(CP_ACP, 0, caption, -1, str, len);
+		lpw += nchar;
+	};
 
 	if (caption) {
 		str = (LPWSTR)lpw;
@@ -99,4 +111,46 @@ void *dialogtemplate_addcontrol(void *tmpl, DWORD style,
 	*lpw++ = 0;
 
 	return (void *)lpw;
+};
+
+void * __inline dialogtemplate_addbutton(void *tmpl, DWORD style, DWORD exstyle,
+										 int x, int y, int cx, int cy,
+										 char *caption, DWORD id) {
+	return dialogtemplate_addcontrol(tmpl, style, exstyle, x, y, cx, cy, caption, id,
+									 (char *)0xffff0080);
+};
+
+void * __inline dialogtemplate_addeditbox(void *tmpl, DWORD style, DWORD exstyle,
+										  int x, int y, int cx, int cy,
+										  char *caption, DWORD id) {
+	return dialogtemplate_addcontrol(tmpl, style, exstyle, x, y, cx, cy, caption, id,
+									 (char *)0xffff0081);
+};
+
+void * __inline dialogtemplate_addstatic(void *tmpl, DWORD style, DWORD exstyle,
+										 int x, int y, int cx, int cy,
+										 char *caption, DWORD id) {
+	return dialogtemplate_addcontrol(tmpl, style, exstyle, x, y, cx, cy, caption, id,
+									 (char *)0xffff0082);
+};
+
+void * __inline dialogtemplate_addlistbox(void *tmpl, DWORD style, DWORD exstyle,
+										  int x, int y, int cx, int cy,
+										  char *caption, DWORD id) {
+	return dialogtemplate_addcontrol(tmpl, style, exstyle, x, y, cx, cy, caption, id,
+									 (char *)0xffff0083);
+};
+
+void * __inline dialogtemplate_addscrollbar(void *tmpl, DWORD style, DWORD exstyle,
+											int x, int y, int cx, int cy,
+											char *caption, DWORD id) {
+	return dialogtemplate_addcontrol(tmpl, style, exstyle, x, y, cx, cy, caption, id,
+									 (char *)0xffff0084);
+};
+
+void * __inline dialogtemplate_addcombobox(void *tmpl, DWORD style, DWORD exstyle,
+										   int x, int y, int cx, int cy,
+										   char *caption, DWORD id) {
+	return dialogtemplate_addcontrol(tmpl, style, exstyle, x, y, cx, cy, caption, id,
+									 (char *)0xffff0085);
 };
