@@ -27,6 +27,8 @@
 #define WM_LAUNCHBOX		(WM_XUSER + 11)
 #define WM_WINDOWLIST		(WM_XUSER + 12)
 #define	WM_LAUNCHPUTTY		(WM_XUSER + 13)
+#define	WM_NETWORKSTART		(WM_XUSER + 14)
+#define	WM_HIDEWINDOW		(WM_XUSER + 15)
 
 #define IDM_CLOSE	    0x0010
 #define IDM_LAUNCHBOX	0x0020
@@ -37,8 +39,13 @@
 #define IDM_OPTIONSBOX	0x0070
 #define IDM_BACKREST	0x0080
 
+#define	IDM_EMPTY		0x0200
+
 #define IDM_SESSION_BASE    0x0300
 #define IDM_SESSION_MAX	    0x0500
+
+#define	IDM_RUNNING_BASE	0x0501
+#define	IDM_RUNNING_MAX		0x0700
 
 #define IDI_MAINICON	100
 
@@ -54,6 +61,9 @@
 
 #define OPTION_ENABLEDRAGDROP	0x0001
 #define OPTION_ENABLESAVECURSOR	0x0002
+#define	OPTION_SHOWONQUIT		0x0004
+#define	OPTION_MENUSESSIONS		0x0008
+#define	OPTION_MENURUNNING		0x0010
 
 struct _config {
 	HINSTANCE hinst;
@@ -100,6 +110,12 @@ int do_launchbox(void);
 /*
  * import from windowlistbox.c
  */
+struct windowlist {
+	unsigned int nhandles;
+	unsigned int current;
+	HWND *handles;
+};
+
 void do_windowlistbox(void);
 
 /*

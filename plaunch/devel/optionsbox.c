@@ -15,7 +15,7 @@
  */
 static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 								   WPARAM wParam, LPARAM lParam) {
-	static HWND ppedit, ppbutton, lbedit, wledit;
+	static HWND ppedit, ppbutton, lbedit, wledit, hdedit;
 	static DWORD lb_key, wl_key;
 	int check;
 	char buf[256];
@@ -34,21 +34,35 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 		make_hotkey(lbedit, config->hotkeys[0].hotkey);
 		wledit = GetDlgItem(hwnd, IDC_OPTIONSBOX_EDITBOX_HOTKEY_WLIST);
 		make_hotkey(wledit, config->hotkeys[1].hotkey);
+		hdedit = GetDlgItem(hwnd, IDC_OPTIONSBOX_EDITBOX_HOTKEY_HIDEWINDOW);
+		make_hotkey(hdedit, config->hotkeys[2].hotkey);
 
 		if (reg_read_s(PLAUNCH_AUTO_STARTUP, APPNAME, NULL, buf, BUFSIZE))
 			check = BST_CHECKED;
 		else
 			check = BST_UNCHECKED;
 
-		CheckDlgButton(hwnd, IDC_OPTIONSBOX_BUTTON_STARTUP, check);
+		CheckDlgButton(hwnd, IDC_OPTIONSBOX_CHECKBOX_STARTUP, check);
 
 		check = config->options & OPTION_ENABLEDRAGDROP ? BST_CHECKED : BST_UNCHECKED;
 
-		CheckDlgButton(hwnd, IDC_OPTIONSBOX_BUTTON_DRAGDROP, check);
+		CheckDlgButton(hwnd, IDC_OPTIONSBOX_CHECKBOX_DRAGDROP, check);
 
 		check = config->options & OPTION_ENABLESAVECURSOR ? BST_CHECKED : BST_UNCHECKED;
 
-		CheckDlgButton(hwnd, IDC_OPTIONSBOX_BUTTON_SAVECUR, check);
+		CheckDlgButton(hwnd, IDC_OPTIONSBOX_CHECKBOX_SAVECUR, check);
+
+		check = config->options & OPTION_SHOWONQUIT ? BST_CHECKED : BST_UNCHECKED;
+
+		CheckDlgButton(hwnd, IDC_OPTIONSBOX_CHECKBOX_SHOWONQUIT, check);
+
+		check = config->options & OPTION_MENUSESSIONS ? BST_CHECKED : BST_UNCHECKED;
+
+		CheckDlgButton(hwnd, IDC_OPTIONSBOX_CHECKBOX_MENUSESSIONS, check);
+
+		check = config->options & OPTION_MENURUNNING ? BST_CHECKED : BST_UNCHECKED;
+
+		CheckDlgButton(hwnd, IDC_OPTIONSBOX_CHECKBOX_MENURUNNING, check);
 
 		SendMessage(ppedit, (UINT)EM_SETLIMITTEXT, (WPARAM)BUFSIZE, 0);
 
@@ -61,6 +75,7 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 	case WM_DESTROY:
 		unmake_hotkey(lbedit);
 		unmake_hotkey(wledit);
+		unmake_hotkey(hdedit);
 		return FALSE;
 	case WM_COMMAND:
 		switch (wParam) {
@@ -85,6 +100,14 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 					SendMessage(config->hwnd_mainwindow, WM_HOTKEYCHANGE, 1, 0);
 				};
 
+				hotkey = get_hotkey(hdedit);
+
+				if (hotkey) {
+					config->hotkeys[2].hotkey = hotkey;
+					what |= CFG_SAVE_HOTKEY_HIDEWINDOW;
+					SendMessage(config->hwnd_mainwindow, WM_HOTKEYCHANGE, 2, 0);
+				};
+
 				if (SendMessage(ppedit, EM_GETMODIFY, 0, 0)) {
 					GetWindowText(ppedit, buf, 256);
 
@@ -96,7 +119,7 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 					what |= CFG_SAVE_PUTTY_PATH;
 				};
 
-				check = IsDlgButtonChecked(hwnd, IDC_OPTIONSBOX_BUTTON_STARTUP);
+				check = IsDlgButtonChecked(hwnd, IDC_OPTIONSBOX_CHECKBOX_STARTUP);
 
 #ifndef _DEBUG
 				if (check == BST_CHECKED) {
@@ -106,21 +129,45 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 					reg_delete_v(PLAUNCH_AUTO_STARTUP, APPNAME);
 #endif /* _DEBUG */
 
-				check = IsDlgButtonChecked(hwnd, IDC_OPTIONSBOX_BUTTON_DRAGDROP);
+				check = IsDlgButtonChecked(hwnd, IDC_OPTIONSBOX_CHECKBOX_DRAGDROP);
 
 				config->options = 
 					check > 0 ? 
 						config->options | OPTION_ENABLEDRAGDROP : 
-						config->options ^ OPTION_ENABLEDRAGDROP;
+						config->options & ~OPTION_ENABLEDRAGDROP;
 				what |= CFG_SAVE_DRAGDROP;
 
-				check = IsDlgButtonChecked(hwnd, IDC_OPTIONSBOX_BUTTON_SAVECUR);
+				check = IsDlgButtonChecked(hwnd, IDC_OPTIONSBOX_CHECKBOX_SAVECUR);
 
 				config->options =
 					check > 0 ?
 						config->options | OPTION_ENABLESAVECURSOR :
-						config->options ^ OPTION_ENABLESAVECURSOR;
+						config->options & ~OPTION_ENABLESAVECURSOR;
 				what |= CFG_SAVE_SAVECURSOR;
+
+				check = IsDlgButtonChecked(hwnd, IDC_OPTIONSBOX_CHECKBOX_SHOWONQUIT);
+
+				config->options =
+					check > 0 ?
+						config->options | OPTION_SHOWONQUIT :
+						config->options & ~OPTION_SHOWONQUIT;
+				what |= CFG_SAVE_SHOWONQUIT;
+
+				check = IsDlgButtonChecked(hwnd, IDC_OPTIONSBOX_CHECKBOX_MENUSESSIONS);
+
+				config->options =
+					check > 0 ?
+						config->options | OPTION_MENUSESSIONS :
+						config->options & ~OPTION_MENUSESSIONS;
+				what |= CFG_SAVE_MENUSESSIONS;
+
+				check = IsDlgButtonChecked(hwnd, IDC_OPTIONSBOX_CHECKBOX_MENURUNNING);
+
+				config->options =
+					check > 0 ?
+						config->options | OPTION_MENURUNNING :
+						config->options & ~OPTION_MENURUNNING;
+				what |= CFG_SAVE_MENURUNNING;
 
 				save_config(config, what);
 

@@ -8,6 +8,7 @@
  */
 
 #include "plaunch.h"
+#include <wininet.h>
 #include "entry.h"
 #include "dlgtmpl.h"
 #include "misc.h"
@@ -63,7 +64,6 @@ static unsigned int add_tray_icon(HWND hwnd) {
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 				WPARAM wParam, LPARAM lParam)
 {
-//	unsigned int ret;
 	static unsigned int menuinprogress;
     static UINT msgTaskbarCreated = 0;
 	static UINT iconx = 0, icony = 0, cxmenucheck = 0, cymenucheck = 0;
@@ -95,8 +95,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	case WM_SYSTRAY:
 		if (lParam == WM_RBUTTONUP) {
 			POINT cursorpos;
-			GetCursorPos(&cursorpos);
-			SendMessage(hwnd, WM_SYSTRAY2, cursorpos.x, cursorpos.y);
+			GetCursorPos(&cursorpos);			SendMessage(hwnd, WM_SYSTRAY2, cursorpos.x, cursorpos.y);
 		} else if (lParam == WM_LBUTTONDBLCLK) {
 			SendMessage(hwnd, WM_COMMAND, IDM_LAUNCHBOX, 0);
 		}
@@ -127,6 +126,12 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 					SendMessage(hwnd, WM_LAUNCHPUTTY,
 								(WPARAM)HOTKEY_ACTION_LAUNCH,
 								(LPARAM)mii.dwItemData);
+			} else if (ret > IDM_RUNNING_BASE) {
+				HWND window;
+
+				window = (HWND)(ret - IDM_RUNNING_BASE);
+				ShowWindow(window, SW_NORMAL);
+				SetForegroundWindow(window);
 			} else
 				SendMessage(hwnd, WM_COMMAND, (WPARAM)ret, 0);
 
@@ -136,15 +141,70 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	case WM_LAUNCHPUTTY:
 		{
 			char buf[BUFSIZE];
+			HWND pwin;
+			int limit;
 
 			if (!lParam)
 				return FALSE;
 
-			sprintf(buf, wParam == HOTKEY_ACTION_LAUNCH ?
-					"-load \"%s\"" :
-					"-edit \"%s\"",
-					(char *)lParam);
-			ShellExecute(hwnd, "open", config->putty_path, buf, _T(""), SW_SHOWDEFAULT);
+			reg_make_path(NULL, (char *)lParam, buf);
+			reg_read_i(buf, PLAUNCH_LIMIT_ENABLE, 0, &limit);
+
+			if (limit) {
+				int i, number, active, searchfor, action[2];
+				struct process_record *pr;
+
+				reg_read_i(buf, PLAUNCH_LIMIT_NUMBER, 0, &number);
+
+				if (number) {
+					active = enum_process_records(process_records, nprocesses, (char *)lParam);
+
+					if (active >= number) {
+						reg_read_i(buf, PLAUNCH_LIMIT_SEARCHFOR, 0, &searchfor);
+
+						pr = get_nth_process_record(process_records, nprocesses,
+													(char *)lParam, searchfor);
+
+						if (pr && pr->window) {
+							reg_read_i(buf, PLAUNCH_LIMIT_ACTION1, 0, &action[0]);
+							reg_read_i(buf, PLAUNCH_LIMIT_ACTION2, 0, &action[1]);
+
+							for (i = 0; i < 2; i++) {
+								switch (action[i]) {
+								case LIMIT_ACTION_HIDE:
+									ShowWindow(pr->window, SW_HIDE);
+									break;
+								case LIMIT_ACTION_SHOW:
+									ShowWindow(pr->window, SW_SHOWNORMAL);
+									SetForegroundWindow(pr->window);
+									break;
+								case LIMIT_ACTION_MINIMIZE:
+									ShowWindow(pr->window, SW_MINIMIZE);
+									break;
+								case LIMIT_ACTION_MAXIMIZE:
+									ShowWindow(pr->window, SW_MAXIMIZE);
+									break;
+								case LIMIT_ACTION_CENTER:
+									center_window(pr->window);
+									break;
+								case LIMIT_ACTION_KILL:
+									SendMessage(pr->window, WM_CLOSE, 0, 0);
+									break;
+								case LIMIT_ACTION_MURDER:
+									TerminateProcess(pr->hprocess, 0);
+									break;
+								case LIMIT_ACTION_RUN:
+									launch_putty(0, (char *)lParam);
+									break;
+								};
+								return FALSE;
+							};
+						};
+					};
+				};
+			};
+
+			pwin = launch_putty(wParam - HOTKEY_ACTION_LAUNCH, (char *)lParam);
 		};
 		return FALSE;
 	case WM_HOTKEY:
@@ -178,6 +238,25 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 					HIWORD(config->hotkeys[wParam].hotkey));
 		};
 		return FALSE;
+	case WM_HIDEWINDOW:
+		{
+			HWND fwin;
+			char buf[BUFSIZE];
+
+			fwin = GetForegroundWindow();
+
+			if (!fwin)
+				break;
+
+			GetClassName(fwin, buf, BUFSIZE);
+
+			if (!strcmp(buf, PUTTY) || !strcmp(buf, PUTTYTEL))
+				ShowWindow(fwin, SW_HIDE);
+		};
+		break;
+	case WM_NETWORKSTART:
+		launch_autoruns("", AUTORUN_WHEN_NETWORKSTART);
+		break;
 	case WM_LAUNCHBOX:
 		do_launchbox();
 
@@ -308,11 +387,24 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
     return DefWindowProc(hwnd, message, wParam, lParam);
 }
 
+/*
+void CALLBACK PLaunchInternetStatusCallback(HINTERNET hInternet, DWORD dwContext,
+											DWORD dwInternetStatus, 
+											LPVOID lpvStatusInformation,
+											DWORD dwStatusInformationLength) {
+	if (dwInternetStatus == INTERNET_STATUS_STATE_CHANGE &&
+		*((DWORD *)lpvStatusInformation) == INTERNET_STATE_CONNECTED)
+		PostMessage(config->hwnd_mainwindow, WM_NETWORKSTART, 0, 0);
+};
+*/
+
 int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 {
     WNDCLASS wndclass;
     MSG msg;
 	OSVERSIONINFO osv;
+	DWORD wait;
+//	HINTERNET hinternet = NULL;
 
 #ifndef _DEBUG
     {
@@ -384,14 +476,10 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 
 			config->img_session = ImageList_AddIcon(config->image_list, config->main_icon);
 
-#ifndef _DEBUG
 			if (osv.dwPlatformId == VER_PLATFORM_WIN32_NT) {
-#endif /* _DEBUG */
 				ImageList_Destroy(large_list);
 				ImageList_Destroy(small_list);
-#ifndef _DEBUG
 			};
-#endif /* _DEBUG */
 			FreeSystemImageLists(shell32);
 
 		} 
@@ -422,6 +510,22 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 
 		RegisterClass(&wndclass);
     }
+
+/*
+	{
+		WNDCLASS dlg, dlgkid;
+
+		memset(&dlg, 0, sizeof(WNDCLASS));
+		memset(&dlgkid, 0, sizeof(WNDCLASS));
+		GetClassInfo(NULL, "#32770", &dlg);
+		memmove(&dlgkid, &dlg, sizeof(WNDCLASS));
+		dlgkid.lpszMenuName = NULL;
+		dlgkid.lpszClassName = "PLaunchTransparentChildDialog";
+		dlgkid.hbrBackground = GetStockObject(HOLLOW_BRUSH);
+		dlgkid.hInstance = inst;
+		RegisterClass(&dlgkid);
+	};
+*/
 
     config->hwnd_mainwindow = CreateWindow(APPNAME, WINDOWTITLE,
 						WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_ICONIC,
@@ -486,6 +590,10 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 					case WM_WINDOWLIST:
 						destination = "Window List";
 						break;
+					case WM_HIDEWINDOW:
+						action = "hiding";
+						destination = "active window";
+						break;
 					};
 					break;
 				case HOTKEY_ACTION_LAUNCH:
@@ -504,8 +612,89 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 		};
 	};
 
-    while (GetMessage(&msg, NULL, 0, 0))
+	/*
+	 * work over all startup autorun session.
+	 */
+	launch_autoruns("", AUTORUN_WHEN_START);
+
+	/*
+	 * try to discover if a network connection is available, and if it is,
+	 * launch all network-start autorun sessions.
+	 */
+#ifdef WINDOWS_NT351_COMPATIBLE
+	if (config->have_shell)
+#endif /* WINDOWS_NT351_COMPATIBLE */
+	{
+//		DWORD flags;
+
+/*
+		if (InternetGetConnectedState(&flags, 0))
+			launch_autoruns("", AUTORUN_WHEN_NETWORKSTART);
+		else {
+			if (hinternet = InternetOpen(APPNAME, INTERNET_OPEN_TYPE_DIRECT, NULL, NULL,
+				INTERNET_FLAG_ASYNC)) {
+				InternetSetStatusCallback(hinternet, PLaunchInternetStatusCallback);
+			};
+		};
+*/
+	};
+
+    while (GetMessage(&msg, NULL, 0, 0)) {
 		DispatchMessage(&msg);
+
+		wait = MsgWaitForMultipleObjects(nprocesses, process_handles, 
+										FALSE, INFINITE, QS_ALLINPUT);
+		if (wait == WAIT_OBJECT_0 + nprocesses)
+			continue;
+		else if (wait >= WAIT_OBJECT_0 && wait < (WAIT_OBJECT_0 + nprocesses)) {
+			HANDLE hprocess;
+			struct process_record *pr;
+
+			/*
+			 * process is dead, we need to clean up after it.
+			 */
+			wait -= WAIT_OBJECT_0;
+			hprocess = process_handles[wait];
+			pr = process_records[wait];
+			item_remove((void *)&process_handles, &nprocesses, hprocess);
+			nprocesses++;
+			item_remove((void *)&process_records, &nprocesses, pr);
+			CloseHandle(hprocess);
+			if (pr->path)
+				free(pr->path);
+			free(pr);
+		};
+	};
+
+#ifdef WINDOWS_NT351_COMPATIBLE
+	if (config->have_shell)
+#endif /* WINDOWS_NT351_COMPATIBLE */
+//		InternetCloseHandle(hinternet);
+
+	/*
+	 * work over all quit auto-run session.
+	 */
+	launch_autoruns("", AUTORUN_WHEN_QUIT);
+
+	/*
+	 * show up all hidden putty windows if applicable.
+	 */
+	if (config->options & OPTION_SHOWONQUIT) {
+		unsigned int i;
+		struct process_record *pr;
+
+		for (i = 0; i < nprocesses; i++) {
+			pr = process_records[i];
+			if (pr && pr->window && !IsWindowVisible(pr->window))
+				ShowWindow(pr->window, SW_SHOW);
+		};
+	};
+
+	/*
+	 * ...and, by the way, it would be rude to leave opened handles
+	 * to hang all over the system.
+	 */
+	free_process_records();
 
 	/*
 	 * clean up hot keys.
@@ -515,7 +704,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 
 		for (i = config->nhotkeys - 1; i >= 0; i--) {
 			UnregisterHotKey(config->hwnd_mainwindow, i);
-			if (i > 1 && config->hotkeys[i].destination)
+			if (config->hotkeys[i].action != HOTKEY_ACTION_MESSAGE && 
+				config->hotkeys[i].destination)
 				free(config->hotkeys[i].destination);
 		};
 	}
@@ -536,6 +726,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 
 	DestroyMenu(config->systray_menu);
 
+//	UnregisterClass("PLaunchTransparentChildDialog", config->hinst);
+
 	/*
 	 * clean up the config
 	 */
@@ -550,4 +742,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	}
 
     return 0;
+};
+
+void __cdecl main(void) {
 };

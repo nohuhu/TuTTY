@@ -1,79 +1,68 @@
-#include <windows.h>
+//Microsoft Developer Studio generated resource script.
+//
+#include "resrc1.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
 #include "resource.h"
 
-IDD_LAUNCHBOX DIALOG DISCARDABLE  0, 0, 242, 255
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.K.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_LAUNCHBOX DIALOG DISCARDABLE  0, 0, 242, 263
 STYLE DS_MODALFRAME | DS_3DLOOK | DS_CENTER | WS_POPUP | WS_VISIBLE | 
-    WS_CAPTION | WS_SYSMENU
+    WS_CLIPSIBLINGS | WS_CAPTION | WS_SYSMENU
 CAPTION "PuTTY Session Manager"
 FONT 8, "MS Sans Serif"
 BEGIN
     DEFPUSHBUTTON   "Open",IDOK,188,17,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,188,34,50,14
-    PUSHBUTTON      "New &folder",IDC_LAUNCHBOX_BUTTON_NEW_FOLDER,188,55,50,14
-    PUSHBUTTON      "New sessi&on",IDC_LAUNCHBOX_BUTTON_NEW_SESSION,188,71,50,14
+    PUSHBUTTON      "New &folder",IDC_LAUNCHBOX_BUTTON_NEW_FOLDER,188,55,50,
+                    14
+    PUSHBUTTON      "New sessi&on",IDC_LAUNCHBOX_BUTTON_NEW_SESSION,188,71,
+                    50,14
     PUSHBUTTON      "&Edit",IDC_LAUNCHBOX_BUTTON_EDIT,188,87,50,14
     PUSHBUTTON      "&Rename",IDC_LAUNCHBOX_BUTTON_RENAME,188,103,50,14
     PUSHBUTTON      "&Delete",IDC_LAUNCHBOX_BUTTON_DELETE,188,119,50,14
     PUSHBUTTON      "&More >>",IDC_LAUNCHBOX_BUTTON_MORE,188,140,50,14
-    COMBOBOX        IDC_LAUNCHBOX_COMBOBOX_HOTKEY,4,167,61,30,
-                    CBS_DROPDOWNLIST | WS_TABSTOP
-    EDITTEXT        IDC_LAUNCHBOX_EDITBOX_HOTKEY,96,166,88,14
-    PUSHBUTTON      "Se&t",IDC_LAUNCHBOX_BUTTON_HOTKEY,188,166,50,14
-    CONTROL         "&Limit this session to run",IDC_LAUNCHBOX_CHECKBOX_LIMIT,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,4,185,88,14
-    EDITTEXT        IDC_LAUNCHBOX_EDITBOX_LIMIT1,96,185,30,14,ES_NUMBER
-    CONTROL         "Spin1",IDC_LAUNCHBOX_SPIN_HOTKEY,"msctls_updown32",UDS_SETBUDDYINT | 
-                    UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,120,186,
-                    11,14
-    COMBOBOX        IDC_LAUNCHBOX_COMBOBOX_LIMIT1,96,204,48,30,
-                    CBS_DROPDOWNLIST | WS_TABSTOP
-    COMBOBOX        IDC_LAUNCHBOX_COMBOBOX_LIMIT2,4,222,66,30,
-                    CBS_DROPDOWNLIST | WS_TABSTOP
-    COMBOBOX        IDC_LAUNCHBOX_COMBOBOX_LIMIT3,96,222,61,30,
-                    CBS_DROPDOWNLIST | WS_TABSTOP
-    CONTROL         "&Autorun this session at",IDC_LAUNCHBOX_CHECKBOX_RUN,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,4,239,88,14
-    COMBOBOX        IDC_LAUNCHBOX_COMBOBOX_RUN1,96,239,48,30,CBS_DROPDOWNLIST | 
-                    WS_TABSTOP
-    COMBOBOX        IDC_LAUNCHBOX_COMBOBOX_RUN2,164,239,48,30,
-                    CBS_DROPDOWNLIST | WS_TABSTOP
     LTEXT           "&Sessions:",IDC_LAUNCHBOX_STATIC_TREEVIEW,4,4,75,9
     GROUPBOX        "",IDC_LAUNCHBOX_GROUPBOX_TREEVIEW,4,17,180,137
-    LTEXT           "&hotkey",IDC_LAUNCHBOX_STATIC_HOTKEY,70,166,23,14,
-                    SS_CENTERIMAGE
+    GROUPBOX        "",IDC_LAUNCHBOX_GROUPBOX_TABVIEW,4,165,234,95
     CONTROL         "",IDC_LAUNCHBOX_STATIC_DIVIDER,"Static",SS_ETCHEDHORZ,4,
                     160,233,1
-    CONTROL         "concurrent instances, and when",
-                    IDC_LAUNCHBOX_STATIC_UNUSED2,"Static",SS_LEFTNOWORDWRAP | 
-                    SS_CENTERIMAGE | WS_GROUP,129,185,109,14
-    CONTROL         "this limit is reached, find the",
-                    IDC_LAUNCHBOX_STATIC_UNUSED3,"Static",SS_LEFTNOWORDWRAP | 
-                    SS_CENTERIMAGE | WS_GROUP,4,203,88,14
-    CONTROL         "running instance and then",IDC_LAUNCHBOX_STATIC_UNUSED4,
-                    "Static",SS_LEFTNOWORDWRAP | SS_CENTERIMAGE | WS_GROUP,
-                    147,203,88,14
-    CONTROL         "it and",IDC_LAUNCHBOX_STATIC_UNUSED5,"Static",
-                    SS_LEFTNOWORDWRAP | SS_CENTERIMAGE | WS_GROUP,73,221,19,
-                    14
-    CONTROL         ".",IDC_LAUNCHBOX_STATIC_UNUSED6,"Static",
-                    SS_LEFTNOWORDWRAP | SS_CENTERIMAGE | WS_GROUP,159,221,19,
-                    14
-    CONTROL         "and",IDC_LAUNCHBOX_STATIC_UNUSED7,"Static",
-                    SS_LEFTNOWORDWRAP | SS_CENTERIMAGE | WS_GROUP,148,239,13,
-                    14
-    CONTROL         "it.",IDC_LAUNCHBOX_STATIC_UNUSED8,"Static",
-                    SS_LEFTNOWORDWRAP | SS_CENTERIMAGE | WS_GROUP,216,239,13,
-                    14
 END
 
-IDD_WINDOWLISTBOX DIALOG DISCARDABLE 0, 0, 240, 152
-STYLE WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME |
-        DS_CENTER
+IDD_WINDOWLISTBOX DIALOG DISCARDABLE  0, 0, 240, 152
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | 
+    WS_SYSMENU
 CAPTION "PuTTY Sessions"
 FONT 8, "MS Sans Serif"
 BEGIN
-    LTEXT           "&Running PuTTY or PuTTYtel sessions:",IDC_WINDOWLISTBOX_STATIC,7,3,169,8
-    LISTBOX         IDC_WINDOWLISTBOX_LISTBOX,7,15,169,132,WS_VSCROLL | WS_BORDER | WS_TABSTOP | LBS_HASSTRINGS | LBS_NOTIFY | LBS_DISABLENOSCROLL | LBS_USETABSTOPS | LBS_WANTKEYBOARDINPUT
+    LTEXT           "&Running PuTTY or PuTTYtel sessions:",
+                    IDC_WINDOWLISTBOX_STATIC,7,3,169,8
+    LISTBOX         IDC_WINDOWLISTBOX_LISTBOX,7,15,169,132,LBS_HASSTRINGS | 
+                    LBS_USETABSTOPS | LBS_WANTKEYBOARDINPUT | 
+                    LBS_DISABLENOSCROLL | WS_VSCROLL | WS_TABSTOP
     DEFPUSHBUTTON   "Switch to",IDOK,183,21,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,183,38,50,14
     PUSHBUTTON      "&Hide",IDC_WINDOWLISTBOX_BUTTON_HIDE,183,77,50,14
@@ -109,49 +98,175 @@ CAPTION "About"
 FONT 8, "MS Sans Serif"
 BEGIN
     DEFPUSHBUTTON   "&Close",IDOK,157,49,70,14
-    PUSHBUTTON      "Visit &home page...",IDC_ABOUTBOX_BUTTON_HOMEPAGE,82,49,70,14
-    PUSHBUTTON      "View &License...",IDC_ABOUTBOX_BUTTON_LICENSE,7,49,70,14
+    PUSHBUTTON      "Visit &home page...",IDC_ABOUTBOX_BUTTON_HOMEPAGE,82,49,
+                    70,14
+    PUSHBUTTON      "View &License...",IDC_ABOUTBOX_BUTTON_LICENSE,7,49,70,
+                    14
     CTEXT           "PuTTY Launcher && Session Manager",100,7,7,220,11
     CTEXT           "",IDC_ABOUTBOX_STATIC_VERSION,12,20,210,8
     CTEXT           "© 2004, 2005 dwalin <dwalin@dwalin.ru>. All rights reserved.",
                     101,7,35,220,11
 END
 
-IDD_OPTIONSBOX DIALOG DISCARDABLE  0, 0, 229, 167
-STYLE WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME |
-        DS_CENTER
+IDD_OPTIONSBOX DIALOG DISCARDABLE  0, 0, 229, 204
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | 
+    WS_SYSMENU
 CAPTION "Options"
 FONT 8, "MS Sans Serif"
 BEGIN
-    EDITTEXT        IDC_OPTIONSBOX_EDITBOX_PUTTYPATH,16,31,139,14,ES_AUTOHSCROLL
-    PUSHBUTTON      "&Browse...",IDC_OPTIONSBOX_BUTTON_PUTTYPATH,164,31,50,14
-    EDITTEXT        IDC_OPTIONSBOX_EDITBOX_HOTKEY_LBOX,16,68,95,14,ES_AUTOHSCROLL
-    EDITTEXT        IDC_OPTIONSBOX_EDITBOX_HOTKEY_WLIST,118,68,95,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_OPTIONSBOX_EDITBOX_PUTTYPATH,16,24,139,12,
+                    ES_AUTOHSCROLL
+    PUSHBUTTON      "&Browse...",IDC_OPTIONSBOX_BUTTON_PUTTYPATH,164,24,50,
+                    14
+    EDITTEXT        IDC_OPTIONSBOX_EDITBOX_HOTKEY_LBOX,16,53,95,12,
+                    ES_AUTOHSCROLL
+    EDITTEXT        IDC_OPTIONSBOX_EDITBOX_HOTKEY_WLIST,118,53,95,12,
+                    ES_AUTOHSCROLL
     CONTROL         "&Run PuTTY Launcher automatically at startup?",
-                    IDC_OPTIONSBOX_BUTTON_STARTUP,"Button",BS_AUTOCHECKBOX | 
+                    IDC_OPTIONSBOX_CHECKBOX_STARTUP,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,16,91,200,9
     CONTROL         "Enable tree-view items &drag&&drop in Launch Box?",
-                    IDC_OPTIONSBOX_BUTTON_DRAGDROP,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,16,105,200,9
-    CONTROL         "Enable remembering cursor position in Launch Box?",
-                    IDC_OPTIONSBOX_BUTTON_SAVECUR,"Button",BS_AUTOCHECKBOX | 
+                    IDC_OPTIONSBOX_CHECKBOX_DRAGDROP,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,105,200,9
+    CONTROL         "Enable remembering &cursor position in Launch Box?",
+                    IDC_OPTIONSBOX_CHECKBOX_SAVECUR,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,16,119,200,9
-    DEFPUSHBUTTON   "OK",IDOK,61,138,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,118,138,50,14
-    GROUPBOX        "",IDC_OPTIONSBOX_GROUPBOX,7,7,215,153
+    DEFPUSHBUTTON   "OK",IDOK,61,175,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,118,175,50,14
+    GROUPBOX        "",IDC_OPTIONSBOX_GROUPBOX,7,3,215,193
     LTEXT           "&Path to PuTTY or PuTTYtel executable:",
-                    IDC_OPTIONSBOX_STATIC_PUTTYPATH,16,17,169,9
-    LTEXT           "&Launch Box hot key:",IDC_OPTIONSBOX_STATIC_HOTKEY_LBOX,16,54,
-                    75,9
-    LTEXT           "&Window List hot key:",IDC_OPTIONSBOX_STATIC_HOTKEY_WLIST,118,
-                    54,75,9
+                    IDC_OPTIONSBOX_STATIC_PUTTYPATH,16,14,169,8
+    LTEXT           "&Launch Box hot key:",IDC_OPTIONSBOX_STATIC_HOTKEY_LBOX,
+                    16,42,75,8
+    LTEXT           "&Window List hot key:",
+                    IDC_OPTIONSBOX_STATIC_HOTKEY_WLIST,118,42,75,8
+    CONTROL         "Show all hidden PuTTY or PuTTYtel sessions on &quit?",
+                    IDC_OPTIONSBOX_CHECKBOX_SHOWONQUIT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,133,200,8
+    LTEXT           "&Hide active PuTTY window:",
+                    IDC_OPTIONSBOX_STATIC_HOTKEY_HIDEWINDOW,16,72,95,8
+    EDITTEXT        IDC_OPTIONSBOX_EDITBOX_HOTKEY_HIDEWINDOW,118,70,95,12,
+                    ES_AUTOHSCROLL
+    CONTROL         "Show &saved PuTTY or PuTTYtel sessions as a submenu?",
+                    IDC_OPTIONSBOX_CHECKBOX_MENUSESSIONS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,147,200,8
+    CONTROL         "Show &running PuTTY or PuTTYtel sessions as a submenu?",
+                    IDC_OPTIONSBOX_CHECKBOX_MENURUNNING,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,161,200,8
 END
 
+IDD_LAUNCHBOX_TAB0 DIALOGEX 0, 0, 224, 52
+STYLE WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif"
+BEGIN
+    EDITTEXT        IDC_LAUNCHBOX_EDITBOX_HOTKEY,80,0,90,14
+    PUSHBUTTON      "Set",IDC_LAUNCHBOX_BUTTON_HOTKEY,174,0,50,14
+    LTEXT           "Launch session hotkey:",IDC_STATIC,0,3,76,8
+    EDITTEXT        IDC_LAUNCHBOX_EDITBOX_HOTKEY2,80,19,90,14
+    PUSHBUTTON      "Set",IDC_LAUNCHBOX_BUTTON_HOTKEY2,174,19,50,14
+    LTEXT           "Edit session hotkey:",IDC_STATIC,0,22,64,8
+    EDITTEXT        IDC_LAUNCHBOX_EDITBOX_HOTKEY3,80,38,90,14
+    PUSHBUTTON      "Set",IDC_LAUNCHBOX_BUTTON_HOTKEY3,174,38,50,14
+    LTEXT           "Kill session hotkey:",IDC_STATIC,0,41,60,8
+END
+
+IDD_LAUNCHBOX_TAB1 DIALOGEX 0, 0, 224, 80
+STYLE WS_CHILD | WS_VISIBLE
+EXSTYLE WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "Enable auto action at &start:",
+                    IDC_LAUNCHBOX_TAB1_CHECKBOX_AUTORUN_ATSTART,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,0,4,101,10
+    COMBOBOX        IDC_COMBO1,104,0,66,30,CBS_DROPDOWN | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
 IDI_MAINICON            ICON    DISCARDABLE     "putty.ico"
 
-/* Some systems don't define this, so I do it myself if necessary */
-#ifndef RT_MANIFEST
-#define RT_MANIFEST 24
-#endif
+/////////////////////////////////////////////////////////////////////////////
+//
+// 24
+//
 
-1                       RT_MANIFEST             "plaunch.manifest"
+1                       24      MOVEABLE PURE   "plaunch.manifest"
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resrc1.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""resource.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_LAUNCHBOX_TAB0, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 217
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 45
+    END
+
+    IDD_LAUNCHBOX_TAB1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 217
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 73
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (U.K.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

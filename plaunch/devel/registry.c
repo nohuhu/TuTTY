@@ -11,14 +11,14 @@ const char * const LIMIT_SEARCHFOR_STRINGS[] = {
 	"twelfth", "%dth"};
 
 const char * const LIMIT_ACTION_STRINGS[] = {
-	"do nothing", "hide", "show", "minimize", "maximize", "center",
+	"do nothing with", "hide", "show", "minimize", "maximize", "center",
 	"kill", "murder", "run another"};
 
 const char * const AUTORUN_WHEN_STRINGS[] = {
-	"start", "quit", "shutdown" };
+	"start", "network start", "quit" };
 
 const char * const AUTORUN_ACTION_STRINGS[] = {
-	"do nothing", "hide", "show", "minimize", "maximize", "center" };
+	"do nothing with", "hide", "show", "minimize", "maximize", "center" };
 
 static const char hex[16] = "0123456789ABCDEF";
 

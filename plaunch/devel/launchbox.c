@@ -6,19 +6,36 @@
 #include "registry.h"
 #include "resource.h"
 #include "dlgtmpl.h"
+#include "resrc1.h"
 
-#define IDM_CTXM_COPY						0x0100
-#define IDM_CTXM_CUT						0x0101
-#define IDM_CTXM_PASTE						0x0102
-#define IDM_CTXM_DELETE						0x0103
-#define IDM_CTXM_UNDO						0x0104
-#define IDM_CTXM_CRTFLD						0x0105
-#define IDM_CTXM_CRTSES						0x0106
-#define IDM_CTXM_RENAME						0x0107
-#define	IDM_CTXM_CANCEL						0x0108
+#define IDM_CTXM_COPY		0x0100
+#define IDM_CTXM_CUT		0x0101
+#define IDM_CTXM_PASTE		0x0102
+#define IDM_CTXM_DELETE		0x0103
+#define IDM_CTXM_UNDO		0x0104
+#define IDM_CTXM_CRTFLD		0x0105
+#define IDM_CTXM_CRTSES		0x0106
+#define IDM_CTXM_RENAME		0x0107
+#define	IDM_CTXM_CANCEL		0x0108
 
-#define NEWFOLDER	"New Folder"
-#define NEWSESSION	"New Session"
+#define NEWFOLDER			"New Folder"
+#define NEWSESSION			"New Session"
+
+#define	TAB_HOTKEYS			0
+#define	TAB_LIMITCONDITIONS	1
+#define	TAB_LIMITACTIONS	2
+#define	TAB_AUTOPROCESS		3
+#define	TAB_LAST			4
+
+char * TAB_NAMES[] =
+	{ "Hot keys", "Limit conditions", "Limit actions", "Auto processing"};
+
+typedef struct tag_dlghdr { 
+    HWND hwndTab;       // tab control 
+    HWND hwndDisplay;   // current child dialog box 
+    RECT rcDisplay;     // display rectangle for the tab control 
+    DLGTEMPLATE *apRes[TAB_LAST]; 
+} DLGHDR; 
 
 /*
  * Launch Box: tree view compare function.
@@ -79,15 +96,54 @@ static unsigned int treeview_find_unused_name(HWND treeview, HTREEITEM parent,
 };
 
 /*
+ * Launch Box: child dialog window function.
+ */
+
+static int CALLBACK LaunchBoxChildProc(HWND hwnd, UINT msg,
+									   WPARAM wParam, LPARAM lParam) {
+	switch (msg) {
+	case WM_INITDIALOG:
+		{
+			HWND parent;
+			HDC dc;
+			DLGHDR *hdr;
+			RECT r;
+			POINT pt;
+			unsigned int cx, cy;
+
+			parent = GetParent(hwnd);
+			hdr = (DLGHDR *)GetWindowLong(parent, GWL_USERDATA);
+
+			GetWindowRect(hwnd, &r);
+			cx = r.right - r.left;
+			cy = r.bottom - r.top;
+			pt.x = hdr->rcDisplay.left +
+				(((hdr->rcDisplay.right - hdr->rcDisplay.left) - cx) / 2);
+			SetWindowPos(hwnd, HWND_TOP, pt.x, hdr->rcDisplay.top,
+//						hdr->rcDisplay.right - hdr->rcDisplay.left, 
+//						hdr->rcDisplay.bottom - hdr->rcDisplay.top, 
+						0, 0, SWP_NOSIZE);
+
+			dc = GetDC(hwnd);
+			SelectObject(dc, GetStockObject(WHITE_BRUSH));
+		};
+		break;
+	};
+
+	return FALSE;
+};
+
+/*
  * Launch Box: dialog function.
  */
 static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 								  WPARAM wParam, LPARAM lParam) {
+	static DLGHDR *dlghdr = NULL;
 	static POINT bigpt = {0}, smallpt = {0};
-	static HWND treeview = NULL, hotkey_combo = NULL, hotkey_edit = NULL,
-		limit_checkbox = NULL, limit_edit = NULL, limit_searchfor = NULL,
-		limit_action1 = NULL, limit_action2 = NULL, autorun_checkbox = NULL,
-		autorun_when = NULL, autorun_action = NULL;
+	static HWND treeview = NULL, tabview = NULL, hotkey_combo = NULL, 
+		hotkey_edit = NULL,	limit_checkbox = NULL, limit_edit = NULL, 
+		limit_searchfor = NULL,	limit_action1 = NULL, limit_action2 = NULL, 
+		autorun_checkbox = NULL, autorun_when = NULL, autorun_action = NULL;
 	static HMENU context_menu = NULL;
 	static unsigned int cut_or_copy = 0;
 	static unsigned int morestate;
@@ -121,6 +177,8 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 
 		limit_checkbox = GetDlgItem(hwnd, IDC_LAUNCHBOX_CHECKBOX_LIMIT);
 		limit_edit = GetDlgItem(hwnd, IDC_LAUNCHBOX_EDITBOX_LIMIT1);
+		SendDlgItemMessage(hwnd, IDC_LAUNCHBOX_SPIN_LIMIT, UDM_SETRANGE, 0, 
+							(LPARAM)MAKELONG((short)UD_MAXVAL, (short)0));
 		limit_searchfor = GetDlgItem(hwnd, IDC_LAUNCHBOX_COMBOBOX_LIMIT1);
 
 		limit_action1 = GetDlgItem(hwnd, IDC_LAUNCHBOX_COMBOBOX_LIMIT2);
@@ -184,6 +242,73 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			if (config->image_list)
 				TreeView_SetImageList(treeview, config->image_list, TVSIL_NORMAL);
 		}
+
+		ShowWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_GROUPBOX_TABVIEW), SW_HIDE);
+
+		/*
+		 * Create the tab view.
+		 */
+		{
+			RECT r;
+			POINT pt;
+			WPARAM font;
+			TCITEM item;
+			unsigned int i;
+
+			GetWindowRect(GetDlgItem(hwnd, IDC_LAUNCHBOX_GROUPBOX_TABVIEW), &r);
+			pt.x = r.left;
+			pt.y = r.top;
+			ScreenToClient(hwnd, &pt);
+
+			tabview = CreateWindow(WC_TABCONTROL, "",
+										WS_CHILD | WS_VISIBLE | WS_TABSTOP |
+										WS_CLIPSIBLINGS |
+										TCS_SINGLELINE,
+										pt.x, pt.y,
+										r.right - r.left, r.bottom - r.top,
+										hwnd, NULL, config->hinst, NULL);
+			font = SendMessage(hwnd, WM_GETFONT, 0, 0);
+			SendMessage(tabview, WM_SETFONT, font, MAKELPARAM(TRUE, 0));
+
+			dlghdr = (DLGHDR *)LocalAlloc(LPTR, sizeof(DLGHDR));
+			dlghdr->hwndTab = tabview;
+			dlghdr->rcDisplay.left = pt.x;
+			dlghdr->rcDisplay.top = pt.y;
+			dlghdr->rcDisplay.right = pt.x + (r.right - r.left);
+			dlghdr->rcDisplay.bottom = pt.y + (r.bottom - r.top);
+
+			TabCtrl_AdjustRect(tabview, FALSE, &dlghdr->rcDisplay);
+
+			memset(&item, 0, sizeof(TCITEM));
+			item.mask = TCIF_TEXT | TCIF_IMAGE;
+			item.iImage = -1;
+			for (i = 0; i < 2; i++) {
+				HRSRC hrsrc;
+				HGLOBAL hglobal;
+
+				item.pszText = TAB_NAMES[i];
+				TabCtrl_InsertItem(tabview, i, &item);
+				hrsrc = FindResource(NULL, MAKEINTRESOURCE(IDD_LAUNCHBOX_TAB0 + i), RT_DIALOG);
+				hglobal = LoadResource(config->hinst, hrsrc);
+				dlghdr->apRes[i] = (DLGTEMPLATE *)LockResource(hglobal);
+			};
+
+			TabCtrl_GetItemRect(tabview, 0, &r);
+			dlghdr->rcDisplay.top = pt.y + r.bottom + 9;
+
+			SetWindowLong(hwnd, GWL_USERDATA, (LONG)dlghdr);
+
+			{
+				NMHDR nmhdr;
+
+				memset(&nmhdr, 0, sizeof(NMHDR));
+				nmhdr.code = TCN_SELCHANGE;
+				nmhdr.hwndFrom = tabview;
+				nmhdr.idFrom = 0;
+
+				SendMessage(hwnd, WM_NOTIFY, 0, (LPARAM)&nmhdr);
+			};
+		};
 
 		/*
 		 * Create a popup context menu and fill it with elements.
@@ -273,6 +398,9 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			if (!item && TreeView_GetCount(treeview))
 				item = TreeView_GetSelection(treeview);
 
+			if (!item)
+				break;
+
 			memset(name, 0, BUFSIZE);
 			memset(path, 0, BUFSIZE);
 
@@ -299,6 +427,9 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_HOTKEY), FALSE);
 			EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_EDIT), !isfolder);
 			EnableWindow(GetDlgItem(hwnd, IDOK), !isfolder);
+
+			EnableWindow(limit_checkbox, boolean);
+			EnableWindow(autorun_checkbox, boolean);
 
 			if (!cut_or_copy) {
 				flag = MF_ENABLED;
@@ -328,68 +459,62 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			EnableMenuItem(context_menu, IDM_CTXM_RENAME, flag2);
 
 			if (morestate) {
-				int i, tmp, limit = 0, autorun = 0;
+				int i, tmp, lnumber, limit = 0, autorun = 0;
+
+				ShowWindow(tabview, SW_SHOW);
+				EnableWindow(tabview, TRUE);
 
 				reg_read_i(buf, PLAUNCH_LIMIT_ENABLE, 0, &limit);
 
-				if (limit) {
-					CheckDlgButton(hwnd, IDC_LAUNCHBOX_CHECKBOX_LIMIT, BST_CHECKED);
+				CheckDlgButton(hwnd, IDC_LAUNCHBOX_CHECKBOX_LIMIT, 
+					limit ? BST_CHECKED : BST_UNCHECKED);
 
-					EnableWindow(limit_edit, TRUE);
-					reg_read_i(buf, PLAUNCH_LIMIT_NUMBER, 0, &tmp);
+				reg_read_i(buf, PLAUNCH_LIMIT_NUMBER, 0, &tmp);
+				GetWindowText(limit_edit, buf2, BUFSIZE);
+				lnumber = small_atoi(buf2);
+				if (tmp != lnumber) {
 					sprintf(buf2, "%d", tmp);
 					SetWindowText(limit_edit, buf2);
-
-					EnableWindow(limit_searchfor, TRUE);
-					SendMessage(limit_searchfor, CB_RESETCONTENT, 0, 0);
-					for (i = 0; i < tmp + 1; i++) {
-						if (i < LIMIT_SEARCHFOR_UMPTEENTH) {
-							SendMessage(limit_searchfor, CB_ADDSTRING, 0,
-										(LPARAM)LIMIT_SEARCHFOR_STRINGS[i]);
-						} else {
-							sprintf(buf2, 
-								LIMIT_SEARCHFOR_STRINGS[LIMIT_SEARCHFOR_UMPTEENTH],
-								i);
-							SendMessage(limit_searchfor, CB_ADDSTRING, 0, (LPARAM)buf2);
-						};
-					};
-
-					EnableWindow(limit_action1, TRUE);
-					reg_read_i(buf, PLAUNCH_LIMIT_ACTION1, 0, &tmp);
-					SendMessage(limit_action1, CB_SETCURSEL, (WPARAM)tmp, 0);
-
-					if (tmp) {
-						EnableWindow(limit_action2, TRUE);
-						reg_read_i(buf, PLAUNCH_LIMIT_ACTION2, 0, &tmp);
-						SendMessage(limit_action2, CB_SETCURSEL, (WPARAM)tmp, 0);
-					} else {
-						EnableWindow(limit_action2, FALSE);
-					};
-				} else {
-					CheckDlgButton(hwnd, IDC_LAUNCHBOX_CHECKBOX_LIMIT, BST_UNCHECKED);
-					EnableWindow(limit_edit, FALSE);
-					EnableWindow(limit_searchfor, FALSE);
-					EnableWindow(limit_action1, FALSE);
-					EnableWindow(limit_action2, FALSE);
 				};
+				EnableWindow(limit_edit, limit);
+				lnumber = tmp;
+
+				SendMessage(limit_searchfor, CB_RESETCONTENT, 0, 0);
+				for (i = 0; i < tmp + 1; i++) {
+					if (i < LIMIT_SEARCHFOR_UMPTEENTH) {
+						SendMessage(limit_searchfor, CB_ADDSTRING, 0,
+									(LPARAM)LIMIT_SEARCHFOR_STRINGS[i]);
+					} else {
+						sprintf(buf2, 
+							LIMIT_SEARCHFOR_STRINGS[LIMIT_SEARCHFOR_UMPTEENTH],	i);
+						SendMessage(limit_searchfor, CB_ADDSTRING, 0, (LPARAM)buf2);
+					};
+				};
+				reg_read_i(buf, PLAUNCH_LIMIT_SEARCHFOR, 0, &tmp);
+				SendMessage(limit_searchfor, CB_SETCURSEL, tmp, 0);
+				EnableWindow(limit_searchfor, limit && lnumber);
+
+				reg_read_i(buf, PLAUNCH_LIMIT_ACTION1, 0, &tmp);
+				SendMessage(limit_action1, CB_SETCURSEL, (WPARAM)tmp, 0);
+				EnableWindow(limit_action1, limit && lnumber);
+				boolean = (tmp > 0);
+
+				reg_read_i(buf, PLAUNCH_LIMIT_ACTION2, 0, &tmp);
+				SendMessage(limit_action2, CB_SETCURSEL, (WPARAM)tmp, 0);
+				EnableWindow(limit_action2, limit && lnumber && boolean);
 
 				reg_read_i(buf, PLAUNCH_AUTORUN_ENABLE, 0, &autorun);
 
-				if (autorun) {
-					CheckDlgButton(hwnd, IDC_LAUNCHBOX_CHECKBOX_RUN, BST_CHECKED);
+				CheckDlgButton(hwnd, IDC_LAUNCHBOX_CHECKBOX_RUN, 
+					autorun ? BST_CHECKED : BST_UNCHECKED);
 
-					EnableWindow(autorun_when, TRUE);
-					reg_read_i(buf, PLAUNCH_AUTORUN_WHEN, 0, &tmp);
-					SendMessage(autorun_when, CB_SETCURSEL, (WPARAM)tmp, 0);
+				reg_read_i(buf, PLAUNCH_AUTORUN_WHEN, 0, &tmp);
+				SendMessage(autorun_when, CB_SETCURSEL, (WPARAM)tmp, 0);
+				EnableWindow(autorun_when, autorun);
 
-					EnableWindow(autorun_action, TRUE);
-					reg_read_i(buf, PLAUNCH_AUTORUN_ACTION, 0, &tmp);
-					SendMessage(autorun_action, CB_SETCURSEL, (WPARAM)tmp, 0);
-				} else {
-					CheckDlgButton(hwnd, IDC_LAUNCHBOX_CHECKBOX_RUN, BST_UNCHECKED);
-					EnableWindow(autorun_when, FALSE);
-					EnableWindow(autorun_action, FALSE);
-				};
+				reg_read_i(buf, PLAUNCH_AUTORUN_ACTION, 0, &tmp);
+				SendMessage(autorun_action, CB_SETCURSEL, (WPARAM)tmp, 0);
+				EnableWindow(autorun_action, autorun);
 			};
 		};
 		break;
@@ -560,9 +685,87 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			};
 			break;
 		case CBN_SELCHANGE:
-			if ((HWND)lParam == hotkey_combo)
+			{
+				HTREEITEM item;
+				char buf[BUFSIZE], path[BUFSIZE], *valname;
+				int index;
+
+				item = TreeView_GetSelection(treeview);
+
+				if (!item)
+					break;
+
+				treeview_getitempath(treeview, item, path);
+				reg_make_path(NULL, path, buf);
+
+				if (LOWORD(wParam) == IDC_LAUNCHBOX_COMBOBOX_LIMIT1)
+					valname = PLAUNCH_LIMIT_SEARCHFOR;
+				else if (LOWORD(wParam) == IDC_LAUNCHBOX_COMBOBOX_LIMIT2)
+					valname = PLAUNCH_LIMIT_ACTION1;
+				else if (LOWORD(wParam) == IDC_LAUNCHBOX_COMBOBOX_LIMIT3)
+					valname = PLAUNCH_LIMIT_ACTION2;
+				else if (LOWORD(wParam) == IDC_LAUNCHBOX_COMBOBOX_RUN1)
+					valname = PLAUNCH_AUTORUN_WHEN;
+				else if (LOWORD(wParam) == IDC_LAUNCHBOX_COMBOBOX_RUN2)
+					valname = PLAUNCH_AUTORUN_ACTION;
+
+				index = SendMessage((HWND)lParam, CB_GETCURSEL, 0, 0);
+				if (index)
+					reg_write_i(buf, valname, index);
+				else
+					reg_delete_v(buf, valname);
+
 				SendMessage(hwnd, WM_REFRESHBUTTONS, 0, 0);
+			};
 			break;
+		case EN_CHANGE:
+			if (LOWORD(wParam) == IDC_LAUNCHBOX_EDITBOX_LIMIT1){
+				HTREEITEM item;
+				char buf[BUFSIZE], path[BUFSIZE], str[BUFSIZE];
+				int value;
+
+				item = TreeView_GetSelection(treeview);
+
+				if (!item)
+					break;
+
+				treeview_getitempath(treeview, item, path);
+				reg_make_path(NULL, path, buf);
+
+				GetWindowText(limit_edit, str, BUFSIZE);
+				value = small_atoi(str);
+				if (value)
+					reg_write_i(buf, PLAUNCH_LIMIT_NUMBER, value);
+				else
+					reg_delete_v(buf, PLAUNCH_LIMIT_NUMBER);
+
+				SendMessage(hwnd, WM_REFRESHBUTTONS, 0, (LPARAM)item);
+			};
+			break;
+		case BN_CLICKED:
+			if (LOWORD(wParam) == IDC_LAUNCHBOX_CHECKBOX_LIMIT ||
+				LOWORD(wParam) == IDC_LAUNCHBOX_CHECKBOX_RUN) {
+				HTREEITEM item;
+				char buf[BUFSIZE], path[BUFSIZE], *valname;
+				int check;
+
+				item = TreeView_GetSelection(treeview);
+
+				if (!item)
+					break;
+
+				treeview_getitempath(treeview, item, path);
+				reg_make_path(NULL, path, buf);
+				check = IsDlgButtonChecked(hwnd, LOWORD(wParam));
+				valname = LOWORD(wParam) == IDC_LAUNCHBOX_CHECKBOX_LIMIT ?
+					PLAUNCH_LIMIT_ENABLE : PLAUNCH_AUTORUN_ENABLE;
+				if (check == BST_CHECKED)
+					reg_write_i(buf, valname, 1);
+				else
+					reg_delete_v(buf, valname);
+
+				SendMessage(hwnd, WM_REFRESHBUTTONS, 0, (LPARAM)item);
+			};
 		};
 		switch (wParam) {
 		case IDC_LAUNCHBOX_STATIC_TREEVIEW:
@@ -583,7 +786,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 						SetWindowPos(hwnd, 0, 0, 0, bigpt.x, bigpt.y, SWP_NOMOVE | SWP_NOZORDER);
 						ShowWindow(divider, SW_SHOW);
 						SetWindowText(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_MORE),
-							"<< Less");
+							"<< &Less");
 					};
 					break;
 					case 1:
@@ -592,7 +795,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 							SWP_NOMOVE | SWP_NOZORDER);
 						ShowWindow(divider, SW_HIDE);
 						SetWindowText(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_MORE),
-							"More >>");
+							"&More >>");
 					};
 					break;
 				};
@@ -1009,6 +1212,18 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 					dragging_now = nmtv->itemNew.hItem;
 				};
 				break;
+			case TCN_SELCHANGE:
+				{
+					int selected;
+
+					selected = TabCtrl_GetCurSel(dlghdr->hwndTab);
+
+					if (dlghdr->hwndDisplay != NULL)
+						DestroyWindow(dlghdr->hwndDisplay);
+
+					dlghdr->hwndDisplay = CreateDialogIndirect(config->hinst,
+						dlghdr->apRes[selected], hwnd, LaunchBoxChildProc);
+				};
 			};
 		};
 	};

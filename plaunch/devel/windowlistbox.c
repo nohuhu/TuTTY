@@ -13,7 +13,7 @@
  * Returns number of PuTTY or PuTTYtel windows in lParam,
  * which is indeed an integer pointer.
  */
-static BOOL CALLBACK CountPuTTYWindows(HWND hwnd, LPARAM lParam) {
+BOOL CALLBACK CountPuTTYWindows(HWND hwnd, LPARAM lParam) {
 	unsigned char *classname;
 	unsigned int *count = (unsigned int *)lParam;
 
@@ -30,16 +30,15 @@ static BOOL CALLBACK CountPuTTYWindows(HWND hwnd, LPARAM lParam) {
 	return TRUE;
 };
 
-static unsigned int nhandles;
 static HWND hwnd_windowlistbox = NULL;
 
 /*
  * Window List Box: helper enumeration function.
  * Returns an array of PuTTY or PuTTYtel window handles in lParam.
  */
-static BOOL CALLBACK EnumPuTTYWindows(HWND hwnd, LPARAM lParam) {
+BOOL CALLBACK EnumPuTTYWindows(HWND hwnd, LPARAM lParam) {
 	unsigned char *classname;
-	HWND *handles = (HWND *)lParam;
+	struct windowlist *wl = (struct windowlist *)lParam;
 
 	classname = malloc(BUFSIZE);
 	memset(classname, 0, BUFSIZE);
@@ -47,8 +46,8 @@ static BOOL CALLBACK EnumPuTTYWindows(HWND hwnd, LPARAM lParam) {
 	if (GetClassName(hwnd, classname, BUFSIZE) &&
 		(strcmp(classname, PUTTY) == 0 ||
 		 strcmp(classname, PUTTYTEL) == 0)) {
-		handles[nhandles] = hwnd;
-		nhandles++;
+		wl->handles[wl->current] = hwnd;
+		wl->current++;
 	};
 
 	free(classname);
@@ -61,40 +60,37 @@ static BOOL CALLBACK EnumPuTTYWindows(HWND hwnd, LPARAM lParam) {
  * Updates contents of the window list by enumerating PuTTY
  * and PuTTYtel windows then updates listbox content.
  */
-static void refresh_listbox(HWND listbox, unsigned int *nwindows, HWND **handles) {
+static void refresh_listbox(HWND listbox, struct windowlist *wl) {
 	unsigned int i;
 
-	if (*handles && *nwindows > 0) {
-		free(*handles);
-		*handles = NULL;
-	};
+	if (wl->handles && wl->nhandles > 0)
+		free(wl->handles);
 
-	*nwindows = 0;
-	nhandles = 0;
+	memset(wl, 0, sizeof(struct windowlist));
 
 	SendMessage(listbox, (UINT)LB_RESETCONTENT, 0, 0);
 
-	EnumWindows(CountPuTTYWindows, (LPARAM)nwindows);
+	EnumWindows(CountPuTTYWindows, (LPARAM)&wl->nhandles);
 
-	if (*nwindows == 0) {
-		*handles = NULL;
+	if (wl->nhandles == 0) {
+		wl->handles = NULL;
 	} else {
 		unsigned char *buf, *title, visible;
 		unsigned int len;
 
-		*handles = (HWND *)malloc(sizeof(HWND) * (*nwindows));
-		memset(*handles, 0, sizeof(HWND) * (*nwindows));
+		wl->handles = (HWND *)malloc(wl->nhandles * sizeof(HWND));
+		memset(wl->handles, 0, wl->nhandles * sizeof(HWND));
 
-		EnumWindows(EnumPuTTYWindows, (LPARAM)(*handles));
+		EnumWindows(EnumPuTTYWindows, (LPARAM)wl);
 
 		buf = (char *)malloc(BUFSIZE);
 		title = (char *)malloc(BUFSIZE);
 
-		for (i = 0; i < *nwindows; i++) {
+		for (i = 0; i < wl->nhandles; i++) {
 			memset(buf, 0, BUFSIZE);
 
-			if (len = GetWindowText((*handles)[i], buf, BUFSIZE)) {
-				visible = IsWindowVisible((*handles)[i]) ? 'v' : 'h';
+			if (len = GetWindowText(wl->handles[i], buf, BUFSIZE)) {
+				visible = IsWindowVisible(wl->handles[i]) ? 'v' : 'h';
 				sprintf(title, "[%c] %s", visible, buf);
 			} else
 				title[0] = '\0';
@@ -112,8 +108,7 @@ static void refresh_listbox(HWND listbox, unsigned int *nwindows, HWND **handles
 static int CALLBACK WindowListBoxProc(HWND hwnd, UINT msg,
 									  WPARAM wParam, LPARAM lParam) {
 	unsigned int i = 0;
-	static unsigned int nwindows;
-	static HWND *handles;
+	static struct windowlist wl;
 	static HWND listbox;
 	static HWND hidebutton, showbutton, killbutton;
 	static HMENU context_menu = NULL;
@@ -133,9 +128,9 @@ static int CALLBACK WindowListBoxProc(HWND hwnd, UINT msg,
 		showbutton = GetDlgItem(hwnd, IDC_WINDOWLISTBOX_BUTTON_SHOW);
 		killbutton = GetDlgItem(hwnd, IDC_WINDOWLISTBOX_BUTTON_KILL);
 
-		handles = NULL;
+		memset(&wl, 0, sizeof(struct windowlist));
 
-		refresh_listbox(listbox, &nwindows, &handles);
+		refresh_listbox(listbox, &wl);
 
 		if (!context_menu) {
 			context_menu = CreatePopupMenu();
@@ -169,7 +164,7 @@ static int CALLBACK WindowListBoxProc(HWND hwnd, UINT msg,
 				hide = FALSE;
 				show = FALSE;
 				kill = FALSE;
-			} else if (IsWindowVisible(handles[item])) {
+			} else if (IsWindowVisible(wl.handles[item])) {
 				hide = TRUE;
 				show = FALSE;
 				kill = TRUE;
@@ -196,48 +191,48 @@ static int CALLBACK WindowListBoxProc(HWND hwnd, UINT msg,
 			SetFocus(listbox);
 			break;
 		case IDOK:
-			if (handles) {
+			if (wl.handles) {
 				int item;
 
 				item = SendMessage(listbox, (UINT)LB_GETCURSEL, 0, 0);
 
 				if (item != LB_ERR) {
-					ShowWindow(handles[item], SW_SHOWNORMAL);
-					SetForegroundWindow(handles[item]);
-					SetFocus(handles[item]);
+					ShowWindow(wl.handles[item], SW_SHOWNORMAL);
+					SetForegroundWindow(wl.handles[item]);
+					SetFocus(wl.handles[item]);
 				};
 			};
 			SendMessage(hwnd, WM_COMMAND, (WPARAM)IDCANCEL, 0);
 			break;
 		case IDC_WINDOWLISTBOX_BUTTON_HIDE:
 		case IDC_WINDOWLISTBOX_BUTTON_SHOW:
-			if (handles) {
+			if (wl.handles) {
 				int item;
 
 				item = SendMessage(listbox, (UINT)LB_GETCURSEL, 0, 0);
 
 				if (item != LB_ERR)
-					ShowWindow(handles[item], wParam == IDC_WINDOWLISTBOX_BUTTON_HIDE ?
+					ShowWindow(wl.handles[item], wParam == IDC_WINDOWLISTBOX_BUTTON_HIDE ?
 												SW_HIDE : SW_SHOWNOACTIVATE);
 
-				refresh_listbox(listbox, &nwindows, &handles);
+				refresh_listbox(listbox, &wl);
 				SendMessage(listbox, (UINT)LB_SETCURSEL, item, 0);
 				SendMessage(hwnd, WM_COMMAND, MAKEWPARAM(0, LBN_SELCHANGE), (LPARAM)listbox);
 			};
 			break;
 		case IDC_WINDOWLISTBOX_BUTTON_KILL:
-			if (handles) {
+			if (wl.handles) {
 				int item;
 				item = SendMessage(listbox, (UINT)LB_GETCURSEL, 0, 0);
 
 				if (item != LB_ERR) {
-					SetForegroundWindow(handles[item]);
-					SetActiveWindow(handles[item]);
-					SendMessage(handles[item], WM_CLOSE, 0, 0);
-					if (!IsWindow(handles[item])) {
+					SetForegroundWindow(wl.handles[item]);
+					SetActiveWindow(wl.handles[item]);
+					SendMessage(wl.handles[item], WM_CLOSE, 0, 0);
+					if (!IsWindow(wl.handles[item])) {
 						int j;
 
-						refresh_listbox(listbox, &nwindows, &handles);
+						refresh_listbox(listbox, &wl);
 						j = SendMessage(listbox, (UINT)LB_GETCOUNT, 0, 0);
 						if (item > (j - 1))
 							item = j - 1;
@@ -249,11 +244,11 @@ static int CALLBACK WindowListBoxProc(HWND hwnd, UINT msg,
 			};
 			break;
 		case IDCANCEL:
-			if (handles) {
-				free(handles);
-				handles = NULL;
+			if (wl.handles) {
+				free(wl.handles);
+				wl.handles = NULL;
+				wl.nhandles = 0;
 			};
-			nwindows = 0;
 			EndDialog(hwnd, 0);
 			
 			return FALSE;

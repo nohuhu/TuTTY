@@ -47,8 +47,8 @@ extern const char * const LIMIT_SEARCHFOR_STRINGS[];
 extern const char * const LIMIT_ACTION_STRINGS[];
 
 #define	AUTORUN_WHEN_START			0
-#define	AUTORUN_WHEN_QUIT			1
-#define	AUTORUN_WHEN_SHUTDOWN		2
+#define	AUTORUN_WHEN_NETWORKSTART	1
+#define	AUTORUN_WHEN_QUIT			2
 #define	AUTORUN_WHEN_MAX			3
 
 extern const char * const AUTORUN_WHEN_STRINGS[];

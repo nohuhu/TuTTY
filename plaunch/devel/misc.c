@@ -32,8 +32,8 @@ int GetSystemImageLists(HMODULE hShell32, HIMAGELIST *phLarge, HIMAGELIST *phSma
     };
 
     // Initialize imagelist for this process - function not present on win95/98
-//    if (FileIconInit != 0)
-//		FileIconInit(TRUE);
+    if (FileIconInit != 0)
+		FileIconInit(TRUE);
 
     // Get handles to the large+small system image lists!
     Shell_GetImageLists(phLarge, phSmall);
@@ -252,6 +252,51 @@ static int menu_callback(char *name, char *path,
 HMENU menu_addsession(HMENU menu, char *root) {
 	reg_walk_over_tree(root, menu_callback, menu, NULL, NULL);
 
+	if (GetMenuItemCount(menu) == 0)
+		AppendMenu(menu, MF_STRING | MF_GRAYED, IDM_EMPTY, "(No saved sessions)");
+
+	return menu;
+};
+
+extern BOOL CALLBACK CountPuTTYWindows(HWND hwnd, LPARAM lParam);
+extern BOOL CALLBACK EnumPuTTYWindows(HWND hwnd, LPARAM lParam);
+extern unsigned int nhandles;
+
+HMENU menu_addrunning(HMENU menu) {
+	unsigned int i;
+	struct windowlist wl;
+	char buf[BUFSIZE], buf2[BUFSIZE], h;
+
+	if (!menu)
+		return menu;
+
+	memset(&wl, 0, sizeof(struct windowlist));
+
+	EnumWindows(CountPuTTYWindows, (LPARAM)&wl.nhandles);
+
+	if (!wl.nhandles) {
+		AppendMenu(menu, MF_STRING | MF_GRAYED, IDM_EMPTY, "(No running sessions)");
+		return menu;
+	};
+
+	wl.handles = (HWND *)malloc(wl.nhandles * sizeof(HWND));
+
+	EnumWindows(EnumPuTTYWindows, (LPARAM)&wl);
+
+	for (i = 0; i < wl.nhandles; i++) {
+		if (wl.handles[i]) {
+			if (IsWindowVisible(wl.handles[i]))
+				h = 'v';
+			else
+				h = 'h';
+			GetWindowText(wl.handles[i], buf, BUFSIZE);
+			sprintf(buf2, "[%c] %s", h, buf);
+			AppendMenu(menu, MF_STRING, IDM_RUNNING_BASE + (UINT)wl.handles[i], buf2);
+		};
+	};
+
+	free(wl.handles);
+
 	return menu;
 };
 
@@ -287,7 +332,23 @@ HMENU menu_refresh(HMENU menu, char *root) {
 	AppendMenu(m, MF_ENABLED, IDM_ABOUT, "&About...");
 
 	menu_free(menu);
-	menu = menu_addsession(menu, root);
+	if (config->options & OPTION_MENUSESSIONS) {
+		HMENU sessions;
+
+		sessions = CreatePopupMenu();
+		sessions = menu_addsession(sessions, root);
+		AppendMenu(menu, MF_POPUP, (UINT)sessions, "&Saved sessions");
+	} else
+		menu = menu_addsession(menu, root);
+	AppendMenu(menu, MF_SEPARATOR, 0, 0);
+	if (config->options & OPTION_MENURUNNING) {
+		HMENU running;
+
+		running = CreatePopupMenu();
+		running = menu_addrunning(running);
+		AppendMenu(menu, MF_POPUP, (UINT)running, "&Running sessions");
+	} else
+		menu = menu_addrunning(menu);
 	AppendMenu(menu, MF_SEPARATOR, 0, 0);
 	AppendMenu(menu, MF_POPUP, (UINT)m, "&More");
 #ifdef WINDOWS_NT351_COMPATIBLE
@@ -354,6 +415,64 @@ static int extract_hotkeys(struct _config *cfg, char *root) {
 	return TRUE;
 };
 
+static int launching_callback(char *name, char *path, int isfolder, int mode,
+							  void *priv1, void *priv2, void *priv3) {
+	char buf[BUFSIZE];
+	HWND pwin;
+	int i, when = (int)priv2;
+
+	if (mode == REG_MODE_POSTPROCESS)
+		return 0;
+
+	reg_make_path(NULL, path, buf);
+	reg_read_i(buf, PLAUNCH_AUTORUN_ENABLE, 0, &i);
+
+	if (!i)
+		return 0;
+
+	reg_read_i(buf, PLAUNCH_AUTORUN_WHEN, 0, &i);
+
+	if (i != when)
+		return 0;
+
+	pwin = launch_putty(0, path);
+
+	if (!pwin)
+		return 0;
+
+	reg_read_i(buf, PLAUNCH_AUTORUN_ACTION, 0, &i);
+
+	if (!i)
+		return 0;
+
+	switch (i) {
+	case AUTORUN_ACTION_HIDE:
+		ShowWindow(pwin, SW_HIDE);
+		break;
+	case AUTORUN_ACTION_SHOW:
+		ShowWindow(pwin, SW_SHOWNORMAL);
+		SetForegroundWindow(pwin);
+		break;
+	case AUTORUN_ACTION_MINIMIZE:
+		ShowWindow(pwin, SW_MINIMIZE);
+		break;
+	case AUTORUN_ACTION_MAXIMIZE:
+		ShowWindow(pwin, SW_MAXIMIZE);
+		break;
+	case AUTORUN_ACTION_CENTER:
+		center_window(pwin);
+		break;
+	};
+
+	return 0;
+};
+
+int launch_autoruns(char *root, int when) {
+	reg_walk_over_tree(root, launching_callback, NULL, (void *)when, NULL);
+
+	return TRUE;
+};
+
 unsigned int is_folder(char *name) {
 	char buf[BUFSIZE];
 	int isfolder;
@@ -399,15 +518,35 @@ unsigned int read_config(struct _config *cfg) {
 	config->hotkeys[config->nhotkeys].destination = (char *)WM_WINDOWLIST;
 	config->nhotkeys++;
 
-	if (reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLEDRAGDROP, TRUE, &hk) && hk)
-		config->options |= OPTION_ENABLEDRAGDROP;
-	else
-		config->options &= !OPTION_ENABLEDRAGDROP;
+	reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_HIDEWINDOW, 0, &hk);
 
-	if (reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLESAVECURSOR, TRUE, &hk) && hk)
+//	if (hk == 0)
+//		hk = MAKELPARAM(MOD_WIN, 'H');
+
+	config->hotkeys[config->nhotkeys].action = HOTKEY_ACTION_MESSAGE;
+	config->hotkeys[config->nhotkeys].hotkey = hk;
+	config->hotkeys[config->nhotkeys].destination = (char *)WM_HIDEWINDOW;
+	config->nhotkeys++;
+
+	reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLEDRAGDROP, TRUE, &hk);
+	if (hk)
+		config->options |= OPTION_ENABLEDRAGDROP;
+
+	reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLESAVECURSOR, TRUE, &hk);
+	if (hk)
 		config->options |= OPTION_ENABLESAVECURSOR;
-	else
-		config->options &= !OPTION_ENABLESAVECURSOR;
+
+	reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_SHOWONQUIT, TRUE, &hk);
+	if (hk)
+		config->options |= OPTION_SHOWONQUIT;
+
+	reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_MENUSESSIONS, FALSE, &hk);
+	if (hk)
+		config->options |= OPTION_MENUSESSIONS;
+
+	reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_MENURUNNING, FALSE, &hk);
+	if (hk)
+		config->options |= OPTION_MENURUNNING;
 
 	extract_hotkeys(cfg, "");
 
@@ -442,6 +581,14 @@ unsigned int save_config(struct _config *cfg, int what) {
 			reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_WL, config->hotkeys[1].hotkey);
 	};
 
+	if (what & CFG_SAVE_HOTKEY_HIDEWINDOW) {
+		if (config->hotkeys[2].hotkey == 0)
+			reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_HIDEWINDOW);
+		else
+			reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_HIDEWINDOW, 
+						config->hotkeys[2].hotkey);
+	};
+
 	if (what & CFG_SAVE_DRAGDROP) {
 		if (config->options & OPTION_ENABLEDRAGDROP)
 			reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLEDRAGDROP);
@@ -454,6 +601,27 @@ unsigned int save_config(struct _config *cfg, int what) {
 			reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLESAVECURSOR);
 		else
 			reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLESAVECURSOR, 0);
+	};
+
+	if (what & CFG_SAVE_SHOWONQUIT) {
+		if (config->options & OPTION_SHOWONQUIT)
+			reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_SHOWONQUIT);
+		else
+			reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_SHOWONQUIT, 0);
+	};
+
+	if (what & CFG_SAVE_MENUSESSIONS) {
+		if (config->options & OPTION_MENUSESSIONS)
+			reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_MENUSESSIONS, 1);
+		else
+			reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_MENUSESSIONS);
+	};
+
+	if (what & CFG_SAVE_MENURUNNING) {
+		if (config->options & OPTION_MENURUNNING)
+			reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_MENURUNNING, 1);
+		else
+			reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_MENURUNNING);
 	};
 
 	return TRUE;
@@ -480,4 +648,242 @@ void center_window(HWND window) {
 		rp.left + (r.right / 2),
 		rp.top + (r.bottom / 2),
 		0, 0, SWP_NOSIZE);
+};
+
+void item_insert(void **array, int *anum, void *item) {
+	DWORD *ar = (DWORD *)*array, *tmp;
+
+	if (ar == NULL) {
+		ar = (DWORD *)malloc(sizeof(DWORD));
+		ar[0] = (DWORD)item;
+		*array = ar;
+		*anum = 1;
+		return;
+    };
+
+    tmp = (DWORD *)malloc((*anum + 1) * sizeof(DWORD));
+    memmove(tmp, ar, *anum * sizeof(DWORD));
+    tmp[*anum] = (DWORD)item;
+    (*anum)++;
+    free(ar);
+	*array = tmp;
+
+    return;
+};
+
+int item_find(void *array, int anum, void *item) {
+	DWORD *ar = (DWORD *)array;
+	int i;
+
+	if (!array || !item)
+		return -1;
+
+	for (i = 0; i < anum; i++) {
+		if (ar[i] == (DWORD)item)
+			return i;
+	};
+
+	return -1;
+};
+
+void item_remove(void **array, int *anum, void *item) {
+	int i, j, pos;
+	DWORD *ar = (DWORD *)*array, *tmp, *tmp2, *tmp3;
+
+	j = *anum;
+
+	if (!*array || !j || !item)
+		return;
+
+	pos = -1;
+	for (i = 0; i < j; i++) {
+		if (ar[i] == (DWORD)item) {
+			pos = i;
+			break;
+		};
+	};
+
+	if (pos < 0)
+		return;
+
+	j--;
+	tmp = (DWORD *)malloc(j * sizeof(DWORD));
+
+	if (pos == j) {
+		if (j)
+			memmove(tmp, ar, j * sizeof(DWORD));
+		else
+			tmp = NULL;
+	} else if (pos == 0) {
+		tmp2 = ar + 1;
+		memmove(tmp, tmp2, j * sizeof(DWORD));
+	} else {
+		memmove(tmp, ar, pos * sizeof(DWORD));
+		tmp2 = tmp + pos;
+		tmp3 = ar + pos + 1;
+		memmove(tmp2, tmp3, (j - pos) * sizeof(DWORD));
+	};
+
+	free(ar);
+	*array = tmp;
+	*anum = j;
+
+	return;
+};
+
+static BOOL CALLBACK FindPuttyWindowCallback(HWND hwnd, LPARAM lParam) {
+	char classname[BUFSIZE];
+
+	if (GetClassName(hwnd, classname, BUFSIZE) &&
+		(strcmp(classname, PUTTY) == 0 ||
+		strcmp(classname, PUTTYTEL) == 0)) {
+			*((HWND *)lParam) = hwnd;
+			return TRUE;
+	};
+
+	return FALSE;
+};
+
+unsigned int nprocesses = 0;
+HANDLE *process_handles = NULL;
+struct process_record **process_records = NULL;
+
+#define	LAUNCH_TIMEOUT	10000
+
+HWND launch_putty(int action, char *path) {
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+	DWORD wait;
+	HWND pwin;
+	struct process_record *pr;
+	char buf[BUFSIZE];
+
+	memset(&si, 0, sizeof(STARTUPINFO));
+	si.cb = sizeof(STARTUPINFO);
+
+	memset(&pi, 0, sizeof(PROCESS_INFORMATION));
+
+	sprintf(buf, "%s -%s \"%s\"", config->putty_path, 
+			action ? "edit" : "load", path);
+
+	if (!CreateProcess(config->putty_path, buf, NULL, NULL, 
+						FALSE, 0, NULL, NULL, &si, &pi))
+		return NULL;
+
+	wait = WaitForInputIdle(pi.hProcess, LAUNCH_TIMEOUT);
+
+	if (wait != 0) {
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+		return NULL;
+	};
+
+	CloseHandle(pi.hThread);
+
+	pwin = NULL;
+	EnumThreadWindows(pi.dwThreadId, FindPuttyWindowCallback, (LPARAM)&pwin);
+
+	if (!pwin) {
+		CloseHandle(pi.hProcess);
+		return NULL;
+	};
+
+	pr = (struct process_record *)malloc(sizeof(struct process_record));
+	pr->pid = pi.dwProcessId;
+	pr->tid = pi.dwThreadId;
+	pr->hprocess = pi.hProcess;
+	pr->window = pwin;
+	pr->path = dupstr(path);
+
+	item_insert((void *)&process_handles, &nprocesses, pi.hProcess);
+	nprocesses -= 1;
+	item_insert((void *)&process_records, &nprocesses, pr);
+
+	return pwin;
+};
+
+void free_process_records(void) {
+	unsigned int i;
+
+	if (!process_handles)
+		free(process_handles);
+
+	if (!process_records) {
+		for (i = 0; i < nprocesses; i++) {
+			if (process_records[i]->path)
+				free(process_records[i]->path);
+			free(process_records[i]);
+		};
+		free(process_records);
+	};
+};
+
+int enum_process_records(void **array, int nrecords, char *path) {
+	struct process_record **records =
+		(struct process_record **)array;
+	int i, count = 0;
+
+	for (i = 0; i < nrecords; i++) {
+		if (!strcmp(records[i]->path, path))
+			count++;
+	};
+
+	return count;
+};
+
+void *get_nth_process_record(void **array, int nrecords, char *path, int n) {
+	struct process_record **records =
+		(struct process_record **)array;
+	int i, count = 0;
+
+	if (n == 0) {
+		for (i = nrecords - 1; i >= 0; i--) {
+			if (!strcmp(records[i]->path, path))
+				return records[i];
+		};
+	} else {
+		for (i = 0; i < nrecords; i++) {
+			if (!strcmp(records[i]->path, path)) {
+				count++;
+
+				if (count == n)
+					return records[i];
+			};
+		};
+	};
+
+	return NULL;
+};
+
+void *get_process_record_by_window(void **array, int nrecords, HWND window) {
+	struct process_record **records =
+		(struct process_record **)array;
+	struct process_record *pr;
+	int i;
+
+	for (i = 0; i < nrecords; i++) {
+		pr = records[i];
+		if (pr && (pr->window == window))
+			return pr;
+	};
+
+	return NULL;
+};
+
+int small_atoi(char *a) {
+	char *orig;
+	int number = 0;
+
+	orig = a;
+
+	while (*a) {
+		number *= 10;
+		number += ((unsigned char)*a - 0x30);
+		*a++;
+	};
+
+	if (*orig == '-')
+		number = -number;
+
+	return number;
 };
