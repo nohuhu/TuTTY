@@ -1,21 +1,11 @@
+#include <stdio.h>
+#include "entry.h"
 #include "plaunch.h"
-#include "dlgtmpl.h"
 #include "misc.h"
 #include "hotkey.h"
 #include "registry.h"
-
-#define ID_LAUNCHBOX_TREEVIEW_STATIC		100
-#define ID_LAUNCHBOX_TREEVIEW_GROUPBOX		101
-#define ID_LAUNCHBOX_NEW_FOLDER				102
-#define ID_LAUNCHBOX_NEW_SESSION			103
-#define ID_LAUNCHBOX_EDIT					104
-#define ID_LAUNCHBOX_RENAME					105
-#define ID_LAUNCHBOX_DELETE					106
-#define ID_LAUNCHBOX_LAUNCH_HOTKEY_STATIC	107
-#define ID_LAUNCHBOX_LAUNCH_HOTKEY_EDITBOX	108
-#define	ID_LAUNCHBOX_EDIT_HOTKEY_STATIC		109
-#define ID_LAUNCHBOX_EDIT_HOTKEY_EDITBOX	110
-#define ID_LAUNCHBOX_HOTKEY_BUTTON_SET		111
+#include "resource.h"
+#include "dlgtmpl.h"
 
 #define IDM_CTXM_COPY						0x0100
 #define IDM_CTXM_CUT						0x0101
@@ -34,40 +24,35 @@
  * Launch Box: tree view compare function.
  */
 
-int CALLBACK treeview_compare(LPARAM p1, LPARAM p2, LPARAM sort) {
-	int ret;
-	char *item1, *item2;
+static int CALLBACK treeview_compare(LPARAM p1, LPARAM p2, LPARAM sort) {
+	char item1[BUFSIZE], item2[BUFSIZE];
 
-	item1 = treeview_getitemname((HWND)sort, (HTREEITEM)p1);
-	item2 = treeview_getitemname((HWND)sort, (HTREEITEM)p2);
+	treeview_getitemname((HWND)sort, (HTREEITEM)p1, item1, BUFSIZE);
+	treeview_getitemname((HWND)sort, (HTREEITEM)p2, item2, BUFSIZE);
 
-	ret = sessioncmp(item1, item2);
-
-	free(item1);
-	free(item2);
-
-	return ret;
+	return sessioncmp(item1, item2);
 };
 
 /*
  * Launch Box: a helper subroutine that finds unused name for the item
  */
 
-char *treeview_find_unused_name(HWND treeview, HTREEITEM parent, char *name) {
+static unsigned int treeview_find_unused_name(HWND treeview, HTREEITEM parent, 
+											  char *name, char *buf) {
 	TVITEM tvi;
 	HTREEITEM child;
-	char *oname, *cname, *ret;
-	int i = 0;
+	char oname[BUFSIZE], cname[BUFSIZE];
+	unsigned int i = 0;
 
-	if (!name)
-		return NULL;
+	if (!name || name[0] == '\0')
+		return FALSE;
 
-	if (!parent || !TreeView_GetCount(treeview))
-		return dupstr(name);
+	if (!parent || !TreeView_GetCount(treeview)) {
+		strcpy(buf, name);
+		return TRUE;
+	};
 
-	oname = (char *)malloc(BUFSIZE);
 	strcpy(oname, name);
-	cname = (char *)malloc(BUFSIZE);
 	child = TreeView_GetChild(treeview, parent);
 	while (child) {
 		memset(cname, 0, BUFSIZE);
@@ -88,10 +73,9 @@ char *treeview_find_unused_name(HWND treeview, HTREEITEM parent, char *name) {
 			child = TreeView_GetNextSibling(treeview, child);
 	};
 
-	free(cname);
-	ret = dupstr(oname);
-	free(oname);
-	return ret;
+	strcpy(buf, oname);
+
+	return TRUE;
 };
 
 /*
@@ -99,13 +83,19 @@ char *treeview_find_unused_name(HWND treeview, HTREEITEM parent, char *name) {
  */
 static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 								  WPARAM wParam, LPARAM lParam) {
-	static HWND treeview = NULL, launchhotkey = NULL, edithotkey = NULL;
+	static POINT bigpt = {0}, smallpt = {0};
+	static HWND treeview = NULL, hotkey_combo = NULL, hotkey_edit = NULL,
+		limit_checkbox = NULL, limit_edit = NULL, limit_searchfor = NULL,
+		limit_action1 = NULL, limit_action2 = NULL, autorun_checkbox = NULL,
+		autorun_when = NULL, autorun_action = NULL;
 	static HMENU context_menu = NULL;
 	static unsigned int cut_or_copy = 0;
+	static unsigned int morestate;
 	static HTREEITEM editing_now = NULL;
 	static HTREEITEM copying_now = NULL;
 	static HTREEITEM dragging_now = NULL;
 	static HIMAGELIST draglist = NULL;
+	int i, j;
 
 	switch (msg) {
 	case WM_INITDIALOG:
@@ -115,13 +105,50 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 #endif /* WINDOWS_NT351_COMPATIBLE */
 
 		hwnd_launchbox = hwnd;
-		SendMessage(hwnd, WM_SETICON, (WPARAM)ICON_BIG,
-					(LPARAM)LoadIcon(config->hinst, MAKEINTRESOURCE(IDI_MAINICON)));
+		SendMessage(hwnd, WM_SETICON, (WPARAM)ICON_BIG, (LPARAM)config->main_icon);
 
-		launchhotkey = GetDlgItem(hwnd, ID_LAUNCHBOX_LAUNCH_HOTKEY_EDITBOX);
-		make_hotkey(launchhotkey, 0);
-		edithotkey = GetDlgItem(hwnd, ID_LAUNCHBOX_EDIT_HOTKEY_EDITBOX);
-		make_hotkey(edithotkey, 0);
+		hotkey_combo = GetDlgItem(hwnd, IDC_LAUNCHBOX_COMBOBOX_HOTKEY);
+
+		SendMessage(hotkey_combo, CB_RESETCONTENT, 0, 0);
+		for (i = 2; i <= HOTKEY_MAX_ACTION; i++) {
+			j = SendMessage(hotkey_combo, CB_ADDSTRING, 0, (LPARAM)HOTKEY_STRINGS[i]);
+			SendMessage(hotkey_combo, CB_SETITEMDATA, (WPARAM)j, (LPARAM)i);
+		};
+		SendMessage(hotkey_combo, CB_SETCURSEL, 0, 0);
+
+		hotkey_edit = GetDlgItem(hwnd, IDC_LAUNCHBOX_EDITBOX_HOTKEY);
+		make_hotkey(hotkey_edit, 0);
+
+		limit_checkbox = GetDlgItem(hwnd, IDC_LAUNCHBOX_CHECKBOX_LIMIT);
+		limit_edit = GetDlgItem(hwnd, IDC_LAUNCHBOX_EDITBOX_LIMIT1);
+		limit_searchfor = GetDlgItem(hwnd, IDC_LAUNCHBOX_COMBOBOX_LIMIT1);
+
+		limit_action1 = GetDlgItem(hwnd, IDC_LAUNCHBOX_COMBOBOX_LIMIT2);
+		SendMessage(limit_action1, CB_RESETCONTENT, 0, 0);
+
+		limit_action2 = GetDlgItem(hwnd, IDC_LAUNCHBOX_COMBOBOX_LIMIT3);
+		SendMessage(limit_action2, CB_RESETCONTENT, 0, 0);
+
+		for (i = 0; i < LIMIT_ACTION_MAX; i++) {
+			SendMessage(limit_action1, CB_ADDSTRING, 0, 
+						(LPARAM)LIMIT_ACTION_STRINGS[i]);
+			SendMessage(limit_action2, CB_ADDSTRING, 0,
+						(LPARAM)LIMIT_ACTION_STRINGS[i]);
+		};
+
+		autorun_checkbox = GetDlgItem(hwnd, IDC_LAUNCHBOX_CHECKBOX_RUN);
+
+		autorun_when = GetDlgItem(hwnd, IDC_LAUNCHBOX_COMBOBOX_RUN1);
+		SendMessage(autorun_when, CB_RESETCONTENT, 0, 0);
+		for (i = 0; i < AUTORUN_WHEN_MAX; i++)
+			SendMessage(autorun_when, CB_ADDSTRING, 0,
+						(LPARAM)AUTORUN_WHEN_STRINGS[i]);
+
+		autorun_action = GetDlgItem(hwnd, IDC_LAUNCHBOX_COMBOBOX_RUN2);
+		SendMessage(autorun_action, CB_RESETCONTENT, 0, 0);
+		for (i = 0; i < AUTORUN_ACTION_MAX; i++)
+			SendMessage(autorun_action, CB_ADDSTRING, 0,
+						(LPARAM)AUTORUN_ACTION_STRINGS[i]);
 
 		/*
 		 * Create the tree view.
@@ -131,7 +158,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			POINT pt;
 			WPARAM font;
 
-			GetWindowRect(GetDlgItem(hwnd, ID_LAUNCHBOX_TREEVIEW_GROUPBOX), &r);
+			GetWindowRect(GetDlgItem(hwnd, IDC_LAUNCHBOX_GROUPBOX_TREEVIEW), &r);
 			pt.x = r.left;
 			pt.y = r.top;
 			ScreenToClient(hwnd, &pt);
@@ -179,11 +206,9 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		SendMessage(hwnd, WM_REFRESHTV, 0, 0);
 
 		if (config->options & OPTION_ENABLESAVECURSOR) {
-			char *curpos;
+			char curpos[BUFSIZE];
 
-			curpos = reg_read_s(PLAUNCH_REGISTRY_ROOT, PLAUNCH_SAVEDCURSORPOS, NULL);
-
-			if (curpos) {
+			if (reg_read_s(PLAUNCH_REGISTRY_ROOT, PLAUNCH_SAVEDCURSORPOS, NULL, curpos, BUFSIZE)) {
 				HTREEITEM pos;
 
 				pos = treeview_getitemfrompath(treeview, curpos);
@@ -193,11 +218,27 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 					TreeView_SelectItem(treeview, pos);
 				};
 			};
-
-			free(curpos);
 		};
 
 		SendMessage(hwnd, WM_REFRESHBUTTONS, 0, 0);
+
+		{
+			RECT r1, r2;
+			int i;
+
+			GetWindowRect(hwnd, &r1);
+			bigpt.x = r1.right - r1.left;
+			bigpt.y = r1.bottom - r1.top;
+			GetWindowRect(GetDlgItem(hwnd, IDC_LAUNCHBOX_STATIC_DIVIDER), &r2);
+			smallpt.x = bigpt.x;
+			smallpt.y = r2.top - r1.top;
+			morestate = 1;
+			reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_SAVEMOREBUTTON, 0, &i);
+			if (!i) {
+				SendMessage(hwnd, WM_COMMAND, IDC_LAUNCHBOX_BUTTON_MORE, 0);
+				center_window(hwnd);
+			};
+		}
 
 		SetForegroundWindow(hwnd);
 		SetActiveWindow(hwnd);
@@ -205,8 +246,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 
 		return FALSE;
 	case WM_DESTROY:
-		unmake_hotkey(launchhotkey);
-		unmake_hotkey(edithotkey);
+		unmake_hotkey(hotkey_edit);
 
 		return FALSE;
 	case WM_REFRESHTV:
@@ -221,55 +261,135 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		break;
 	case WM_REFRESHBUTTONS:
 		/*
-		 * Refresh the dialog's push button and context menu items state.
+		 * Refresh the dialog's push buttons and context menu items state.
 		 */
 		{
 			HTREEITEM item;
-			char *name, *path, *buf;
-			unsigned int isfolder, flag, boolean, ehotkey, lhotkey;
+			char buf2[10], name[BUFSIZE], path[BUFSIZE], buf[BUFSIZE];
+			unsigned int isfolder, flag, flag2, boolean, htype, hotkey;
 
 			item = (HTREEITEM)lParam;
 
 			if (!item && TreeView_GetCount(treeview))
 				item = TreeView_GetSelection(treeview);
 
-			name = treeview_getitemname(treeview, item);
-			path = treeview_getitempath(treeview, item);
+			memset(name, 0, BUFSIZE);
+			memset(path, 0, BUFSIZE);
+
+			treeview_getitemname(treeview, item, name, BUFSIZE);
+			treeview_getitempath(treeview, item, path);
 			isfolder = is_folder(path);
+			reg_make_path(NULL, path, buf);
+			htype = SendMessage(hotkey_combo, CB_GETCURSEL, 0, 0);
+			htype = SendMessage(hotkey_combo, CB_GETITEMDATA, (WPARAM)htype, 0);
+			sprintf(buf2, "%s%d", HOTKEY, htype);
+			reg_read_i(buf, buf2, 0, &hotkey);
 
 			if (!name || !strcmp(name, DEFAULTSETTINGS)) {
 				boolean = FALSE;
 				flag = MF_GRAYED;
-				lhotkey = 0;
-				ehotkey = 0;
-				isfolder = 1;
 			} else {
 				boolean = TRUE;
 				flag = MF_ENABLED;
-				buf = reg_make_path(NULL, path);
-				lhotkey = reg_read_i(buf, HOTKEY "0", 0);
-				ehotkey = reg_read_i(buf, HOTKEY "1", 0);
-				free(buf);
 			};
 
-			free(path);
-			free(name);
-
-			set_hotkey(launchhotkey, lhotkey);
-			set_hotkey(edithotkey, ehotkey);
-			EnableWindow(GetDlgItem(hwnd, ID_LAUNCHBOX_DELETE), boolean);
-			EnableWindow(GetDlgItem(hwnd, ID_LAUNCHBOX_RENAME), boolean);
-			EnableWindow(launchhotkey, boolean && !isfolder);
-			EnableWindow(edithotkey, boolean && !isfolder);
-			EnableWindow(GetDlgItem(hwnd, ID_LAUNCHBOX_HOTKEY_BUTTON_SET), FALSE);
-			EnableWindow(GetDlgItem(hwnd, ID_LAUNCHBOX_EDIT), !isfolder);
+			set_hotkey(hotkey_edit, hotkey);
+			EnableWindow(hotkey_combo, boolean && !isfolder);
+			EnableWindow(hotkey_edit, boolean && !isfolder);
+			EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_HOTKEY), FALSE);
+			EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_EDIT), !isfolder);
 			EnableWindow(GetDlgItem(hwnd, IDOK), !isfolder);
 
 			if (!cut_or_copy) {
+				flag = MF_ENABLED;
+				flag2 = MF_GRAYED;
+				boolean = FALSE;
 				EnableMenuItem(context_menu, IDM_CTXM_COPY, flag);
 				EnableMenuItem(context_menu, IDM_CTXM_CUT, flag);
-				EnableMenuItem(context_menu, IDM_CTXM_DELETE, flag);
-				EnableMenuItem(context_menu, IDM_CTXM_RENAME, flag);
+				ModifyMenu(context_menu, IDM_CTXM_CANCEL, MF_STRING | MF_BYCOMMAND,
+							IDM_CTXM_UNDO, "Undo");
+			} else {
+				flag = MF_GRAYED;
+				flag2 = MF_ENABLED;
+				boolean = FALSE;
+				ModifyMenu(context_menu, IDM_CTXM_UNDO, MF_STRING | MF_BYCOMMAND,
+							IDM_CTXM_CANCEL, 
+							(cut_or_copy == 1 ?
+							"Cancel Cut" :
+							"Cancel Copy"));
+			};
+
+			EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_DELETE), boolean);
+			EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_RENAME), boolean);
+			EnableMenuItem(context_menu, IDM_CTXM_CUT, flag);
+			EnableMenuItem(context_menu, IDM_CTXM_COPY, flag);
+			EnableMenuItem(context_menu, IDM_CTXM_PASTE, flag2);
+			EnableMenuItem(context_menu, IDM_CTXM_DELETE, flag2);
+			EnableMenuItem(context_menu, IDM_CTXM_RENAME, flag2);
+
+			if (morestate) {
+				int i, tmp, limit = 0, autorun = 0;
+
+				reg_read_i(buf, PLAUNCH_LIMIT_ENABLE, 0, &limit);
+
+				if (limit) {
+					CheckDlgButton(hwnd, IDC_LAUNCHBOX_CHECKBOX_LIMIT, BST_CHECKED);
+
+					EnableWindow(limit_edit, TRUE);
+					reg_read_i(buf, PLAUNCH_LIMIT_NUMBER, 0, &tmp);
+					sprintf(buf2, "%d", tmp);
+					SetWindowText(limit_edit, buf2);
+
+					EnableWindow(limit_searchfor, TRUE);
+					SendMessage(limit_searchfor, CB_RESETCONTENT, 0, 0);
+					for (i = 0; i < tmp + 1; i++) {
+						if (i < LIMIT_SEARCHFOR_UMPTEENTH) {
+							SendMessage(limit_searchfor, CB_ADDSTRING, 0,
+										(LPARAM)LIMIT_SEARCHFOR_STRINGS[i]);
+						} else {
+							sprintf(buf2, 
+								LIMIT_SEARCHFOR_STRINGS[LIMIT_SEARCHFOR_UMPTEENTH],
+								i);
+							SendMessage(limit_searchfor, CB_ADDSTRING, 0, (LPARAM)buf2);
+						};
+					};
+
+					EnableWindow(limit_action1, TRUE);
+					reg_read_i(buf, PLAUNCH_LIMIT_ACTION1, 0, &tmp);
+					SendMessage(limit_action1, CB_SETCURSEL, (WPARAM)tmp, 0);
+
+					if (tmp) {
+						EnableWindow(limit_action2, TRUE);
+						reg_read_i(buf, PLAUNCH_LIMIT_ACTION2, 0, &tmp);
+						SendMessage(limit_action2, CB_SETCURSEL, (WPARAM)tmp, 0);
+					} else {
+						EnableWindow(limit_action2, FALSE);
+					};
+				} else {
+					CheckDlgButton(hwnd, IDC_LAUNCHBOX_CHECKBOX_LIMIT, BST_UNCHECKED);
+					EnableWindow(limit_edit, FALSE);
+					EnableWindow(limit_searchfor, FALSE);
+					EnableWindow(limit_action1, FALSE);
+					EnableWindow(limit_action2, FALSE);
+				};
+
+				reg_read_i(buf, PLAUNCH_AUTORUN_ENABLE, 0, &autorun);
+
+				if (autorun) {
+					CheckDlgButton(hwnd, IDC_LAUNCHBOX_CHECKBOX_RUN, BST_CHECKED);
+
+					EnableWindow(autorun_when, TRUE);
+					reg_read_i(buf, PLAUNCH_AUTORUN_WHEN, 0, &tmp);
+					SendMessage(autorun_when, CB_SETCURSEL, (WPARAM)tmp, 0);
+
+					EnableWindow(autorun_action, TRUE);
+					reg_read_i(buf, PLAUNCH_AUTORUN_ACTION, 0, &tmp);
+					SendMessage(autorun_action, CB_SETCURSEL, (WPARAM)tmp, 0);
+				} else {
+					CheckDlgButton(hwnd, IDC_LAUNCHBOX_CHECKBOX_RUN, BST_UNCHECKED);
+					EnableWindow(autorun_when, FALSE);
+					EnableWindow(autorun_action, FALSE);
+				};
 			};
 		};
 		break;
@@ -433,74 +553,95 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		switch (HIWORD(wParam)) {
 		case HK_CHANGE:
 			{
-				if ((HWND)lParam == launchhotkey || 
-					(HWND)lParam == edithotkey) {
-					EnableWindow(GetDlgItem(hwnd, ID_LAUNCHBOX_HOTKEY_BUTTON_SET), TRUE);
+				if ((HWND)lParam == hotkey_edit) {
+					EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_HOTKEY), TRUE);
 					return FALSE;
 				};
 			};
+			break;
+		case CBN_SELCHANGE:
+			if ((HWND)lParam == hotkey_combo)
+				SendMessage(hwnd, WM_REFRESHBUTTONS, 0, 0);
+			break;
 		};
 		switch (wParam) {
-		case ID_LAUNCHBOX_TREEVIEW_STATIC:
+		case IDC_LAUNCHBOX_STATIC_TREEVIEW:
 			SetFocus(treeview);
 			break;
-		case ID_LAUNCHBOX_LAUNCH_HOTKEY_STATIC:
-			SetFocus(launchhotkey);
+		case IDC_LAUNCHBOX_STATIC_HOTKEY:
+			SetFocus(hotkey_edit);
 			break;
-		case ID_LAUNCHBOX_EDIT_HOTKEY_STATIC:
-			SetFocus(edithotkey);
-			break;
-		case ID_LAUNCHBOX_HOTKEY_BUTTON_SET:
+		case IDC_LAUNCHBOX_BUTTON_MORE:
 			{
-				HTREEITEM item;
-				char *path, *buf, *valname;
-				int i, j, found, hotkey;
+				HWND divider;
 
-				item = TreeView_GetSelection(treeview);
-				path = treeview_getitempath(treeview, item);
-				buf = reg_make_path(NULL, path);
-				valname = (char *)malloc(BUFSIZE);
+				divider = GetDlgItem(hwnd, IDC_LAUNCHBOX_STATIC_DIVIDER);
 
-				for (i = 0; i < 2; i++) {
-					if (SendMessage(i == 0 ? 
-							launchhotkey :
-						edithotkey, EM_GETMODIFY, 0, 0)) {
-						hotkey = get_hotkey(i == 0 ? launchhotkey :	edithotkey);
-						sprintf(valname, "%s%d", HOTKEY, i);
-						if (hotkey)
-							reg_write_i(buf, valname, hotkey);
-						else
-							reg_delete_v(buf, valname);
-						found = FALSE;
-						for (j = 0; j < config->nhotkeys; j++) {
-							if (config->hotkeys[j].action == (i == 0 ?
-																HOTKEY_ACTION_LAUNCH :
-																HOTKEY_ACTION_EDIT) &&
-								!strcmp(config->hotkeys[j].destination, path)) {
-								found = TRUE;
-								config->hotkeys[j].hotkey = hotkey;
-								SendMessage(config->hwnd_mainwindow, WM_HOTKEYCHANGE, j, 0);
-								break;
-							};
-						};
-						if (!found) {
-							config->hotkeys[config->nhotkeys].action = (i == 0 ?
-																		HOTKEY_ACTION_LAUNCH :
-																		HOTKEY_ACTION_EDIT);
-							config->hotkeys[config->nhotkeys].hotkey = hotkey;
-							config->hotkeys[config->nhotkeys].destination = dupstr(path);
-							config->nhotkeys++;
-							SendMessage(config->hwnd_mainwindow, WM_HOTKEYCHANGE,
-										config->nhotkeys - 1, 0);
-						};
+				switch (morestate) {
+					case 0: 
+					{
+						SetWindowPos(hwnd, 0, 0, 0, bigpt.x, bigpt.y, SWP_NOMOVE | SWP_NOZORDER);
+						ShowWindow(divider, SW_SHOW);
+						SetWindowText(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_MORE),
+							"<< Less");
 					};
+					break;
+					case 1:
+					{
+						SetWindowPos(hwnd, 0, 0, 0,	smallpt.x, smallpt.y, 
+							SWP_NOMOVE | SWP_NOZORDER);
+						ShowWindow(divider, SW_HIDE);
+						SetWindowText(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_MORE),
+							"More >>");
+					};
+					break;
 				};
 
-				free(valname);
-				free(buf);
-				free(path);
+				morestate = !morestate;
+				SendMessage(hwnd, WM_REFRESHBUTTONS, 0, 0);
+			};
+			break;
+		case IDC_LAUNCHBOX_BUTTON_HOTKEY:
+			{
+				HTREEITEM item;
+				char path[BUFSIZE], buf[BUFSIZE], valname[BUFSIZE];
+				unsigned int i, found, htype, hotkey;
 
-				EnableWindow(GetDlgItem(hwnd, ID_LAUNCHBOX_HOTKEY_BUTTON_SET), FALSE);
+				item = TreeView_GetSelection(treeview);
+				treeview_getitempath(treeview, item, path);
+				reg_make_path(NULL, path, buf);
+
+				if (!SendMessage(hotkey_edit, EM_GETMODIFY, 0, 0))
+					break;
+
+				i = SendMessage(hotkey_combo, CB_GETCURSEL, 0, 0);
+				htype = SendMessage(hotkey_combo, CB_GETITEMDATA, (WPARAM)i, 0);
+				hotkey = get_hotkey(hotkey_edit);
+				sprintf(valname, "%s%d", HOTKEY, htype);
+				if (hotkey)
+					reg_write_i(buf, valname, hotkey);
+				else
+					reg_delete_v(buf, valname);
+				found = FALSE;
+				for (i = 0; i < (int)config->nhotkeys; i++) {
+					if (config->hotkeys[i].action == htype &&
+						!strcmp(config->hotkeys[i].destination, path)) {
+						found = TRUE;
+						config->hotkeys[i].hotkey = hotkey;
+						SendMessage(config->hwnd_mainwindow, WM_HOTKEYCHANGE, i, 0);
+						break;
+					};
+				};
+				if (!found) {
+					config->hotkeys[config->nhotkeys].action = htype;
+					config->hotkeys[config->nhotkeys].hotkey = hotkey;
+					config->hotkeys[config->nhotkeys].destination = dupstr(path);
+					config->nhotkeys++;
+					SendMessage(config->hwnd_mainwindow, WM_HOTKEYCHANGE,
+								config->nhotkeys - 1, 0);
+				};
+
+				EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_HOTKEY), FALSE);
 
 				return FALSE;
 			}
@@ -513,24 +654,22 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 
 				if (config->options & OPTION_ENABLESAVECURSOR) {
 					HTREEITEM item;
-					char *path;
+					char path[BUFSIZE];
 
 					item = TreeView_GetSelection(treeview);
-					path = treeview_getitempath(treeview, item);
+					treeview_getitempath(treeview, item, path);
 					reg_write_s(PLAUNCH_REGISTRY_ROOT, PLAUNCH_SAVEDCURSORPOS, path);
-					free(path);
 				};
 
 			};
-		case ID_LAUNCHBOX_EDIT:
+		case IDC_LAUNCHBOX_BUTTON_EDIT:
 			{
 				HTREEITEM item;
-				char *path, *buf;
+				char path[BUFSIZE];
 
 				item = TreeView_GetSelection(treeview);
-				path = treeview_getitempath(treeview, item);
 
-				if (!path) {
+				if (!treeview_getitempath(treeview, item, path)) {
 					EndDialog(hwnd, 0);
 					return FALSE;
 				};
@@ -540,18 +679,11 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 					return FALSE;
 				};
 
-				buf = malloc(strlen(path) + 9);
-
-				sprintf(buf, (wParam == IDOK) ? 
-								"-load \"%s\"" :
-								"-edit \"%s\"", path);
-
-				ShellExecute(hwnd, "open", config->putty_path,
-							buf, _T(""), SW_SHOWNORMAL);
-
-				free(buf);
-				free(path);
-
+				SendMessage(config->hwnd_mainwindow, WM_LAUNCHPUTTY,
+							(WPARAM)(wParam == IDOK ?
+									HOTKEY_ACTION_LAUNCH :
+									HOTKEY_ACTION_EDIT),
+							(LPARAM)path);
 				EndDialog(hwnd, 0);
 
 				return FALSE;
@@ -567,7 +699,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 
 				return FALSE;
 			};
-		case ID_LAUNCHBOX_RENAME:
+		case IDC_LAUNCHBOX_BUTTON_RENAME:
 		case IDM_CTXM_RENAME:
 			{
 				HTREEITEM item;
@@ -579,35 +711,29 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 
 				return TRUE;
 			};
-		case ID_LAUNCHBOX_DELETE:
+		case IDC_LAUNCHBOX_BUTTON_DELETE:
 		case IDM_CTXM_DELETE:
 			{
 				HTREEITEM item;
-				char *buf, *name, *path;
+				char buf[BUFSIZE], name[BUFSIZE], path[BUFSIZE], *s;
 
 				item = TreeView_GetSelection(treeview);
-				name = treeview_getitemname(treeview, item);
-				path = treeview_getitempath(treeview, item);
-
-				buf = (char *)malloc(BUFSIZE);
-
-				sprintf(buf, "Are you sure you want to delete the \"%s\"", name);
+				treeview_getitemname(treeview, item, name, BUFSIZE);
+				treeview_getitempath(treeview, item, path);
 
 				if (is_folder(path))
-					strcat(buf, " folder and all its contents?");
+					s = "folder and all its contents?";
 				else
-					strcat(buf, " session?");
+					s = "session?";
+
+				sprintf(buf, "Are you sure you want to delete the \"%s\" %s", name, s);
 
 				if (MessageBox(hwnd, buf, "Confirmation required", 
 					MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION) == IDYES) {
-					buf = reg_make_path(NULL, path);
+					reg_make_path(NULL, path, buf);
 					if (reg_delete_tree(buf))
 						TreeView_DeleteItem(treeview, item);
 				};
-
-				free(buf);
-				free(path);
-				free(name);
 
 				SendMessage(hwnd, WM_REFRESHBUTTONS, 0, 0);
 			};
@@ -623,21 +749,14 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 								1 : // cut
 								2); // copy
 
-				EnableMenuItem(context_menu, IDM_CTXM_CUT, MF_GRAYED);
-				EnableMenuItem(context_menu, IDM_CTXM_COPY, MF_GRAYED);
-				EnableMenuItem(context_menu, IDM_CTXM_PASTE, MF_ENABLED);
-
 				if (cut_or_copy == 1) {
 					memset(&item, 0, sizeof(TVITEM));
 					item.mask = TVIF_HANDLE | TVIF_STATE;
 					item.state = item.stateMask = TVIS_CUT;
 					item.hItem = copying_now;
 					TreeView_SetItem(treeview, &item);
-					ModifyMenu(context_menu, IDM_CTXM_UNDO, MF_STRING | MF_BYCOMMAND,
-								IDM_CTXM_CANCEL, "Cancel Cut");
-				} else if (cut_or_copy == 2)
-					ModifyMenu(context_menu, IDM_CTXM_UNDO, MF_STRING | MF_BYCOMMAND,
-								IDM_CTXM_CANCEL, "Cancel Copy");
+				};
+				SendMessage(hwnd, WM_REFRESHBUTTONS, 0, (LPARAM)item.hItem);
 			};
 			break;
 		case IDM_CTXM_CANCEL:
@@ -653,65 +772,61 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 					TreeView_SetItem(treeview, &item);
 				};
 
-				EnableMenuItem(context_menu, IDM_CTXM_CUT, MF_ENABLED);
-				EnableMenuItem(context_menu, IDM_CTXM_COPY, MF_ENABLED);
-				EnableMenuItem(context_menu, IDM_CTXM_PASTE, MF_GRAYED);
-				ModifyMenu(context_menu, IDM_CTXM_CANCEL, MF_STRING | MF_BYCOMMAND,
-							IDM_CTXM_UNDO, "Undo");
+				SendMessage(hwnd, WM_REFRESHBUTTONS, 0, (LPARAM)item.hItem);
 
 				copying_now = NULL;
 				cut_or_copy = 0;
 			};
 			break;
-		case ID_LAUNCHBOX_NEW_FOLDER:
+		case IDC_LAUNCHBOX_BUTTON_NEW_FOLDER:
 		case IDM_CTXM_CRTFLD:
-		case ID_LAUNCHBOX_NEW_SESSION:
+		case IDC_LAUNCHBOX_BUTTON_NEW_SESSION:
 		case IDM_CTXM_CRTSES:
 		case IDM_CTXM_PASTE:
 			{
 				TVSORTCB tscb;
 				HTREEITEM tv_parent, tv_curitem, tv_newitem, tv_copyitem;
-				char *copy_name, *copy_path, *cur_path, *parent_path, *to_name, 
-					*from_path, *to_path;
-				int isfolder, success = 0;
+				char copy_name[BUFSIZE], copy_path[BUFSIZE], cur_path[BUFSIZE], 
+					parent_path[BUFSIZE], to_name[BUFSIZE], from_path[BUFSIZE], 
+					to_path[BUFSIZE];
+				int i, isfolder, success = 0;
 
 				tv_copyitem = copying_now;
 				tv_curitem = TreeView_GetSelection(treeview);
 
 				if (tv_curitem) {
 					tv_parent = TreeView_GetParent(treeview, tv_curitem);
-					cur_path = treeview_getitempath(treeview, tv_curitem);
+					treeview_getitempath(treeview, tv_curitem, cur_path);
 				} else {
 					tv_parent = NULL;
-					cur_path = NULL;
+					cur_path[0] = '\0';
 				};
 
-				if (cur_path && is_folder(cur_path)) {
+				if (cur_path[0] && is_folder(cur_path)) {
 					tv_parent = tv_curitem;
-					parent_path = dupstr(cur_path);
+					strcpy(parent_path, cur_path);
 				} else if (tv_parent) {
 					tv_parent = tv_parent;
-					parent_path = treeview_getitempath(treeview, tv_parent);
+					treeview_getitempath(treeview, tv_parent, parent_path);
 				} else {
 					tv_parent = TVI_ROOT;
-					parent_path = NULL;
+					parent_path[0] = '\0';
 				};
 
 				if (cut_or_copy) {
-					copy_name = treeview_getitemname(treeview, tv_copyitem);
-					copy_path = treeview_getitempath(treeview, tv_copyitem);
+					treeview_getitemname(treeview, tv_copyitem, copy_name, BUFSIZE);
+					treeview_getitempath(treeview, tv_copyitem, copy_path);
 					isfolder = is_folder(copy_path);
-					from_path = reg_make_path(NULL, copy_path);
+					reg_make_path(NULL, copy_path, from_path);
 				} else {
-					isfolder = (wParam == ID_LAUNCHBOX_NEW_FOLDER ||
+					isfolder = (wParam == IDC_LAUNCHBOX_BUTTON_NEW_FOLDER ||
 								wParam == IDM_CTXM_CRTFLD) ? 1 : 0;
-					copy_name = dupstr(isfolder ? NEWFOLDER : NEWSESSION);
-					copy_path = NULL;
-					from_path = NULL;
+					strcpy(copy_name, isfolder ? NEWFOLDER : NEWSESSION);
+					copy_path[0] = '\0';
 				};
 
-				to_name = treeview_find_unused_name(treeview, tv_parent, copy_name);
-				to_path = reg_make_path(parent_path, to_name);
+				treeview_find_unused_name(treeview, tv_parent, copy_name, to_name);
+				reg_make_path(parent_path, to_name, to_path);
 
 				switch (cut_or_copy) {
 				case 0: // insert new session/folder
@@ -725,12 +840,6 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 					break;
 				};
 
-				free(from_path);
-				free(parent_path);
-				free(cur_path);
-				free(copy_name);
-				free(copy_path);
-
 				if (success) {
 					tv_newitem = treeview_additem(treeview, tv_parent, config,
 						to_name, isfolder);
@@ -738,8 +847,11 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 						treeview_addtree(treeview, tv_newitem, to_path);
 					else {
 						// by default, clear all hotkeys
-						reg_delete_v(to_path, HOTKEY "0");
-						reg_delete_v(to_path, HOTKEY "1");
+						for (i = 0; i < 6; i++) {
+							sprintf(copy_name, "%s%d", HOTKEY, i);
+							reg_delete_v(to_path, copy_name);
+							reg_delete_v(to_path, copy_name);
+						};
 					};
 
 					if (cut_or_copy == 1)
@@ -756,19 +868,14 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 					TreeView_SelectItem(treeview, tv_newitem);
 				};
 
-				free(to_name);
-				free(to_path);
-
 				if (cut_or_copy) {
 					copying_now = NULL;
 					cut_or_copy = 0;
-					EnableMenuItem(context_menu, IDM_CTXM_CUT, MF_ENABLED);
-					EnableMenuItem(context_menu, IDM_CTXM_COPY, MF_ENABLED);
-					EnableMenuItem(context_menu, IDM_CTXM_PASTE, MF_GRAYED);
 					ModifyMenu(context_menu, IDM_CTXM_CANCEL, MF_STRING | MF_BYCOMMAND,
 								IDM_CTXM_UNDO, (cut_or_copy == 1 ?
 												"Undo Cut" :
 												"Undo Copy"));
+					SendMessage(hwnd, WM_REFRESHBUTTONS, 0, 0);
 				};
 			};
 		};
@@ -800,8 +907,8 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 					LPNMTREEVIEW tv = (LPNMTREEVIEW)lParam;
 
 					if (tv->itemNew.cChildren) {
-						int isexpanded, wasexpanded;
-						char *path, *buf;
+						unsigned int isexpanded, wasexpanded;
+						char buf[BUFSIZE], path[BUFSIZE];
 
 						wasexpanded = (tv->itemOld.state & TVIS_EXPANDED) ? TRUE : FALSE;
 						isexpanded = (tv->itemNew.state & TVIS_EXPANDED) ? TRUE : FALSE;
@@ -814,12 +921,10 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 								config->img_closed;
 						TreeView_SetItem(treeview, &tv->itemNew);
 
-						path = treeview_getitempath(treeview, tv->itemNew.hItem);
+						treeview_getitempath(treeview, tv->itemNew.hItem, path);
 
-						buf = reg_make_path(NULL, path);
+						reg_make_path(NULL, path, buf);
 						reg_write_i(buf, ISEXPANDED, isexpanded);
-						free(buf);
-						free(path);
 					};
 				};
 				break;
@@ -833,16 +938,13 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			case TVN_BEGINLABELEDIT:
 				{
 					LPNMTVDISPINFO di = (LPNMTVDISPINFO)lParam;
-					char *name;
+					char name[BUFSIZE];
 
-					name = treeview_getitemname(treeview, di->item.hItem);
-					if (!strcmp(name, DEFAULTSETTINGS)) {
+					treeview_getitemname(treeview, di->item.hItem, name, BUFSIZE);
+					if (!strcmp(name, DEFAULTSETTINGS))
 						TreeView_EndEditLabelNow(treeview, TRUE);
-						free(name);
-					} else {
+					else
 						editing_now = di->item.hItem;
-						free(name);
-					};
 				};
 				break;
 			case TVN_ENDLABELEDIT:
@@ -852,19 +954,19 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 
 					if (di->item.pszText) {
 						HTREEITEM item, parent;
-						char *path, *parent_path, *from, *to;
+						char path[BUFSIZE], parent_path[BUFSIZE], from[BUFSIZE], to[BUFSIZE];
 
 						item = di->item.hItem;
 						parent = TreeView_GetParent(treeview, item);
 						if (parent)
-							parent_path = treeview_getitempath(treeview, parent);
+							treeview_getitempath(treeview, parent, parent_path);
 						else
-							parent_path = NULL;
+							parent_path[0] = '\0';
 
-						path = treeview_getitempath(treeview, item);
+						treeview_getitempath(treeview, item, path);
 
-						from = reg_make_path(NULL, path);
-						to = reg_make_path(parent_path, di->item.pszText);
+						reg_make_path(NULL, path, from);
+						reg_make_path(parent_path, di->item.pszText, to);
 
 						if (reg_move_tree(from, to)) {
 							TVSORTCB tscb;
@@ -872,7 +974,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 							di->item.mask = TVIF_HANDLE | TVIF_TEXT;
 							TreeView_SetItem(treeview, &di->item);
 
-							tscb.hParent = TreeView_GetParent(treeview, item);
+							tscb.hParent = parent;
 							tscb.lpfnCompare = treeview_compare;
 							tscb.lParam = (LPARAM)treeview;
 							TreeView_SortChildrenCB(treeview, &tscb, FALSE);
@@ -911,67 +1013,23 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		};
 	};
     return FALSE;
-}
+};
 
 /*
  * Launch Box: setup function.
  */
 int do_launchbox(void) {
     int ret;
-	LPDLGTEMPLATE tmpl = NULL;
-	void *ptr;
 
 	if (hwnd_launchbox) {
 		SetForegroundWindow(hwnd_launchbox);
 		return 0;
 	};
 
-	tmpl = (LPDLGTEMPLATE)GlobalAlloc(GMEM_ZEROINIT, BUFSIZE * 2);
-	ptr = dialogtemplate_create((void *)tmpl, WS_POPUP | WS_VISIBLE | WS_CAPTION |
-								WS_SYSMENU | DS_CENTER | DS_3DLOOK | DS_MODALFRAME,
-								0, 0, 242, 202, "PuTTY session manager", 14, NULL,
-								8, "MS Sans Serif");
-	ptr = dialogtemplate_addstatic(ptr, WS_CHILD | WS_VISIBLE,
-								4, 4, 75, 9, "&Sessions:",
-								ID_LAUNCHBOX_TREEVIEW_STATIC);
-	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | BS_GROUPBOX,
-								4, 17, 180, 150, NULL,
-								ID_LAUNCHBOX_TREEVIEW_GROUPBOX);
-	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
-								188, 17, 50, 14, "Open", IDOK);
-	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-								188, 34, 50, 14, "Cancel", IDCANCEL);
-	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-								188, 68, 50, 14, "New &folder", ID_LAUNCHBOX_NEW_FOLDER);
-	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-								188, 84, 50, 15, "New sessi&on", ID_LAUNCHBOX_NEW_SESSION);
-	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-								188, 100, 50, 14, "&Edit", ID_LAUNCHBOX_EDIT);
-	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-								188, 116, 50, 14, "&Rename", ID_LAUNCHBOX_RENAME);
-	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-								188, 132, 50, 14, "&Delete", ID_LAUNCHBOX_DELETE);
-	ptr = dialogtemplate_addstatic(ptr, WS_CHILD | WS_VISIBLE,
-								4, 171, 88, 9, "&Launch hotkey:", 
-								ID_LAUNCHBOX_LAUNCH_HOTKEY_STATIC);
-	ptr = dialogtemplate_addeditbox(ptr, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
-								4, 184, 88, 14, NULL, 
-								ID_LAUNCHBOX_LAUNCH_HOTKEY_EDITBOX);
-	ptr = dialogtemplate_addstatic(ptr, WS_CHILD | WS_VISIBLE,
-								96, 171, 88, 9, "Ed&it hotkey:",
-								ID_LAUNCHBOX_EDIT_HOTKEY_STATIC);
-	ptr = dialogtemplate_addeditbox(ptr, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
-								96, 184, 88, 14, NULL,
-								ID_LAUNCHBOX_EDIT_HOTKEY_EDITBOX);
-	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-								188, 184, 50, 14, "Se&t",
-								ID_LAUNCHBOX_HOTKEY_BUTTON_SET);
+	ret = DialogBox(config->hinst, MAKEINTRESOURCE(IDD_LAUNCHBOX), NULL, LaunchBoxProc);
 
-	ret = DialogBoxIndirect(config->hinst, (LPDLGTEMPLATE)tmpl, NULL, LaunchBoxProc);
-
-	GlobalFree(tmpl);
 	hwnd_launchbox = NULL;
 
     return (ret == IDOK);
-}
+};
 

@@ -1,21 +1,12 @@
 #include <windows.h>
+#include <stdio.h>
+#include "entry.h"
 #include "plaunch.h"
-#include "dlgtmpl.h"
 #include "hotkey.h"
 #include "misc.h"
 #include "registry.h"
-
-#define ID_OPTIONS_GROUPBOX			120
-#define ID_OPTIONS_PUTTYPATH_STATIC	121
-#define	ID_OPTIONS_PUTTYPATH_EDIT	122
-#define ID_OPTIONS_PUTTYPATH_BUTTON	123
-#define	ID_OPTIONS_WL_HOTKEY_STATIC	124
-#define ID_OPTIONS_WL_HOTKEY_EDIT	125
-#define ID_OPTIONS_LB_HOTKEY_STATIC	126
-#define	ID_OPTIONS_LB_HOTKEY_EDIT	127
-#define ID_OPTIONS_BUTTON_STARTUP	128
-#define ID_OPTIONS_BUTTON_DRAGDROP	129
-#define ID_OPTIONS_BUTTON_SAVECUR	130
+#include "resource.h"
+#include "dlgtmpl.h"
 
 #define PLAUNCH_AUTO_STARTUP	"Software\\Microsoft\\Windows\\CurrentVersion\\Run"
 
@@ -27,7 +18,7 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 	static HWND ppedit, ppbutton, lbedit, wledit;
 	static DWORD lb_key, wl_key;
 	int check;
-	char *buf;
+	char buf[256];
 
     switch (msg) {
     case WM_INITDIALOG:
@@ -35,31 +26,29 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 		if (!config->have_shell)
 			center_window(hwnd);
 #endif /* WINDOWS_NT351_COMPATIBLE */
+		SendMessage(hwnd, WM_SETICON, (WPARAM) ICON_BIG, (LPARAM)config->main_icon);
 
-		ppedit = GetDlgItem(hwnd, ID_OPTIONS_PUTTYPATH_EDIT);
-		ppbutton = GetDlgItem(hwnd, ID_OPTIONS_PUTTYPATH_BUTTON);
-		lbedit = GetDlgItem(hwnd, ID_OPTIONS_LB_HOTKEY_EDIT);
+		ppedit = GetDlgItem(hwnd, IDC_OPTIONSBOX_EDITBOX_PUTTYPATH);
+		ppbutton = GetDlgItem(hwnd, IDC_OPTIONSBOX_BUTTON_PUTTYPATH);
+		lbedit = GetDlgItem(hwnd, IDC_OPTIONSBOX_EDITBOX_HOTKEY_LBOX);
 		make_hotkey(lbedit, config->hotkeys[0].hotkey);
-		wledit = GetDlgItem(hwnd, ID_OPTIONS_WL_HOTKEY_EDIT);
+		wledit = GetDlgItem(hwnd, IDC_OPTIONSBOX_EDITBOX_HOTKEY_WLIST);
 		make_hotkey(wledit, config->hotkeys[1].hotkey);
 
-		buf = reg_read_s(PLAUNCH_AUTO_STARTUP, APPNAME, NULL);
-
-		if (buf) {
-			free(buf);
+		if (reg_read_s(PLAUNCH_AUTO_STARTUP, APPNAME, NULL, buf, BUFSIZE))
 			check = BST_CHECKED;
-		} else
+		else
 			check = BST_UNCHECKED;
 
-		CheckDlgButton(hwnd, ID_OPTIONS_BUTTON_STARTUP, check);
+		CheckDlgButton(hwnd, IDC_OPTIONSBOX_BUTTON_STARTUP, check);
 
 		check = config->options & OPTION_ENABLEDRAGDROP ? BST_CHECKED : BST_UNCHECKED;
 
-		CheckDlgButton(hwnd, ID_OPTIONS_BUTTON_DRAGDROP, check);
+		CheckDlgButton(hwnd, IDC_OPTIONSBOX_BUTTON_DRAGDROP, check);
 
 		check = config->options & OPTION_ENABLESAVECURSOR ? BST_CHECKED : BST_UNCHECKED;
 
-		CheckDlgButton(hwnd, ID_OPTIONS_BUTTON_SAVECUR, check);
+		CheckDlgButton(hwnd, IDC_OPTIONSBOX_BUTTON_SAVECUR, check);
 
 		SendMessage(ppedit, (UINT)EM_SETLIMITTEXT, (WPARAM)BUFSIZE, 0);
 
@@ -78,7 +67,7 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 		case IDOK:
 			{
 				LONG hotkey;
-				int what = 0;
+				unsigned int what = 0;
 
 				hotkey = get_hotkey(lbedit);
 
@@ -97,37 +86,27 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 				};
 
 				if (SendMessage(ppedit, EM_GETMODIFY, 0, 0)) {
-					char *buf;
+					GetWindowText(ppedit, buf, 256);
 
-					buf = (char *)malloc(BUFSIZE);
-					memset(buf, 0, BUFSIZE);
-					GetWindowText(ppedit, buf, BUFSIZE);
-
-					if (config->putty_path)
-						free(config->putty_path);
-
-					if (buf[0] == '\0') {
-						config->putty_path = get_putty_path();
-					} else {
-						config->putty_path = (char *)malloc(strlen(buf) + 1);
+					if (buf[0] == '\0')
+						get_putty_path(config->putty_path, BUFSIZE);
+					else
 						strcpy(config->putty_path, buf);
-						free(buf);
-					};
 
 					what |= CFG_SAVE_PUTTY_PATH;
 				};
 
-				check = IsDlgButtonChecked(hwnd, ID_OPTIONS_BUTTON_STARTUP);
+				check = IsDlgButtonChecked(hwnd, IDC_OPTIONSBOX_BUTTON_STARTUP);
 
+#ifndef _DEBUG
 				if (check == BST_CHECKED) {
-					buf = (char *)malloc(BUFSIZE);
-					GetModuleFileName(NULL, buf, BUFSIZE);
+					GetModuleFileName(NULL, buf, 256);
 					reg_write_s(PLAUNCH_AUTO_STARTUP, APPNAME, buf);
-					free(buf);
 				} else if (check == BST_UNCHECKED)
 					reg_delete_v(PLAUNCH_AUTO_STARTUP, APPNAME);
+#endif /* _DEBUG */
 
-				check = IsDlgButtonChecked(hwnd, ID_OPTIONS_BUTTON_DRAGDROP);
+				check = IsDlgButtonChecked(hwnd, IDC_OPTIONSBOX_BUTTON_DRAGDROP);
 
 				config->options = 
 					check > 0 ? 
@@ -135,7 +114,7 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 						config->options ^ OPTION_ENABLEDRAGDROP;
 				what |= CFG_SAVE_DRAGDROP;
 
-				check = IsDlgButtonChecked(hwnd, ID_OPTIONS_BUTTON_SAVECUR);
+				check = IsDlgButtonChecked(hwnd, IDC_OPTIONSBOX_BUTTON_SAVECUR);
 
 				config->options =
 					check > 0 ?
@@ -153,13 +132,11 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 			EndDialog(hwnd, 0);
 
 			return FALSE;
-		case ID_OPTIONS_PUTTYPATH_BUTTON:
+		case IDC_OPTIONSBOX_BUTTON_PUTTYPATH:
 			{
 				OPENFILENAME ofn;
-				char *buf;
 
-				buf = (char *)malloc(BUFSIZE);
-				GetWindowText(ppedit, buf, BUFSIZE);
+				GetWindowText(ppedit, buf, 256);
 
 				memset(&ofn, 0, sizeof(OPENFILENAME));
 				ofn.lStructSize = sizeof(OPENFILENAME);
@@ -171,27 +148,22 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 				ofn.Flags = OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR | OFN_PATHMUSTEXIST;
 
 				if (GetOpenFileName(&ofn)) {
-					if (config->putty_path)
-						free(config->putty_path);
-					config->putty_path = (char *)malloc(strlen(buf) + 1);
 					strcpy(config->putty_path, buf);
 					SendMessage(ppedit, WM_SETTEXT, 0, (LPARAM)buf);
 					SendMessage(ppedit, EM_SETMODIFY, (WPARAM)TRUE, 0);
 				};
 
-				free(buf);
-
 				return FALSE;
 			}
-		case ID_OPTIONS_PUTTYPATH_STATIC:
+		case IDC_OPTIONSBOX_STATIC_PUTTYPATH:
 			SetFocus(ppedit);
 
 			return FALSE;
-		case ID_OPTIONS_LB_HOTKEY_STATIC:
+		case IDC_OPTIONSBOX_STATIC_HOTKEY_LBOX:
 			SetFocus(lbedit);
 
 			return FALSE;
-		case ID_OPTIONS_WL_HOTKEY_STATIC:
+		case IDC_OPTIONSBOX_STATIC_HOTKEY_WLIST:
 			SetFocus(wledit);
 
 			return FALSE;
@@ -206,50 +178,5 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
  * Options Box: setup function.
  */
 void do_optionsbox(void) {
-	LPDLGTEMPLATE tmpl = NULL;
-	void *ptr;
-
-	tmpl = (LPDLGTEMPLATE)GlobalAlloc(GMEM_ZEROINIT, BUFSIZE * 2);
-	ptr = dialogtemplate_create(tmpl, WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU |
-								DS_CENTER | DS_MODALFRAME,
-								0, 0, 229, 167, "PuTTY Launcher Options", 13, NULL,
-								8, "MS Sans Serif");
-	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | BS_GROUPBOX,
-								7, 7, 215, 153, NULL, ID_OPTIONS_GROUPBOX);
-	ptr = dialogtemplate_addstatic(ptr, WS_CHILD | WS_VISIBLE,
-								16, 17, 169, 9, "&Path to PuTTY or PuTTYtel executable:",
-								ID_OPTIONS_PUTTYPATH_STATIC);
-	ptr = dialogtemplate_addeditbox(ptr, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP |
-								ES_AUTOHSCROLL,
-								16, 31, 139, 14, NULL, ID_OPTIONS_PUTTYPATH_EDIT);
-	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-								164, 31, 50, 14, "&Browse...", 
-								ID_OPTIONS_PUTTYPATH_BUTTON);
-	ptr = dialogtemplate_addstatic(ptr, WS_CHILD | WS_VISIBLE,
-								16, 54, 75, 9, "&Launch Box hot key:",
-								ID_OPTIONS_LB_HOTKEY_STATIC);
-	ptr = dialogtemplate_addeditbox(ptr, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
-								16, 68, 95, 14, NULL, ID_OPTIONS_LB_HOTKEY_EDIT);
-	ptr = dialogtemplate_addstatic(ptr, WS_CHILD | WS_VISIBLE,
-								118, 54, 75, 9, "&Window List hot key:",
-								ID_OPTIONS_WL_HOTKEY_STATIC);
-	ptr = dialogtemplate_addeditbox(ptr, WS_CHILD | WS_VISIBLE | WS_BORDER | WS_TABSTOP,
-								118, 68, 95, 14, NULL, ID_OPTIONS_WL_HOTKEY_EDIT);
-	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX,
-								16, 91, 200, 9, "&Run PuTTY Launcher automatically at startup?",
-								ID_OPTIONS_BUTTON_STARTUP);
-	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX,
-								16, 105, 200, 9, "Enable tree-view items &drag&&drop in Launch Box?",
-								ID_OPTIONS_BUTTON_DRAGDROP);
-	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX,
-								16, 119, 200, 9, "Enable remembering cursor position in Launch Box?",
-								ID_OPTIONS_BUTTON_SAVECUR);
-	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
-								61, 138, 50, 14, "OK", IDOK);
-	ptr = dialogtemplate_addbutton(ptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON,
-								118, 138, 50, 14, "Cancel", IDCANCEL);
-
-	DialogBoxIndirect(config->hinst, (LPDLGTEMPLATE)tmpl, NULL, OptionsBoxProc);
-
-	GlobalFree(tmpl);
+	DialogBox(config->hinst, MAKEINTRESOURCE(IDD_OPTIONSBOX), NULL, OptionsBoxProc);
 };

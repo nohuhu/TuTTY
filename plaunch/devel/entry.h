@@ -5,12 +5,16 @@
 #ifndef ENTRY_H
 #define ENTRY_H
 
+#include <windows.h>
+
 #if !defined(_DEBUG) && defined(MINIRTL)
 
 #define WIN32_LEAN_AND_MEAN
-#define NO_PARSE_CMD_LINE
 
-#include <shlwapi.h>
+void * __cdecl malloc(size_t);
+void __cdecl free(void *);
+void * __cdecl memmove(void *, const void *, size_t);
+void * __cdecl memset(void *, int, size_t);
 
 #define	sprintf	wsprintf
 #define	strlen	lstrlen
@@ -18,7 +22,6 @@
 #define	strcmp	lstrcmp
 #define stricmp	lstrcmpi
 #define	strcat	lstrcat
-#define strrchr(x, y)	StrRChr(x, NULL, y)
 
 #endif /* _DEBUG && MINIRTL */
 

@@ -43,8 +43,8 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /G3 /Gr /Zp4 /W3 /O1 /I "c:\usr\apps\vc98\include" /D "NDEBUG" /D "MINIRTL" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /FD /c
-# SUBTRACT CPP /YX
+# ADD CPP /nologo /G3 /Gr /Zp4 /W3 /O1 /I "c:\usr\apps\vc98\include" /D "NDEBUG" /D "MINIRTL" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "NO_PARSE_CMD_LINE" /FAcs /FD /c
+# SUBTRACT CPP /Fr /YX
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -54,7 +54,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib /nologo /subsystem:windows /pdb:none /map /machine:I386
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib chkstk.obj libc.lib /nologo /subsystem:windows /pdb:none /map /machine:I386
 # SUBTRACT LINK32 /nodefaultlib
 
 !ELSEIF  "$(CFG)" == "plaunch - Win32 Debug"
@@ -96,10 +96,6 @@ LINK32=link.exe
 # Begin Source File
 
 SOURCE=.\aboutbox.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\debug.c
 # End Source File
 # Begin Source File
 
@@ -147,10 +143,6 @@ SOURCE=.\windowlistbox.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=.\debug.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\dlgtmpl.h
 # End Source File
 # Begin Source File
@@ -173,6 +165,10 @@ SOURCE=.\plaunch.h
 
 SOURCE=.\registry.h
 # End Source File
+# Begin Source File
+
+SOURCE=.\resource.h
+# End Source File
 # End Group
 # Begin Group "Resource Files"
 
@@ -186,5 +182,9 @@ SOURCE=.\plaunch.rc
 SOURCE=.\putty.ico
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=.\plaunch.manifest
+# End Source File
 # End Target
 # End Project

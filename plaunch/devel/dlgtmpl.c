@@ -6,6 +6,7 @@
 
 #include "dlgtmpl.h"
 
+/*
 static LPWORD lpwAlign(LPWORD lpIn) {
     ULONG ul;
 
@@ -16,6 +17,7 @@ static LPWORD lpwAlign(LPWORD lpIn) {
 
     return (LPWORD) ul;
 }
+*/
 
 void *dialogtemplate_create(void *templt, DWORD style,
 							int x, int y, int cx, int cy,
@@ -70,7 +72,10 @@ void *dialogtemplate_addcontrol(void *tmpl, DWORD style,
 	LPWSTR str;
 	int nchar, len;
 
-	lpw = lpwAlign((LPWORD)tmpl);
+	lpw = (LPWORD)tmpl;
+    (ULONG)lpw +=3;
+    (ULONG)lpw >>=2;
+    (ULONG)lpw <<=2;
 	item = (LPDLGITEMTEMPLATE)lpw;
 	item->x = x;
 	item->y = y;

@@ -17,22 +17,64 @@
 #define IMG_FOLDER_OPEN	    4
 #define IMG_FOLDER_CLOSED   3
 
+static char *lastname(char *in) {
+    char *p;
+
+    if (in == "")
+		return in;
+    
+    p = &in[strlen(in)];
+
+    while (p >= in && *p != '\\')
+		*p--;
+
+    return p + 1;
+};
+
+static unsigned int add_tray_icon(HWND hwnd) {
+	unsigned int ret;
+	NOTIFYICONDATA tnid;
+	HICON hicon;
+
+	tnid.cbSize = sizeof(NOTIFYICONDATA);
+	tnid.hWnd = hwnd;
+	tnid.uID = 1;	       /* unique within this systray use */
+	tnid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
+	tnid.uCallbackMessage = WM_SYSTRAY;
+	tnid.hIcon = hicon = config->main_icon;
+#ifdef _DEBUG
+	strcpy(tnid.szTip, 
+		"(DEBUG) PuTTY Launcher version " APPVERSION " built " __DATE__ " " __TIME__ );
+#else
+	strcpy(tnid.szTip, "PuTTY Launcher");
+#endif /* _DEBUG */
+
+	ret = Shell_NotifyIcon(NIM_ADD, &tnid);
+
+	if (hicon) 
+		DestroyIcon(hicon);
+
+	return ret;
+};
+
 /*
  * Main window (hidden): window function.
  */
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 				WPARAM wParam, LPARAM lParam)
 {
-	int ret;
-	static int menuinprogress;
+//	unsigned int ret;
+	static unsigned int menuinprogress;
     static UINT msgTaskbarCreated = 0;
+	static UINT iconx = 0, icony = 0, cxmenucheck = 0, cymenucheck = 0;
 
 	switch (message) {
 	case WM_CREATE:
 		msgTaskbarCreated = RegisterWindowMessage(_T("TaskbarCreated"));
-		ImageList_GetIconSize(config->image_list, 
-					&config->iconx, 
-					&config->icony);
+		iconx = config->iconx;
+		icony = config->icony;
+		cxmenucheck = GetSystemMetrics(SM_CXMENUCHECK);
+		cymenucheck = GetSystemMetrics(SM_CYMENUCHECK);
 		break;
 	default:
 		if (message==msgTaskbarCreated) {
@@ -40,7 +82,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 			 * Explorer has been restarted, so the tray icon will
 			 * have been lost.
 			 */
-			AddTrayIcon(hwnd);
+			add_tray_icon(hwnd);
 		}
 		break;
 #ifdef WINDOWS_NT351_COMPATIBLE
@@ -58,13 +100,12 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 		} else if (lParam == WM_LBUTTONDBLCLK) {
 			SendMessage(hwnd, WM_COMMAND, IDM_LAUNCHBOX, 0);
 		}
-		break;
+		return TRUE;
 	case WM_SYSTRAY2:
 		if (!menuinprogress) {
-//			struct session *root;
+			int ret;
 
-			menuinprogress = 1;
-//			root = session_get_root();
+			menuinprogress = TRUE;
 
 			config->systray_menu = menu_refresh(config->systray_menu, "");
 
@@ -82,56 +123,52 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 				mii.cbSize = sizeof(MENUITEMINFO);
 				mii.fMask = MIIM_DATA;
 				if (GetMenuItemInfo(config->systray_menu, ret, FALSE, &mii) &&
-					mii.dwItemData != 0) {
-					char *s, *buf;
-
-					s = (char *)mii.dwItemData;
-					buf = malloc(strlen(s) + 9);
-					sprintf(buf, "-load \"%s\"", s);
-
-					ShellExecute(hwnd, "open", config->putty_path,
-								 buf, _T(""), SW_SHOWNORMAL);
-
-					free(buf);
-				};
+					mii.dwItemData != 0)
+					SendMessage(hwnd, WM_LAUNCHPUTTY,
+								(WPARAM)HOTKEY_ACTION_LAUNCH,
+								(LPARAM)mii.dwItemData);
 			} else
 				SendMessage(hwnd, WM_COMMAND, (WPARAM)ret, 0);
 
-			menuinprogress = 0;
+			menuinprogress = FALSE;
 		}
-		break;
+		return TRUE;
+	case WM_LAUNCHPUTTY:
+		{
+			char buf[BUFSIZE];
+
+			if (!lParam)
+				return FALSE;
+
+			sprintf(buf, wParam == HOTKEY_ACTION_LAUNCH ?
+					"-load \"%s\"" :
+					"-edit \"%s\"",
+					(char *)lParam);
+			ShellExecute(hwnd, "open", config->putty_path, buf, _T(""), SW_SHOWDEFAULT);
+		};
+		return FALSE;
 	case WM_HOTKEY:
 		{
 			int i;
 
-			for (i = 0; i < config->nhotkeys; i++) {
+			for (i = config->nhotkeys - 1; i >= 0; i--) {
 				if (config->hotkeys[i].hotkey == lParam) {
 					switch (config->hotkeys[i].action) {
 					case HOTKEY_ACTION_MESSAGE:
 						SendMessage(config->hwnd_mainwindow, 
 							(UINT)config->hotkeys[i].destination, 0, 0);
-						break;
+						return FALSE;
 					case HOTKEY_ACTION_LAUNCH:
 					case HOTKEY_ACTION_EDIT:
-						{
-							char *buf;
-
-							buf = (char *)malloc(BUFSIZE);
-							sprintf(buf, 
-								config->hotkeys[i].action == HOTKEY_ACTION_LAUNCH ?
-								"-load \"%s\"" :
-								"-edit \"%s\"",
-								config->hotkeys[i].destination);
-							ShellExecute(hwnd, "open", config->putty_path,
-										 buf, _T(""), SW_SHOWNORMAL);
-							free(buf);
-						};
-						break;
+						SendMessage(hwnd, WM_LAUNCHPUTTY, 
+									(WPARAM)config->hotkeys[i].action,
+									(LPARAM)config->hotkeys[i].destination);
+						return FALSE;
 					};
 				};
 			};
 		};
-		break;
+		return FALSE;
 	case WM_HOTKEYCHANGE:
 		{
 			UnregisterHotKey(hwnd, wParam);
@@ -140,21 +177,22 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 					LOWORD(config->hotkeys[wParam].hotkey),
 					HIWORD(config->hotkeys[wParam].hotkey));
 		};
-		break;
+		return FALSE;
 	case WM_LAUNCHBOX:
 		do_launchbox();
 
-		return TRUE;
+		return FALSE;
 	case WM_WINDOWLIST:
 		do_windowlistbox();
 
-		return TRUE;
+		return FALSE;
 	case WM_MEASUREITEM:
 		{
 			LPMEASUREITEMSTRUCT mis;
 			HDC hdc;
 			SIZE size;
 			char *name;
+			UINT y, y1;
 
 			mis = (LPMEASUREITEMSTRUCT)lParam;
 			name = lastname((char *)mis->itemData);
@@ -164,12 +202,12 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 
 			hdc = GetDC(hwnd);
 			GetTextExtentPoint32(hdc, name, strlen(name), &size);
-			mis->itemWidth = size.cx + config->iconx + 7 + GetSystemMetrics(SM_CXMENUCHECK);
-			if (config->icony > size.cy)
-				mis->itemHeight = config->icony + 2;
-			else
-				mis->itemHeight = size.cy + 2;
 			ReleaseDC(hwnd, hdc);
+
+			mis->itemWidth = size.cx + iconx + 7 + cxmenucheck;
+			y1 = icony > (UINT)size.cy ? icony : size.cy;
+			y = cymenucheck > y1 ? cymenucheck : y1;
+			mis->itemHeight = y + 2;
 
 			return TRUE;
 		};
@@ -180,7 +218,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 			HICON icon;
 			SIZE size;
 			char *name, *path;
-			int selected = 0, x, y;
+			unsigned int selected = 0, x, y;
 
 			dis = (LPDRAWITEMSTRUCT)lParam;
 			path = (char *)dis->itemData;
@@ -198,8 +236,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 			GetTextExtentPoint32(dis->hDC, name, strlen(name), &size);
 
 			x = dis->rcItem.left + config->iconx + 7;
-			y = dis->rcItem.top + 
-				(int)((dis->rcItem.bottom - dis->rcItem.top - size.cy) / 2);
+			y = dis->rcItem.top + ((dis->rcItem.bottom - dis->rcItem.top - size.cy) / 2);
 
 			ExtTextOut(dis->hDC, x, y, ETO_OPAQUE, &dis->rcItem, name, strlen(name), NULL);
 			
@@ -213,7 +250,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 					icon = ImageList_ExtractIcon(0, config->image_list, config->img_closed);
 			} else
 				icon = ImageList_ExtractIcon(0, config->image_list, config->img_session);
-			DrawIconEx(dis->hDC, x, y, icon, config->iconx, config->icony, 0, NULL, DI_NORMAL);
+			DrawIconEx(dis->hDC, x, y, icon, iconx, icony, 0, NULL, DI_NORMAL);
 			DeleteObject(icon);
 
 			if (selected) {
@@ -262,8 +299,10 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 */
 		PostQuitMessage(0);
 		return FALSE;
+#ifdef WINDOWS_NT351_COMPATIBLE
 	case WM_QUERYOPEN:
 		return FALSE;
+#endif /* WINDOWS_NT351_COMPATIBLE */
     }
 
     return DefWindowProc(hwnd, message, wParam, lParam);
@@ -273,6 +312,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 {
     WNDCLASS wndclass;
     MSG msg;
+	OSVERSIONINFO osv;
 
 #ifndef _DEBUG
     {
@@ -291,24 +331,22 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	/*
 	 * create struct config and check windows version
 	 */
-	{
-		OSVERSIONINFO osv;
+	config = (struct _config *)malloc(sizeof(struct _config));
+	memset(config, 0, sizeof(struct _config));
 
-		config = (struct _config *)malloc(sizeof(struct _config));
-		memset(config, 0, sizeof(struct _config));
+	osv.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+	GetVersionEx(&osv);
 
-		osv.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-		GetVersionEx(&osv);
-
-		config->version_major = osv.dwMajorVersion;
-		config->version_minor = osv.dwMinorVersion;
+	config->version_major = osv.dwMajorVersion;
+	config->version_minor = osv.dwMinorVersion;
 
 #ifdef WINDOWS_NT351_COMPATIBLE
-		config->have_shell = (config->version_major >= 4);
+	config->have_shell = (config->version_major >= 4);
 #endif /* WINDOWS_NT351_COMPATIBLE */
 
-		config->hinst = inst;
-	}
+	config->hinst = inst;
+
+	config->main_icon = LoadIcon(inst, MAKEINTRESOURCE(IDI_MAINICON));
 
 	/*
 	 * set up the config
@@ -325,15 +363,14 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 		HIMAGELIST small_list, large_list;
 		HICON icon;
 		HMODULE shell32 = 0;
-		int cx = 0, cy = 0;
 
 		if (
 #ifdef WINDOWS_NT351_COMPATIBLE
 			config->have_shell &&
 #endif /* WINDOWS_NT351_COMPATIBLE */
 			GetSystemImageLists(shell32, &large_list, &small_list)) {
-			ImageList_GetIconSize(small_list, &cx, &cy);
-			config->image_list = ImageList_Create(cx, cy, 
+			ImageList_GetIconSize(small_list, &config->iconx, &config->icony);
+			config->image_list = ImageList_Create(config->iconx, config->icony, 
 				ILC_MASK | (config->version_major >= 5 ? ILC_COLOR32 : ILC_COLOR8),
 				3, 0);
 
@@ -345,21 +382,28 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 			config->img_open = ImageList_AddIcon(config->image_list, icon);
 			DestroyIcon(icon);
 
-			icon = LoadIcon(config->hinst, MAKEINTRESOURCE(IDI_MAINICON));
-			config->img_session = ImageList_AddIcon(config->image_list, icon);
-			DeleteObject(icon);
+			config->img_session = ImageList_AddIcon(config->image_list, config->main_icon);
 
+#ifndef _DEBUG
+			if (osv.dwPlatformId == VER_PLATFORM_WIN32_NT) {
+#endif /* _DEBUG */
+				ImageList_Destroy(large_list);
+				ImageList_Destroy(small_list);
+#ifndef _DEBUG
+			};
+#endif /* _DEBUG */
 			FreeSystemImageLists(shell32);
+
 		} 
 #ifdef WINDOWS_NT351_COMPATIBLE
 		else {
 			config->image_list = ImageList_Create(16, 16, ILC_COLOR8 | ILC_MASK, 3, 3);
 
-			icon = LoadIcon(config->hinst, MAKEINTRESOURCE(IDI_MAINICON));
+			icon = config->main_icon;
 			config->img_closed = 
 			config->img_open = 
 			config->img_session = ImageList_AddIcon(config->image_list, icon); 
-			DeleteObject(icon);
+//			DeleteObject(icon);
 		};
 #endif /* WINDOWS_NT351_COMPATIBLE */
 	}
@@ -370,9 +414,9 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 		wndclass.cbClsExtra = 0;
 		wndclass.cbWndExtra = 0;
 		wndclass.hInstance = inst;
-		wndclass.hIcon = LoadIcon(inst, MAKEINTRESOURCE(IDI_MAINICON));
-		wndclass.hCursor = LoadCursor(NULL, IDC_IBEAM);
-		wndclass.hbrBackground = GetStockObject(BLACK_BRUSH);
+		wndclass.hIcon = config->main_icon;
+		wndclass.hCursor = NULL;
+		wndclass.hbrBackground = NULL;
 		wndclass.lpszMenuName = NULL;
 		wndclass.lpszClassName = APPNAME;
 
@@ -383,13 +427,13 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 						WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_ICONIC,
 						CW_USEDEFAULT, CW_USEDEFAULT,
 						0, 0, NULL, NULL, inst, NULL);
-	SetForegroundWindow(config->hwnd_mainwindow);
+//	SetForegroundWindow(config->hwnd_mainwindow);
 
     /* Set up a system tray icon */
 #ifdef WINDOWS_NT351_COMPATIBLE
 	if (config->have_shell)
 #endif /* WINDOWS_NT351_COMPATIBLE */
-		AddTrayIcon(config->hwnd_mainwindow);
+		add_tray_icon(config->hwnd_mainwindow);
 
     /* Create popup menu */
 #ifdef WINDOWS_NT351_COMPATIBLE
@@ -424,19 +468,18 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	{
 		int i;
 
-		for (i = 0; i < config->nhotkeys; i++) {
+		for (i = config->nhotkeys - 1; i >= 0; i--) {
 			if (!RegisterHotKey(config->hwnd_mainwindow, 
 								i, 
 								LOWORD(config->hotkeys[i].hotkey), 
 								HIWORD(config->hotkeys[i].hotkey))) {
-				char *err, *key, *action, *destination;
-				err = malloc(BUFSIZE);
-				key = key_name(LOWORD(config->hotkeys[i].hotkey),
-					HIWORD(config->hotkeys[i].hotkey));
+				char err[BUFSIZE], key[32], *action, *destination;
+				key_name(LOWORD(config->hotkeys[i].hotkey),
+					HIWORD(config->hotkeys[i].hotkey), key, 32);
 				switch (config->hotkeys[i].action) {
 				case HOTKEY_ACTION_MESSAGE:
 					action = "bringing up";
-					switch ((int)config->hotkeys[i].destination) {
+					switch ((UINT)config->hotkeys[i].destination) {
 					case WM_LAUNCHBOX:
 						destination = "Launch Box";
 						break;
@@ -457,15 +500,12 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 				sprintf(err, "Cannot register '%s' hotkey for %s \"%s\"!", 
 					key, action, destination);
 				MessageBox(config->hwnd_mainwindow, err, "Error", MB_OK | MB_ICONERROR);
-				free(err);
 			};
 		};
 	};
 
-    while (GetMessage(&msg, NULL, 0, 0)) {
-//		TranslateMessage(&msg);
+    while (GetMessage(&msg, NULL, 0, 0))
 		DispatchMessage(&msg);
-    };
 
 	/*
 	 * clean up hot keys.
@@ -473,7 +513,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	{
 		int i;
 
-		for (i = 0; i < config->nhotkeys; i++) {
+		for (i = config->nhotkeys - 1; i >= 0; i--) {
 			UnregisterHotKey(config->hwnd_mainwindow, i);
 			if (i > 1 && config->hotkeys[i].destination)
 				free(config->hotkeys[i].destination);
@@ -503,8 +543,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 		if (config->image_list)
 			ImageList_Destroy(config->image_list);
 
-		if (config->putty_path)
-			free(config->putty_path);
+		if (config->main_icon)
+			DestroyIcon(config->main_icon);
 
 		free(config);
 	}

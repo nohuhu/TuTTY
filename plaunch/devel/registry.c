@@ -1,14 +1,24 @@
+#include <windows.h>
 #include <stdio.h>
+#include "entry.h"
 #include "registry.h"
-#include "misc.h"
-#include "debug.h"
 
-#define BUFSIZE			2048
+#define BUFSIZE			512
 
-#define snew(type) ((type *)malloc(sizeof(type)))
-#define snewn(n, type) ((type *)malloc((n)*sizeof(type)))
-#define sresize(ptr, n, type) ((type *)realloc(ptr, (n)*sizeof(type)))
-#define sfree(n) (free(n))
+const char * const LIMIT_SEARCHFOR_STRINGS[] = {
+	"last", "first", "second", "third", "fourth", "fifth",
+	"sixth", "seventh", "eighth", "ninth", "tenth", "eleventh",
+	"twelfth", "%dth"};
+
+const char * const LIMIT_ACTION_STRINGS[] = {
+	"do nothing", "hide", "show", "minimize", "maximize", "center",
+	"kill", "murder", "run another"};
+
+const char * const AUTORUN_WHEN_STRINGS[] = {
+	"start", "quit", "shutdown" };
+
+const char * const AUTORUN_ACTION_STRINGS[] = {
+	"do nothing", "hide", "show", "minimize", "maximize", "center" };
 
 static const char hex[16] = "0123456789ABCDEF";
 
@@ -74,8 +84,8 @@ int sessioncmp(const char *a, const char *b)
     return strcmp(a, b);               /* otherwise, compare normally */
 };
 
-static void stupid_sort(char **strings, int count) {
-	int i, j;
+static void stupid_sort(char **strings, unsigned int count) {
+	unsigned int i, j;
 	char *tmp;
 
 	for (i = 0; i < count; i++) {
@@ -89,61 +99,49 @@ static void stupid_sort(char **strings, int count) {
 	};
 };
 
-char *reg_make_path(char *parent, char *path) {
-	char *buf;
-
-	if (!path)
-		return NULL;
-
-	buf = (char *)malloc(BUFSIZE);
-	if (parent)
-		sprintf(buf, "%s\\%s\\%s", REGROOT, parent, path);
+unsigned int reg_make_path(char *parent, char *path, char *buffer) {
+	if (parent && parent[0] != '\0')
+		sprintf(buffer, "%s\\%s\\%s", REGROOT, parent, path);
+	else if (path && path[0] != '\0')
+		sprintf(buffer, "%s\\%s", REGROOT, path);
 	else
-		sprintf(buf, "%s\\%s", REGROOT, path);
+		strcpy(buffer, REGROOT);
 
-	return buf;
+	return TRUE;
 };
 
-int reg_read_i(char *keyname, char *valname, int defval) {
+int reg_read_i(char *keyname, char *valname, int defval, int *value) {
 	HKEY key;
-	DWORD ret, type, value, size;
-	char *munge;
+	DWORD ret, type, size;
+	char munge[BUFSIZE];
 
-	ret = defval;
+	ret = FALSE;
+	*value = defval;
 
-	munge = (char *)malloc(3 * strlen(keyname) + 1);
 	mungestr(keyname, munge);
-	if (RegOpenKeyEx(HKEY_CURRENT_USER, munge, 0, KEY_READ, &key) != ERROR_SUCCESS) {
-		free(munge);
+	if (RegOpenKeyEx(HKEY_CURRENT_USER, munge, 0, KEY_READ, &key) != ERROR_SUCCESS)
 		return ret;
-	};
-	free(munge);
 
 	type = REG_DWORD;
-	value = 0;
 	size = sizeof(DWORD);
 
-	if (RegQueryValueEx(key, valname, NULL, &type, (LPBYTE)&value, &size) == ERROR_SUCCESS)
-		ret = value;
+	if (RegQueryValueEx(key, valname, NULL, &type, (LPBYTE)value, &size) == ERROR_SUCCESS)
+		ret = TRUE;
 
 	RegCloseKey(key);
 
 	return ret;
 };
 
-int reg_write_i(char *keyname, char *valname, int value) {
+unsigned int reg_write_i(char *keyname, char *valname, int value) {
 	HKEY key;
 	DWORD val, disp;
-	char *munge;
+	char munge[BUFSIZE];
 
-	munge = (char *)malloc(3 * strlen(keyname) + 1);
 	mungestr(keyname, munge);
 	if (RegCreateKeyEx(HKEY_CURRENT_USER, munge, 0, NULL, REG_OPTION_NON_VOLATILE, 
-		KEY_ALL_ACCESS, NULL, &key, &disp) != ERROR_SUCCESS) {
-		free(munge);
+		KEY_ALL_ACCESS, NULL, &key, &disp) != ERROR_SUCCESS)
 		return FALSE;
-	};
-	free(munge);
 
 	val = value;
 	if (RegSetValueEx(key, valname, 0, REG_DWORD, (LPBYTE)&val, sizeof(DWORD)) == ERROR_SUCCESS)
@@ -156,52 +154,41 @@ int reg_write_i(char *keyname, char *valname, int value) {
 	return val;
 };
 
-char *reg_read_s(char *keyname, char *valname, char *defval) {
+unsigned int reg_read_s(char *keyname, char *valname, char *defval, 
+						char *buffer, unsigned int bufsize) {
 	HKEY key;
 	DWORD type, size;
-	char *munge, *ret, *value;
+	char munge[BUFSIZE];
+	unsigned int ret;
 
-	ret = defval;
-
-	munge = (char *)malloc(3 * strlen(keyname) + 1);
 	mungestr(keyname, munge);
-	if (RegOpenKeyEx(HKEY_CURRENT_USER, munge, 0, KEY_READ, &key) != ERROR_SUCCESS) {
-		free(munge);
-		return ret;
-	};
-	free(munge);
+	if (RegOpenKeyEx(HKEY_CURRENT_USER, munge, 0, KEY_READ, &key) != ERROR_SUCCESS)
+		return FALSE;
 
 	type = REG_SZ;
-	value = (char *)malloc(BUFSIZE);
-	size = BUFSIZE;
+	size = bufsize;
 
-	if (RegQueryValueEx(key, valname, NULL, &type, (LPBYTE)value, &size) == ERROR_SUCCESS &&
+	if (RegQueryValueEx(key, valname, NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS &&
 		size > 0)
-		ret = dupstr(value);
+		ret = TRUE;
 	else
-		ret = NULL;
-
-	free(value);
+		ret = FALSE;
 
 	RegCloseKey(key);
 
 	return ret;
 };
 
-int reg_write_s(char *keyname, char *valname, char *value) {
+unsigned int reg_write_s(char *keyname, char *valname, char *value) {
 	HKEY key;
 	DWORD disp;
-	char *munge;
+	char munge[BUFSIZE];
 	int ret;
 
-	munge = (char *)malloc(3 * strlen(keyname) + 1);
 	mungestr(keyname, munge);
 	if (RegCreateKeyEx(HKEY_CURRENT_USER, munge, 0, NULL, REG_OPTION_NON_VOLATILE, 
-		KEY_ALL_ACCESS, NULL, &key, &disp) != ERROR_SUCCESS) {
-		free(munge);
+		KEY_ALL_ACCESS, NULL, &key, &disp) != ERROR_SUCCESS)
 		return FALSE;
-	};
-	free(munge);
 
 	ret = !RegSetValueEx(key, valname, 0, REG_SZ, (LPBYTE)value, strlen(value));
 
@@ -210,18 +197,14 @@ int reg_write_s(char *keyname, char *valname, char *value) {
 	return ret;
 };
 
-int reg_delete_v(char *keyname, char *valname) {
+unsigned int reg_delete_v(char *keyname, char *valname) {
 	HKEY key;
 	DWORD ret;
-	char *munge;
+	char munge[BUFSIZE];
 
-	munge = (char *)malloc(3 * strlen(keyname) + 1);
 	mungestr(keyname, munge);
-	if (RegOpenKeyEx(HKEY_CURRENT_USER, munge, 0, KEY_ALL_ACCESS, &key) != ERROR_SUCCESS) {
-		free(munge);
+	if (RegOpenKeyEx(HKEY_CURRENT_USER, munge, 0, KEY_ALL_ACCESS, &key) != ERROR_SUCCESS)
 		return FALSE;
-	};
-	free(munge);
 
 	if (RegDeleteValue(key, valname) == ERROR_SUCCESS)
 		ret = TRUE;
@@ -233,39 +216,34 @@ int reg_delete_v(char *keyname, char *valname) {
 	return ret;
 };
 
-int reg_delete_k(char *keyname) {
+unsigned int reg_delete_k(char *keyname) {
 	HKEY key;
-	char *munge;
+	char munge[BUFSIZE];
 	DWORD err;
 
 	if (RegOpenKeyEx(HKEY_CURRENT_USER, NULL, 0, 
-		KEY_ALL_ACCESS, &key) != ERROR_SUCCESS) {
+		KEY_ALL_ACCESS, &key) != ERROR_SUCCESS)
 		return FALSE;
-	};
 
-	munge = (char *)malloc(3 * strlen(keyname) + 1);
 	mungestr(keyname, munge);
 
 	err = RegDeleteKey(key, munge);
 	RegCloseKey(key);
 
-	free(munge);
-
 	return (err == ERROR_SUCCESS);
 };
 
-static int _reg_copy_tree(char *from, char *to) {
+static unsigned int _reg_copy_tree(char *from, char *to) {
 	HKEY key1, key2;
-	char *f, *t, *name;
-	LPBYTE data;
+	char f[BUFSIZE], t[BUFSIZE], name[BUFSIZE];
+	BYTE data[16384];
 	DWORD i, size, dsize, subkeys, values;
 
 	if (!from || !to)
 		return FALSE;
 
-	if (RegOpenKeyEx(HKEY_CURRENT_USER, from, 0, KEY_READ, &key1) != ERROR_SUCCESS) {
+	if (RegOpenKeyEx(HKEY_CURRENT_USER, from, 0, KEY_READ, &key1) != ERROR_SUCCESS)
 		return FALSE;
-	};
 
 	if (RegCreateKeyEx(HKEY_CURRENT_USER, to, 0, NULL, REG_OPTION_NON_VOLATILE,
 					KEY_ALL_ACCESS, NULL, &key2, &size) != ERROR_SUCCESS) {
@@ -281,23 +259,13 @@ static int _reg_copy_tree(char *from, char *to) {
 		return FALSE;
 	};
 
-	f = (char *)malloc(BUFSIZE);
-	memset(f, 0, BUFSIZE);
-	t = (char *)malloc(BUFSIZE);
-	memset(t, 0, BUFSIZE);
-	name = (char *)malloc(BUFSIZE);
-	memset(name, 0, BUFSIZE);
-
-	for (i = 0; i < (int)subkeys; i++) {
+	for (i = 0; i < subkeys; i++) {
 		size = BUFSIZE;
 		if (RegEnumKeyEx(key1, i, (LPSTR)name, &size, 
 						NULL, NULL, NULL, NULL) == ERROR_SUCCESS) {
 			sprintf(f, "%s\\%s", from, name);
 			sprintf(t, "%s\\%s", to, name);
 			if (!_reg_copy_tree(f, t)) {
-				free(f);
-				free(t);
-				free(name);
 				RegCloseKey(key1);
 				RegCloseKey(key2);
 				return FALSE;
@@ -305,50 +273,31 @@ static int _reg_copy_tree(char *from, char *to) {
 		};
 	};
 
-	data = (LPBYTE)malloc(BUFSIZE);
-
 	for (i = 0; i < values; i++) {
-		size = dsize = BUFSIZE;
+		size = dsize = 16384;
 		if ((RegEnumValue(key1, i, (LPSTR)name, &size, NULL,
 						&subkeys, data, &dsize) != ERROR_SUCCESS) ||
 			(RegSetValueEx(key2, name, 0, subkeys, data, dsize) != ERROR_SUCCESS)) {
-			free(data);
-			free(f);
-			free(t);
-			free(name);
 			RegCloseKey(key1);
 			RegCloseKey(key2);
 			return FALSE;
 		};
 	};
 
-	free(data);
-	free(f);
-	free(t);
-	free(name);
-
 	return TRUE;
 };
 
-int reg_copy_tree(char *from, char *to) {
-	char *f, *t;
-	int ret;
+unsigned int reg_copy_tree(char *from, char *to) {
+	char f[BUFSIZE], t[BUFSIZE];
 
-	f = (char *)malloc(BUFSIZE);
 	mungestr(from, f);
-	t = (char *)malloc(BUFSIZE);
 	mungestr(to, t);
-	ret = _reg_copy_tree(f, t);
-	free(t);
-	free(f);
-
-	return ret;
+	return _reg_copy_tree(f, t);
 };
 
 static int reg_delete_callback(char *name, char *path, int isfolder, int mode,
 							   void *priv1, void *priv2, void *priv3) {
-	char *buf;
-	int ret;
+	char buf[512];
 
 	switch (mode) {
 	case REG_MODE_PREPROCESS:
@@ -361,55 +310,38 @@ static int reg_delete_callback(char *name, char *path, int isfolder, int mode,
 		break;
 	};
 
-	buf = (char *)malloc(BUFSIZE);
-	sprintf(buf, "%s\\%s", REGROOT, path);
-	ret = reg_delete_k(buf);
-	free(buf);
-
-	return ret;
+	reg_make_path(NULL, path, buf);
+	return reg_delete_k(buf);
 };
 
-int reg_delete_tree(char *keyname) {
+unsigned int reg_delete_tree(char *keyname) {
 	reg_walk_over_tree(keyname, reg_delete_callback, NULL, NULL, NULL);
 	return reg_delete_k(keyname);
 };
 
-int reg_move_tree(char *keyfrom, char *keyto) {
+unsigned int reg_move_tree(char *keyfrom, char *keyto) {
 	return 
 		(reg_copy_tree(keyfrom, keyto) && reg_delete_tree(keyfrom));
 };
 
-int reg_walk_over_tree(char *root, reg_callback cb, 
-					   void *priv1, void *priv2, void *priv3) {
-	char *str1, *str2;
+unsigned int reg_walk_over_tree(char *root, reg_callback cb, 
+								void *priv1, void *priv2, void *priv3) {
+	char str1[BUFSIZE], str2[BUFSIZE];
 	HKEY key;
 	DWORD err, i, subkeys, size, isfolder;
 	char **slist;
 	int ret;
 
-	str1 = (char *)malloc(BUFSIZE);
-	str2 = (char *)malloc(BUFSIZE);
+	mungestr(root, str2);
+	reg_make_path(NULL, str2, str1);
 
-	if (root && root != "") {
-		mungestr(root, str2);
-		sprintf(str1, "%s\\%s", REGROOT, str2);
-	} else
-		sprintf(str1, "%s", REGROOT);
-
-	if ((err = RegOpenKeyEx(HKEY_CURRENT_USER, str1, 0, KEY_READ, &key)) != ERROR_SUCCESS) {
-		free(str1);
-		free(str2);
-
+	if ((err = RegOpenKeyEx(HKEY_CURRENT_USER, str1, 0, KEY_READ, &key)) != ERROR_SUCCESS)
 		return FALSE;
-	};
 
 	if (RegQueryInfoKey(key, NULL, NULL, NULL, &subkeys, NULL, NULL,
 						NULL, NULL, NULL, NULL, NULL) != ERROR_SUCCESS ||
-						subkeys == 0) {
-		free(str1);
-		free(str2);
+						subkeys == 0)
 		return FALSE;
-	};
 
 	slist = (char **)malloc(subkeys * sizeof(char *));
 	memset(slist, 0, subkeys * sizeof(char *));
@@ -426,14 +358,12 @@ int reg_walk_over_tree(char *root, reg_callback cb,
 	stupid_sort(slist, subkeys);
 
 	for (i = 0; i < subkeys; i++) {
-		if (root && root != "") {
-			sprintf(str1, "%s\\%s\\%s", REGROOT, root, slist[i]);
+		reg_make_path(root, slist[i], str1);
+		if (root && root != "")
 			sprintf(str2, "%s\\%s", root, slist[i]);
-		} else {
-			sprintf(str1, "%s\\%s", REGROOT, slist[i]);
-			sprintf(str2, "%s", slist[i]);
-		};
-		isfolder = reg_read_i(str1, ISFOLDER, 0);
+		else
+			strcpy(str2, slist[i]);
+		reg_read_i(str1, ISFOLDER, 0, &isfolder);
 		ret = cb(slist[i], str2, isfolder, REG_MODE_PREPROCESS, priv1, priv2, priv3);
 		if (isfolder)
 			reg_walk_over_tree(str2, cb, (void *)ret, priv2, priv3);
@@ -443,8 +373,6 @@ int reg_walk_over_tree(char *root, reg_callback cb,
 	};
 
 	free(slist);
-	free(str1);
-	free(str2);
 
 	return TRUE;
 };

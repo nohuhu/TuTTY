@@ -9,7 +9,6 @@
 //
 
 #include <windows.h>
-#include <stdio.h>
 
 #if !defined(_DEBUG) && defined(MINIRTL)
 

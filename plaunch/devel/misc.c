@@ -1,6 +1,9 @@
+#include <stdio.h>
+#include "entry.h"
 #include "plaunch.h"
 #include "misc.h"
 #include "registry.h"
+#include "hotkey.h"
 
 typedef BOOL (WINAPI * SHGIL_PROC)	(HIMAGELIST *phLarge, HIMAGELIST *phSmall);
 typedef BOOL (WINAPI * FII_PROC)	(BOOL fFullInit);
@@ -29,8 +32,8 @@ int GetSystemImageLists(HMODULE hShell32, HIMAGELIST *phLarge, HIMAGELIST *phSma
     };
 
     // Initialize imagelist for this process - function not present on win95/98
-    if (FileIconInit != 0)
-		FileIconInit(TRUE);
+//    if (FileIconInit != 0)
+//		FileIconInit(TRUE);
 
     // Get handles to the large+small system image lists!
     Shell_GetImageLists(phLarge, phSmall);
@@ -46,18 +49,33 @@ void FreeSystemImageLists(HMODULE hShell32) {
 #define	ISFOLDER	"IsFolder"
 #define	ISEXPANDED	"IsExpanded"
 
-char *lastname(char *in) {
+/*
+ * Returns a freshly allocated copy of the string
+ * passed to it. Caller is responsible of freeing it.
+ */
+char *dupstr(const char *s) {
     char *p;
+    int len;
 
-    if (in == "")
-		return in;
-    
-    p = &in[strlen(in)];
+    p = NULL;
 
-    while (p >= in && *p != '\\')
-		*p--;
+    if (s) {
+        len = strlen(s);
+        p = malloc(len + 1);
+        strcpy(p, s);
+    }
+    return p;
+}
 
-    return p + 1;
+static char *firstname(char *path) {
+	char *p;
+
+	p = path;
+
+	while (*p != '\0' && *p != '\\')
+		p++;
+
+	return p;
 };
 
 HTREEITEM treeview_additem(HWND treeview, HTREEITEM parent, struct _config *cfg,
@@ -94,13 +112,13 @@ HTREEITEM treeview_additem(HWND treeview, HTREEITEM parent, struct _config *cfg,
 	return hti;
 };
 
-int treeview_callback(char *name, char *path, 
-					  int isfolder, int mode, 
-					  void *priv1, void *priv2, void *priv3) {
+static int treeview_callback(char *name, char *path, 
+							 int isfolder, int mode, 
+							 void *priv1, void *priv2, void *priv3) {
 	HWND treeview;
 	HTREEITEM hti;
 	int isexpanded;
-	char *buf;
+	char buf[BUFSIZE];
 
 	switch (mode) {
 	case REG_MODE_PREPROCESS:
@@ -116,9 +134,8 @@ int treeview_callback(char *name, char *path,
 			hti = (HTREEITEM)priv1;
 			treeview = (HWND)priv2;
 
-			buf = reg_make_path(NULL, path);
-			isexpanded = reg_read_i(buf, ISEXPANDED, 0);
-			free(buf);
+			reg_make_path(NULL, path, buf);
+			reg_read_i(buf, ISEXPANDED, 0, &isexpanded);
 
 			if (isfolder && isexpanded)
 				ret = TreeView_Expand(treeview, hti, TVE_EXPAND);
@@ -135,79 +152,52 @@ HTREEITEM treeview_addtree(HWND hwndTV, HTREEITEM _parent, char *root) {
 	return _parent;
 };
 
-char *treeview_getitemname(HWND treeview, HTREEITEM item) {
+unsigned int treeview_getitemname(HWND treeview, HTREEITEM item, char *buf,
+								  unsigned int bufsize) {
 	TVITEM tvi;
-	char *buf, *name;
 
 	if (!item)
-		return NULL;
-
-	buf = (char *)malloc(BUFSIZE);
-	memset(buf, 0, BUFSIZE);
+		return FALSE;
 
 	memset(&tvi, 0, sizeof(TVITEM));
 	tvi.mask = TVIF_HANDLE | TVIF_TEXT;
 	tvi.hItem = item;
 	tvi.pszText = buf;
-	tvi.cchTextMax = BUFSIZE;
+	tvi.cchTextMax = bufsize;
 	TreeView_GetItem(treeview, &tvi);
 
-	name = dupstr(buf);
-	free(buf);
-
-	return name;
+	return TRUE;
 };
 
-char *treeview_getitempath(HWND treeview, HTREEITEM item) {
-	char *buf, *path, *iname, *pname;
+unsigned int treeview_getitempath(HWND treeview, HTREEITEM item, char *buf) {
+	char buf2[BUFSIZE], buf3[BUFSIZE];
 	HTREEITEM parent, curitem;
 
 	if (!item)
-		return NULL;
+		return FALSE;
 
-	buf = (char *)malloc(BUFSIZE);
-	memset(buf, 0, BUFSIZE);
-	path = (char *)malloc(BUFSIZE);
-	memset(path, 0, BUFSIZE);
-	iname = treeview_getitemname(treeview, item);
-	strcpy(path, iname);
-	free(iname);
+	treeview_getitemname(treeview, item, buf3, BUFSIZE);
+	strcpy(buf, buf3);
 	curitem = item;
 
 	while (parent = TreeView_GetParent(treeview, curitem)) {
-		pname = treeview_getitemname(treeview, parent);
-		strcpy(buf, pname);
-		strcat(buf, "\\");
-		strcat(buf, path);
-		strcpy(path, buf);
-		free(pname);
+		treeview_getitemname(treeview, parent, buf3, BUFSIZE);
+		strcpy(buf2, buf);
+		sprintf(buf, "%s\\%s", buf2, buf3);
+		strcpy(buf, buf2);
 		curitem = parent;
 	};
 
-	free(buf);
-
-	return path;
-};
-
-static char *firstname(char *path) {
-	char *p;
-
-	p = path;
-
-	while (*p != '\0' && *p != '\\')
-		p++;
-
-	return p;
+	return TRUE;
 };
 
 static HTREEITEM _treeview_getitemfrompath(HWND treeview, HTREEITEM parent, char *path) {
-	char *fname, *name, *iname;
+	char *fname, name[BUFSIZE], iname[BUFSIZE];
 	HTREEITEM child;
 
-	if (!path)
+	if (!path || path[0] == '\0')
 		return parent;
 
-	name = (char *)malloc(BUFSIZE);
 	memset(name, 0, BUFSIZE);
 	fname = firstname(path);
 	memmove(name, path, fname - path);
@@ -217,18 +207,14 @@ static HTREEITEM _treeview_getitemfrompath(HWND treeview, HTREEITEM parent, char
 		return parent;
 
 	do {
-		iname = treeview_getitemname(treeview, child);
+		treeview_getitemname(treeview, child, iname, BUFSIZE);
 		if (!strcmp(name, iname)) {
-			free(iname);
 			if (fname[0] == '\0')
 				return child;
 			else
 				return _treeview_getitemfrompath(treeview, child, fname + 1);
 		};
-		free(iname);
 	} while (child = TreeView_GetNextSibling(treeview, child));
-
-	free(name);
 
 	return NULL;
 };
@@ -269,7 +255,7 @@ HMENU menu_addsession(HMENU menu, char *root) {
 	return menu;
 };
 
-void menu_free(HMENU menu) {
+static void menu_free(HMENU menu) {
 	int i;
 	MENUITEMINFO mii;
 	HMENU submenu;
@@ -295,14 +281,14 @@ HMENU menu_refresh(HMENU menu, char *root) {
 
 	m = CreatePopupMenu();
 //	AppendMenu(m, MF_ENABLED, IDM_BACKREST, "&Backup/Restore...");
+	AppendMenu(m, MF_ENABLED, IDM_LAUNCHBOX, "&Session manager...");
+	AppendMenu(m, MF_ENABLED, IDM_WINDOWLIST, "&Window list...");
 	AppendMenu(m, MF_ENABLED, IDM_OPTIONSBOX, "&Options...");
 	AppendMenu(m, MF_ENABLED, IDM_ABOUT, "&About...");
 
 	menu_free(menu);
 	menu = menu_addsession(menu, root);
 	AppendMenu(menu, MF_SEPARATOR, 0, 0);
-	AppendMenu(menu, MF_ENABLED, IDM_LAUNCHBOX, "&Session manager...");
-	AppendMenu(menu, MF_ENABLED, IDM_WINDOWLIST, "&Window list...");
 	AppendMenu(menu, MF_POPUP, (UINT)m, "&More");
 #ifdef WINDOWS_NT351_COMPATIBLE
 	if (config->have_shell)
@@ -311,24 +297,6 @@ HMENU menu_refresh(HMENU menu, char *root) {
 
 	return menu;
 };
-
-/*
- * Returns a freshly allocated copy of the string
- * passed to it. Caller is responsible of freeing it.
- */
-char *dupstr(const char *s) {
-    char *p;
-    int len;
-
-    p = NULL;
-
-    if (s) {
-        len = strlen(s);
-        p = malloc(len + 1);
-        strcpy(p, s);
-    }
-    return p;
-}
 
 /*
  * This function tries to find a full path to putty.exe by
@@ -345,76 +313,37 @@ char *dupstr(const char *s) {
  * returns NULL and relies on the user to set the correct path 
  * in the options dialog.
  */
-char *get_putty_path(void) {
-	char *path, *file;
+unsigned int get_putty_path(char *buf, unsigned int bufsize) {
+	char *file;
 
-    path = malloc(BUFSIZE);
-
-	if (SearchPath(NULL, "putty.exe", NULL, BUFSIZE, path, &file))
-		return path;
-	else if (SearchPath(NULL, "puttytel.exe", NULL, BUFSIZE, path, &file))
-		return path;
-	else {
-		free(path);
-		return NULL;
-	};
+	if (SearchPath(NULL, "putty.exe", NULL, bufsize, buf, &file))
+		return TRUE;
+	else if (SearchPath(NULL, "puttytel.exe", NULL, bufsize, buf, &file))
+		return TRUE;
+	else
+		return FALSE;
 };
 
-/* 
- * Set up a system tray icon.
- */
-int AddTrayIcon(HWND hwnd) {
-    BOOL res;
-    NOTIFYICONDATA tnid;
-    HICON hicon;
-
-    tnid.cbSize = sizeof(NOTIFYICONDATA);
-    tnid.hWnd = hwnd;
-    tnid.uID = 1;	       /* unique within this systray use */
-    tnid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
-    tnid.uCallbackMessage = WM_SYSTRAY;
-    tnid.hIcon = hicon = LoadIcon(config->hinst, MAKEINTRESOURCE(IDI_MAINICON));
-#ifdef _DEBUG
-	strcpy(tnid.szTip, 
-		"(DEBUG) PuTTY Launcher version " APPVERSION " built " __DATE__ " " __TIME__ );
-#else
-    strcpy(tnid.szTip, "PuTTY Launcher");
-#endif /* _DEBUG */
-
-    res = Shell_NotifyIcon(NIM_ADD, &tnid);
-
-    if (hicon) 
-		DestroyIcon(hicon);
-    
-    return res;
-}
-
-int hotkeys_callback(char *name, char *path, int isfolder, int mode,
-					 void *priv1, void *priv2, void *priv3) {
+static int hotkeys_callback(char *name, char *path, int isfolder, int mode,
+							void *priv1, void *priv2, void *priv3) {
 	struct _config *cfg = (struct _config *)priv2;
-	char *buf1, *buf2;
+	char buf1[BUFSIZE], buf2[BUFSIZE];
 	int i, hotkey;
 
 	if (mode == REG_MODE_POSTPROCESS)
 		return 0;
 
-	buf2 = (char *)malloc(BUFSIZE);
+	reg_make_path(NULL, path, buf1);
 
-	buf1 = reg_make_path(NULL, path);
-
-	for (i = 0; i < 2; i++) {
+	for (i = 2; i <= 5; i++) {
 		sprintf(buf2, "%s%d", HOTKEY, i);
-		hotkey = reg_read_i(buf1, buf2, 0);
-		if (hotkey) {
-			cfg->hotkeys[cfg->nhotkeys].action = HOTKEY_ACTION_LAUNCH + i;
+		if (reg_read_i(buf1, buf2, 0, &hotkey) && hotkey) {
+			cfg->hotkeys[cfg->nhotkeys].action = i;
 			cfg->hotkeys[cfg->nhotkeys].hotkey = hotkey;
 			cfg->hotkeys[cfg->nhotkeys].destination = dupstr(path);
 			cfg->nhotkeys++;
 		};
 	};
-
-	free(buf2);
-	free(buf1);
 
 	return 0;
 };
@@ -425,38 +354,32 @@ static int extract_hotkeys(struct _config *cfg, char *root) {
 	return TRUE;
 };
 
-int is_folder(char *name) {
-	char *buf;
-	int ret;
+unsigned int is_folder(char *name) {
+	char buf[BUFSIZE];
+	int isfolder;
 
 	if (!name)
 		return 0;
 
-	buf = reg_make_path(NULL, name);
-	ret = reg_read_i(buf, ISFOLDER, 0);
-	free(buf);
+	reg_make_path(NULL, name, buf);
+	reg_read_i(buf, ISFOLDER, 0, &isfolder);
 
-	return ret;
+	return isfolder;
 };
 
-int read_config(struct _config *cfg) {
-	char *buf;
+unsigned int read_config(struct _config *cfg) {
+	char buf[BUFSIZE];
 	int hk;
 
 	if (!cfg)
 		return FALSE;
 
-	buf = reg_read_s(PLAUNCH_REGISTRY_ROOT, PLAUNCH_PUTTY_PATH, NULL);
-
-	if (config->putty_path)
-		free(config->putty_path);
-
-	if (buf)
-		config->putty_path = dupstr(buf);
+	if (reg_read_s(PLAUNCH_REGISTRY_ROOT, PLAUNCH_PUTTY_PATH, NULL, buf, BUFSIZE))
+		strcpy(config->putty_path, buf);
 	else
-		config->putty_path = get_putty_path();
+		get_putty_path(config->putty_path, BUFSIZE);
 
-	hk = reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_LB, 0);
+	reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_LB, 0, &hk);
 
 	if (hk == 0)
 		hk = MAKELPARAM(MOD_WIN, 'P');
@@ -466,7 +389,7 @@ int read_config(struct _config *cfg) {
 	config->hotkeys[config->nhotkeys].destination = (char *)WM_LAUNCHBOX;
 	config->nhotkeys++;
 
-	hk = reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_WL, 0);
+	reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_WL, 0, &hk);
 
 	if (hk == 0)
 		hk = MAKELPARAM(MOD_WIN, 'W');
@@ -476,12 +399,12 @@ int read_config(struct _config *cfg) {
 	config->hotkeys[config->nhotkeys].destination = (char *)WM_WINDOWLIST;
 	config->nhotkeys++;
 
-	if (reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLEDRAGDROP, TRUE))
+	if (reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLEDRAGDROP, TRUE, &hk) && hk)
 		config->options |= OPTION_ENABLEDRAGDROP;
 	else
 		config->options &= !OPTION_ENABLEDRAGDROP;
 
-	if (reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLESAVECURSOR, TRUE))
+	if (reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLESAVECURSOR, TRUE, &hk) && hk)
 		config->options |= OPTION_ENABLESAVECURSOR;
 	else
 		config->options &= !OPTION_ENABLESAVECURSOR;
@@ -491,19 +414,18 @@ int read_config(struct _config *cfg) {
 	return TRUE;
 };
 
-int save_config(struct _config *cfg, int what) {
-	char *buf;
+unsigned int save_config(struct _config *cfg, int what) {
+	char buf[BUFSIZE];
 
 	if (!cfg || !what)
 		return FALSE;
 
 	if (what & CFG_SAVE_PUTTY_PATH) {
-		buf = get_putty_path();
+		get_putty_path(buf, BUFSIZE);
 		if (!strcmp(buf, config->putty_path))
 			reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_PUTTY_PATH);
 		else
 			reg_write_s(PLAUNCH_REGISTRY_ROOT, PLAUNCH_PUTTY_PATH, config->putty_path);
-		free(buf);
 	};
 
 	if (what & CFG_SAVE_HOTKEY_LB) {
@@ -537,7 +459,6 @@ int save_config(struct _config *cfg, int what) {
 	return TRUE;
 };
 
-#ifdef WINDOWS_NT351_COMPATIBLE
 void center_window(HWND window) {
 	HWND parent;
 	RECT r, rp, rw;
@@ -560,4 +481,3 @@ void center_window(HWND window) {
 		rp.top + (r.bottom / 2),
 		0, 0, SWP_NOSIZE);
 };
-#endif /* WINDOWS_NT351_COMPATIBLE */

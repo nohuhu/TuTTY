@@ -16,7 +16,7 @@
 #include <shellapi.h>
 #include <commctrl.h>
 
-#define BUFSIZE 2048
+#define BUFSIZE 512
 
 #define WM_XUSER			(WM_USER + 0x2000)
 #define WM_SYSTRAY			(WM_XUSER + 6)
@@ -26,6 +26,7 @@
 #define WM_HOTKEYCHANGE		(WM_XUSER + 10)
 #define WM_LAUNCHBOX		(WM_XUSER + 11)
 #define WM_WINDOWLIST		(WM_XUSER + 12)
+#define	WM_LAUNCHPUTTY		(WM_XUSER + 13)
 
 #define IDM_CLOSE	    0x0010
 #define IDM_LAUNCHBOX	0x0020
@@ -51,10 +52,6 @@
 #define PUTTY "PuTTY"
 #define PUTTYTEL "PuTTYtel"
 
-#define HOTKEY_ACTION_MESSAGE	0x01
-#define HOTKEY_ACTION_LAUNCH	0x02
-#define HOTKEY_ACTION_EDIT		0x03
-
 #define OPTION_ENABLEDRAGDROP	0x0001
 #define OPTION_ENABLESAVECURSOR	0x0002
 
@@ -63,22 +60,23 @@ struct _config {
 	HWND hwnd_mainwindow;
 	HIMAGELIST image_list;
 	HMENU systray_menu;
-	int img_open; 
-	int img_closed;
-	int img_session;
-	int iconx, icony;
-	char *putty_path;
-	int nhotkeys;
+	HICON main_icon;
+	unsigned int img_open; 
+	unsigned int img_closed;
+	unsigned int img_session;
+	unsigned int iconx, icony;
+	char putty_path[BUFSIZE];
+	unsigned int nhotkeys;
 	struct _hotkey_action {
 		LONG hotkey;
-		int action;
+		unsigned int action;
 		char *destination;
 	} hotkeys[256];
-	int options;
-	int version_major;
-	int version_minor;
+	unsigned int options;
+	unsigned int version_major;
+	unsigned int version_minor;
 #ifdef WINDOWS_NT351_COMPATIBLE
-	int have_shell;
+	unsigned int have_shell;
 #endif /* WINDOWS_NT351_COMPATIBLE */
 } *config;
 
