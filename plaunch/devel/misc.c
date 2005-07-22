@@ -8,26 +8,27 @@
 typedef BOOL (WINAPI * SHGIL_PROC)	(HIMAGELIST *phLarge, HIMAGELIST *phSmall);
 typedef BOOL (WINAPI * FII_PROC)	(BOOL fFullInit);
 
-int GetSystemImageLists(HMODULE hShell32, HIMAGELIST *phLarge, HIMAGELIST *phSmall) {
+int GetSystemImageLists(HMODULE *hShell32, HIMAGELIST *phLarge, HIMAGELIST *phSmall) {
     SHGIL_PROC	Shell_GetImageLists;
     FII_PROC	FileIconInit;
 
     if (phLarge == 0 || phSmall == 0)
 		return FALSE;
 
-    if (hShell32 == 0)
-		hShell32 = LoadLibrary("shell32.dll");
+	if (*hShell32 == NULL)
+		*hShell32 = LoadLibrary("shell32.dll");
 
-    if (hShell32 == 0)
+    if (*hShell32 == NULL)
 		return FALSE;
 
-    Shell_GetImageLists = (SHGIL_PROC)  GetProcAddress(hShell32, (LPCSTR)71);
-    FileIconInit	    = (FII_PROC)    GetProcAddress(hShell32, (LPCSTR)660);
+    Shell_GetImageLists = (SHGIL_PROC)  GetProcAddress(*hShell32, (LPCSTR)71);
+    FileIconInit	    = (FII_PROC)    GetProcAddress(*hShell32, (LPCSTR)660);
 
     // FreeIconList@8 = ord 227
 
     if (Shell_GetImageLists == 0) {
-		FreeLibrary(hShell32);
+		FreeLibrary(*hShell32);
+		*hShell32 = NULL;
 		return FALSE;
     };
 
@@ -84,6 +85,7 @@ HTREEITEM treeview_additem(HWND treeview, HTREEITEM parent, struct _config *cfg,
 	TVITEM tvi;
 	TVINSERTSTRUCT tvins;
 
+	memset(&tvi, 0, sizeof(TVITEM));
 	tvi.mask = TVIF_TEXT | TVIF_CHILDREN | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
 	tvi.pszText = name; 
 	tvi.cchTextMax = strlen(name); 

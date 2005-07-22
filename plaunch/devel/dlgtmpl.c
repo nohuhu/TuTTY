@@ -113,44 +113,44 @@ void *dialogtemplate_addcontrol(void *tmpl, DWORD style, DWORD exstyle,
 	return (void *)lpw;
 };
 
-void * __inline dialogtemplate_addbutton(void *tmpl, DWORD style, DWORD exstyle,
-										 int x, int y, int cx, int cy,
-										 char *caption, DWORD id) {
+void __inline *dialogtemplate_addbutton(void *tmpl, DWORD style, DWORD exstyle,
+										int x, int y, int cx, int cy,
+										char *caption, DWORD id) {
 	return dialogtemplate_addcontrol(tmpl, style, exstyle, x, y, cx, cy, caption, id,
 									 (char *)0xffff0080);
 };
 
-void * __inline dialogtemplate_addeditbox(void *tmpl, DWORD style, DWORD exstyle,
-										  int x, int y, int cx, int cy,
-										  char *caption, DWORD id) {
+void __inline *dialogtemplate_addeditbox(void *tmpl, DWORD style, DWORD exstyle,
+										 int x, int y, int cx, int cy,
+										 char *caption, DWORD id) {
 	return dialogtemplate_addcontrol(tmpl, style, exstyle, x, y, cx, cy, caption, id,
 									 (char *)0xffff0081);
 };
 
-void * __inline dialogtemplate_addstatic(void *tmpl, DWORD style, DWORD exstyle,
-										 int x, int y, int cx, int cy,
-										 char *caption, DWORD id) {
+void __inline *dialogtemplate_addstatic(void *tmpl, DWORD style, DWORD exstyle,
+										int x, int y, int cx, int cy,
+										char *caption, DWORD id) {
 	return dialogtemplate_addcontrol(tmpl, style, exstyle, x, y, cx, cy, caption, id,
 									 (char *)0xffff0082);
 };
 
-void * __inline dialogtemplate_addlistbox(void *tmpl, DWORD style, DWORD exstyle,
-										  int x, int y, int cx, int cy,
-										  char *caption, DWORD id) {
+void __inline *dialogtemplate_addlistbox(void *tmpl, DWORD style, DWORD exstyle,
+										 int x, int y, int cx, int cy,
+										 char *caption, DWORD id) {
 	return dialogtemplate_addcontrol(tmpl, style, exstyle, x, y, cx, cy, caption, id,
 									 (char *)0xffff0083);
 };
 
-void * __inline dialogtemplate_addscrollbar(void *tmpl, DWORD style, DWORD exstyle,
-											int x, int y, int cx, int cy,
-											char *caption, DWORD id) {
+void __inline *dialogtemplate_addscrollbar(void *tmpl, DWORD style, DWORD exstyle,
+										   int x, int y, int cx, int cy,
+										   char *caption, DWORD id) {
 	return dialogtemplate_addcontrol(tmpl, style, exstyle, x, y, cx, cy, caption, id,
 									 (char *)0xffff0084);
 };
 
-void * __inline dialogtemplate_addcombobox(void *tmpl, DWORD style, DWORD exstyle,
-										   int x, int y, int cx, int cy,
-										   char *caption, DWORD id) {
+void __inline *dialogtemplate_addcombobox(void *tmpl, DWORD style, DWORD exstyle,
+										  int x, int y, int cx, int cy,
+										  char *caption, DWORD id) {
 	return dialogtemplate_addcontrol(tmpl, style, exstyle, x, y, cx, cy, caption, id,
 									 (char *)0xffff0085);
 };

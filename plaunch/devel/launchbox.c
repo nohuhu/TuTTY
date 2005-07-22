@@ -23,17 +23,18 @@
 
 #define	TAB_HOTKEYS			0
 #define	TAB_AUTOPROCESS		1
-#define	TAB_LAST			2
-#define	TAB_ACTIONS			2
+#define	TAB_LIMITS			2
+#define	TAB_LAST			3
+#define	TAB_ACTIONS			3
 
 char * TAB_NAMES[] =
-	{ "Hot Keys", "Limits && Auto Processing", "%s Actions"};
+	{ "Hot Keys", "Auto Processing", "Instance Limits", "Actions", "More Actions"};
 
 typedef struct tag_dlghdr { 
     HWND hwndTab;       // tab control 
     HWND hwndDisplay;   // current child dialog box 
     RECT rcDisplay;     // display rectangle for the tab control 
-    DLGTEMPLATE *apRes[TAB_LAST]; 
+    DLGTEMPLATE *apRes[5]; 
 } DLGHDR; 
 
 /*
@@ -100,7 +101,7 @@ static unsigned int treeview_find_unused_name(HWND treeview, HTREEITEM parent,
 
 static int CALLBACK LaunchBoxChildProc(HWND hwnd, UINT msg,
 									   WPARAM wParam, LPARAM lParam) {
-static HBRUSH background, staticback;
+static HBRUSH background;
 	switch (msg) {
 	case WM_INITDIALOG:
 		{
@@ -116,18 +117,20 @@ static HBRUSH background, staticback;
 						SWP_SHOWWINDOW);
 
 			background = GetStockObject(HOLLOW_BRUSH);
-//			staticback = GetStockObject(config->version_major >= 5 ? WHITE_BRUSH : LTGRAY_BRUSH);
 		};
 		break;
 	case WM_CTLCOLORDLG:
 		return (INT_PTR)background;
-//	case WM_CTLCOLORSTATIC:
-//	case WM_CTLCOLOREDIT:
-//	case WM_CTLCOLORBTN:
-//	case WM_CTLCOLORLISTBOX:
-//		SetBkMode((HDC)wParam, TRANSPARENT);
-//		return (INT_PTR)wParam;
-//		break;
+	case WM_CTLCOLORSTATIC:
+	case WM_CTLCOLOREDIT:
+	case WM_CTLCOLORBTN:
+	case WM_CTLCOLORLISTBOX:
+		if (COMPAT_WINDOWSXP(config->version_major, config->version_minor)) {
+			SetBkMode((HDC)wParam, TRANSPARENT);
+			return (INT_PTR)wParam;
+		} else
+			return FALSE;
+		break;
 	};
 
 	return FALSE;
@@ -282,7 +285,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			memset(&item, 0, sizeof(TCITEM));
 			item.mask = TCIF_TEXT | TCIF_IMAGE;
 			item.iImage = -1;
-			for (i = 0; i < 2 /*TAB_LAST*/; i++) {
+			for (i = 0; i < 5 /*TAB_LAST*/; i++) {
 				HRSRC hrsrc;
 				HGLOBAL hglobal;
 

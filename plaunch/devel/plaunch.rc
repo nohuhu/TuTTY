@@ -45,7 +45,7 @@ BEGIN
     PUSHBUTTON      "&Rename",IDC_LAUNCHBOX_BUTTON_RENAME,188,103,50,14
     PUSHBUTTON      "&Delete",IDC_LAUNCHBOX_BUTTON_DELETE,188,119,50,14
     PUSHBUTTON      "&More >>",IDC_LAUNCHBOX_BUTTON_MORE,188,140,50,14
-    LTEXT           "&Sessions:",IDC_LAUNCHBOX_STATIC_TREEVIEW,4,4,75,9
+    LTEXT           "&Sessions:",IDC_STATIC,4,4,75,9
     GROUPBOX        "",IDC_LAUNCHBOX_GROUPBOX_TREEVIEW,4,17,180,137
     GROUPBOX        "",IDC_LAUNCHBOX_GROUPBOX_TABVIEW,4,165,234,95
     CONTROL         "",IDC_LAUNCHBOX_STATIC_DIVIDER,"Static",SS_ETCHEDHORZ,4,
@@ -58,8 +58,8 @@ STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION |
 CAPTION "PuTTY Sessions"
 FONT 8, "MS Sans Serif"
 BEGIN
-    LTEXT           "&Running PuTTY or PuTTYtel sessions:",
-                    IDC_WINDOWLISTBOX_STATIC,7,3,169,8
+    LTEXT           "&Running PuTTY or PuTTYtel sessions:",IDC_STATIC,7,3,
+                    169,8
     LISTBOX         IDC_WINDOWLISTBOX_LISTBOX,7,15,169,132,LBS_HASSTRINGS | 
                     LBS_USETABSTOPS | LBS_WANTKEYBOARDINPUT | 
                     LBS_DISABLENOSCROLL | WS_VSCROLL | WS_TABSTOP
@@ -78,17 +78,17 @@ FONT 8, "MS Sans Serif"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,95,210,50,14
     LTEXT           "The above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.",
-                    100,15,97,210,20
+                    IDC_STATIC,15,97,210,20
     CTEXT           "PuTTY Launcher © 2004, 2005 dwalin <dwalin@dwalin.ru>\n\nPortions © Simon Tatham, 1997-2004",
-                    101,15,4,210,27
+                    IDC_STATIC,15,4,210,27
     LTEXT           "Permission is hereby granted, free of charge, to any person\nobtaining a copy of this software and associated documentation\nfiles (the """"Software""""), to deal in the Software without restriction,\n",
-                    102,15,36,210,24
+                    IDC_STATIC,15,36,210,24
     LTEXT           "including without limitation the rights to use, copy, modify, merge,\npublish, distribute, sublicense, and/or sell copies of the Software,\nand to permit persons to whom the Software is furnished to do so,\nsubject to the following conditions:\n",
-                    103,15,60,210,34
+                    IDC_STATIC,15,60,210,34
     LTEXT           "THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT\nWARRANTY OF ANY KIND, EXPRESS OR IMPLIED,\nINCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR\nPURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL\n",
-                    104,15,122,210,40
+                    IDC_STATIC,15,122,210,40
     LTEXT           "THE COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,\nDAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR\nTHE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-                    105,15,162,210,42
+                    IDC_STATIC,15,162,210,42
 END
 
 IDD_ABOUTBOX DIALOG DISCARDABLE  0, 0, 234, 68
@@ -102,13 +102,14 @@ BEGIN
                     70,14
     PUSHBUTTON      "View &License...",IDC_ABOUTBOX_BUTTON_LICENSE,7,49,70,
                     14
-    CTEXT           "PuTTY Launcher && Session Manager",100,7,7,220,11
+    CTEXT           "PuTTY Launcher && Session Manager",IDC_STATIC,7,7,220,
+                    11
     CTEXT           "",IDC_ABOUTBOX_STATIC_VERSION,12,20,210,8
     CTEXT           "© 2004, 2005 dwalin <dwalin@dwalin.ru>. All rights reserved.",
-                    101,7,35,220,11
+                    IDC_STATIC,7,35,220,11
 END
 
-IDD_OPTIONSBOX DIALOG DISCARDABLE  0, 0, 229, 204
+IDD_OPTIONSBOX DIALOG DISCARDABLE  0, 0, 229, 210
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | 
     WS_SYSMENU
 CAPTION "Options"
@@ -122,125 +123,189 @@ BEGIN
                     ES_AUTOHSCROLL
     EDITTEXT        IDC_OPTIONSBOX_EDITBOX_HOTKEY_WLIST,118,53,95,12,
                     ES_AUTOHSCROLL
+    EDITTEXT        IDC_OPTIONSBOX_EDITBOX_HOTKEY_HIDEWINDOW,16,82,95,12,
+                    ES_AUTOHSCROLL
+    EDITTEXT        IDC_OPTIONSBOX_EDITBOX_HOTKEY_CYCLEWINDOW,118,82,95,12,
+                    ES_AUTOHSCROLL
     CONTROL         "&Run PuTTY Launcher automatically at startup?",
                     IDC_OPTIONSBOX_CHECKBOX_STARTUP,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,16,91,200,9
+                    WS_TABSTOP,16,100,200,9
     CONTROL         "Enable tree-view items &drag&&drop in Launch Box?",
                     IDC_OPTIONSBOX_CHECKBOX_DRAGDROP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,16,105,200,9
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,114,200,9
     CONTROL         "Enable remembering &cursor position in Launch Box?",
                     IDC_OPTIONSBOX_CHECKBOX_SAVECUR,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,16,119,200,9
-    DEFPUSHBUTTON   "OK",IDOK,61,175,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,118,175,50,14
-    GROUPBOX        "",IDC_OPTIONSBOX_GROUPBOX,7,3,215,193
-    LTEXT           "&Path to PuTTY or PuTTYtel executable:",
-                    IDC_OPTIONSBOX_STATIC_PUTTYPATH,16,14,169,8
-    LTEXT           "&Launch Box hot key:",IDC_OPTIONSBOX_STATIC_HOTKEY_LBOX,
-                    16,42,75,8
-    LTEXT           "&Window List hot key:",
-                    IDC_OPTIONSBOX_STATIC_HOTKEY_WLIST,118,42,75,8
+                    WS_TABSTOP,16,128,200,9
     CONTROL         "Show all hidden PuTTY or PuTTYtel sessions on &quit?",
                     IDC_OPTIONSBOX_CHECKBOX_SHOWONQUIT,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,16,133,200,8
-    LTEXT           "&Hide active PuTTY window:",
-                    IDC_OPTIONSBOX_STATIC_HOTKEY_HIDEWINDOW,16,72,95,8
-    EDITTEXT        IDC_OPTIONSBOX_EDITBOX_HOTKEY_HIDEWINDOW,118,70,95,12,
-                    ES_AUTOHSCROLL
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,142,200,8
     CONTROL         "Show &saved PuTTY or PuTTYtel sessions as a submenu?",
                     IDC_OPTIONSBOX_CHECKBOX_MENUSESSIONS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,16,147,200,8
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,156,200,8
     CONTROL         "Show &running PuTTY or PuTTYtel sessions as a submenu?",
                     IDC_OPTIONSBOX_CHECKBOX_MENURUNNING,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,16,161,200,8
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,170,200,8
+    DEFPUSHBUTTON   "OK",IDOK,61,184,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,118,184,50,14
+    GROUPBOX        "",IDC_OPTIONSBOX_GROUPBOX,7,3,215,201
+    LTEXT           "&Path to PuTTY or PuTTYtel executable:",IDC_STATIC,16,
+                    14,169,8
+    LTEXT           "&Launch Box hot key:",IDC_STATIC,16,42,75,8
+    LTEXT           "&Window List hot key:",IDC_STATIC,118,42,75,8
+    LTEXT           "&Hide active PuTTY window:",IDC_STATIC,16,71,95,8
+    LTEXT           "C&ycle through sessions:",IDC_STATIC,118,71,95,8
 END
 
-IDD_LAUNCHBOX_TAB0 DIALOG DISCARDABLE  0, 0, 232, 52
-STYLE WS_CHILD | WS_VISIBLE
-FONT 8, "MS Sans Serif"
+IDD_LAUNCHBOX_TAB0 DIALOGEX 0, 0, 232, 52
+STYLE WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN
+EXSTYLE WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
-    EDITTEXT        IDC_LAUNCHBOX_EDITBOX_HOTKEY,83,0,90,14
-    PUSHBUTTON      "Set",IDC_LAUNCHBOX_BUTTON_HOTKEY,177,0,50,14
+    EDITTEXT        IDC_LAUNCHBOX_TAB0_EDITBOX_HOTKEY_LAUNCH,83,0,90,14
+    PUSHBUTTON      "Set",IDC_LAUNCHBOX_TAB0_BUTTON_HOTKEY_LAUNCH,177,0,50,
+                    14
+    EDITTEXT        IDC_LAUNCHBOX_TAB0_EDITBOX_HOTKEY_EDIT,83,19,90,14
+    PUSHBUTTON      "Set",IDC_LAUNCHBOX_TAB0_BUTTON_HOTKEY_EDIT,177,19,50,14
+    EDITTEXT        IDC_LAUNCHBOX_TAB0_EDITBOX_HOTKEY_KILL,83,38,90,14
+    PUSHBUTTON      "Set",IDC_LAUNCHBOX_TAB0_BUTTON_HOTKEY_KILL,177,38,50,14
     LTEXT           "Launch session hotkey:",IDC_STATIC,3,3,76,8
-    EDITTEXT        IDC_LAUNCHBOX_EDITBOX_HOTKEY2,83,19,90,14
-    PUSHBUTTON      "Set",IDC_LAUNCHBOX_BUTTON_HOTKEY2,177,19,50,14
     LTEXT           "Edit session hotkey:",IDC_STATIC,3,22,64,8
-    EDITTEXT        IDC_LAUNCHBOX_EDITBOX_HOTKEY3,83,38,90,14
-    PUSHBUTTON      "Set",IDC_LAUNCHBOX_BUTTON_HOTKEY3,177,38,50,14
     LTEXT           "Kill session hotkey:",IDC_STATIC,3,41,60,8
 END
 
-IDD_LAUNCHBOX_TAB1 DIALOGEX 0, 0, 228, 73
-STYLE WS_CHILD | WS_VISIBLE
+IDD_LAUNCHBOX_TAB1 DIALOGEX 0, 0, 228, 71
+STYLE WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN
+EXSTYLE WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    CONTROL         "At the start of the PuTTY Launcher, do this session...",
+                    IDC_LAUNCHBOX_TAB1_CHECKBOX_AUTORUN_ATSTART,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,3,3,181,8
+    PUSHBUTTON      ">>",IDC_LAUNCHBOX_TAB1_BUTTON_AUTORUN_ATSTART,187,0,40,
+                    14
+    CONTROL         "When network connection becomes available, do...",
+                    IDC_LAUNCHBOX_TAB1_CHECKBOX_AUTORUN_ATNETWORKUP,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,3,22,181,8
+    PUSHBUTTON      ">>",IDC_LAUNCHBOX_TAB1_BUTTON_ATNETWORKUP,187,19,40,14
+    CONTROL         "When network connection becomes unavailable...",
+                    IDC_LAUNCHBOX_TAB1_CHECKBOX_AUTORUN_ATNETWORKDOWN,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,3,41,184,8
+    PUSHBUTTON      ">>",IDC_LAUNCHBOX_TAB1_BUTTON_AUTORUN_ATNETWORKDOWN,187,
+                    38,40,14
+    CONTROL         "Before PuTTY Launcher is stopped, do...",
+                    IDC_LAUNCHBOX_TAB1_CHECKBOX_AUTORUN_ATSTOP,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,3,60,181,8
+    PUSHBUTTON      ">>",IDC_LAUNCHBOX_TAB1_BUTTON_AUTORUN_ATSTOP,187,57,40,
+                    14
+END
+
+IDD_LAUNCHBOX_TABGENERIC1 DIALOGEX 0, 0, 228, 70
+STYLE WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN
 EXSTYLE WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT
 FONT 8, "MS Sans Serif"
 BEGIN
-    CONTROL         "When PuTTY Launcher starts,",
-                    IDC_LAUNCHBOX_TAB1_CHECKBOX_AUTORUN_ATSTART,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,3,1,131,10
-    COMBOBOX        IDC_COMBO1,143,0,85,100,CBS_DROPDOWNLIST | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
-    CONTROL         "When network becomes available,",
-                    IDC_LAUNCHBOX_TAB1_CHECKBOX_AUTORUN_ATSTART2,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,3,16,131,10
-    COMBOBOX        IDC_COMBO2,143,15,85,100,CBS_DROPDOWNLIST | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
-    CONTROL         "When this session suddenly quits,",
-                    IDC_LAUNCHBOX_TAB1_CHECKBOX_AUTORUN_ATSTART3,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,3,31,131,10
-    COMBOBOX        IDC_COMBO3,143,30,85,100,CBS_DROPDOWNLIST | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
-    CONTROL         "When PuTTY Launcher stops,",
-                    IDC_LAUNCHBOX_TAB1_CHECKBOX_AUTORUN_ATSTART5,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,3,61,131,10
-    COMBOBOX        IDC_COMBO5,143,60,85,100,CBS_DROPDOWNLIST | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
-    CONTROL         "When network becomes unavailable,",
-                    IDC_LAUNCHBOX_TAB1_CHECKBOX_AUTORUN_ATSTART6,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,3,46,131,10
-    COMBOBOX        IDC_COMBO6,143,45,85,100,CBS_DROPDOWNLIST | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_FIND,103,0,62,100,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_ACTION1,4,19,62,30,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_ACTION2,78,19,62,30,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_ACTION3,154,19,60,30,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_ACTION4,4,38,62,30,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_ACTION5,78,38,62,30,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_ACTION6,154,38,60,30,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_ACTION7,78,57,62,30,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "<< Back",IDC_LAUNCHBOX_TABGENERIC_BUTTON_BACK,4,56,50,
+                    14
+    PUSHBUTTON      "More >>",IDC_LAUNCHBOX_TABGENERIC_BUTTON_MORE,164,56,50,
+                    14
+    LTEXT           "When condition is met, find the",IDC_STATIC,3,2,98,8
+    LTEXT           "instance and:",IDC_STATIC,169,2,44,8
+    LTEXT           "it,",IDC_STATIC,68,22,8,8
+    LTEXT           "it,",IDC_STATIC,142,22,8,8
+    LTEXT           "it,",IDC_STATIC,216,22,8,8
+    LTEXT           "it,",IDC_STATIC,68,41,8,8
+    LTEXT           "it,",IDC_STATIC,142,41,8,8
+    LTEXT           "it,",IDC_STATIC,216,41,8,8
+    RTEXT           "and",IDC_STATIC,59,59,13,8
+    LTEXT           "it.",IDC_STATIC,142,59,8,8
 END
 
-IDD_LAUNCHBOX_TAB2 DIALOG DISCARDABLE  0, 0, 228, 73
+IDD_LAUNCHBOX_TAB2 DIALOGEX 0, 0, 228, 52
 STYLE WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN
+EXSTYLE WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    CONTROL         "Enable limiting this session's number of instances:",
+                    IDC_LAUNCHBOX_TAB2_CHECKBOX_LIMIT_ENABLE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,3,3,171,8
+    CONTROL         "Lower threshold:",
+                    IDC_LAUNCHBOX_TAB2_CHECKBOX_LIMIT_LOWER,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,3,22,64,8
+    EDITTEXT        IDC_LAUNCHBOX_TAB2_EDITBOX_LIMIT_LOWER,72,19,27,14,
+                    ES_RIGHT | ES_NUMBER
+    CONTROL         "Spin2",IDC_LAUNCHBOX_TAB2_SPIN_LOWER,"msctls_updown32",
+                    UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | 
+                    UDS_ARROWKEYS,185,2,11,14
+    PUSHBUTTON      ">>",IDC_LAUNCHBOX_TAB2_BUTTON_LIMIT_LOWER,184,19,40,14
+    CONTROL         "Upper threshold:",
+                    IDC_LAUNCHBOX_TAB2_CHECKBOX_LIMIT_UPPER,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,3,40,64,10
+    EDITTEXT        IDC_LAUNCHBOX_TAB2_EDITBOX_LIMIT_UPPER,72,39,27,12,
+                    ES_RIGHT | ES_NUMBER
+    CONTROL         "Spin2",IDC_LAUNCHBOX_TAB2_SPIN_LIMIT_UPPER,
+                    "msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | 
+                    UDS_AUTOBUDDY | UDS_ARROWKEYS,201,2,11,14
+    PUSHBUTTON      ">>",IDC_LAUNCHBOX_TAB2_BUTTON_LIMIT_UPPER,184,38,40,14
+    LTEXT           ", when it's reached, do...",IDC_STATIC,100,22,78,8
+    LTEXT           ", when it's reached, do...",IDC_STATIC,100,41,78,8
+END
+
+IDD_LAUNCHBOX_TABGENERIC2 DIALOGEX 0, 0, 228, 70
+STYLE WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN
+EXSTYLE WS_EX_TRANSPARENT | WS_EX_CONTROLPARENT
 FONT 8, "MS Sans Serif"
 BEGIN
-    LTEXT           "When condition is met, find the",IDC_STATIC,3,2,98,8
-    COMBOBOX        IDC_COMBO2,103,0,50,100,CBS_DROPDOWN | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "instance and:",IDC_STATIC,157,2,44,8
-    COMBOBOX        IDC_COMBO3,0,15,64,30,CBS_DROPDOWN | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "it,",IDC_STATIC,66,17,8,8
-    COMBOBOX        IDC_COMBO4,76,15,64,30,CBS_DROPDOWN | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "it,",IDC_STATIC,142,17,8,8
-    COMBOBOX        IDC_COMBO7,152,15,64,30,CBS_DROPDOWN | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "it,",IDC_STATIC,218,17,8,8
-    COMBOBOX        IDC_COMBO8,0,30,64,30,CBS_DROPDOWN | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "it,",IDC_STATIC,66,33,8,8
-    COMBOBOX        IDC_COMBO9,76,30,64,30,CBS_DROPDOWN | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "it,",IDC_STATIC,142,33,8,8
-    COMBOBOX        IDC_COMBO10,152,30,64,30,CBS_DROPDOWN | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "it,",IDC_STATIC,218,33,8,8
-    COMBOBOX        IDC_COMBO11,0,45,64,30,CBS_DROPDOWN | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "it,",IDC_STATIC,66,47,8,8
-    COMBOBOX        IDC_COMBO12,76,45,64,30,CBS_DROPDOWN | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "it,",IDC_STATIC,142,47,8,8
-    COMBOBOX        IDC_COMBO13,152,45,64,30,CBS_DROPDOWN | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "it,",IDC_STATIC,218,47,8,8
-    LTEXT           "and finally,",IDC_STATIC,40,63,34,8
-    COMBOBOX        IDC_COMBO15,76,60,64,30,CBS_DROPDOWN | CBS_SORT | 
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "it.",IDC_STATIC,142,63,8,8
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION1,4,0,62,30,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION2,78,0,62,30,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION3,154,0,60,30,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION4,4,19,62,30,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION5,78,19,62,30,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION6,154,19,60,30,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION7,4,38,62,30,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION8,78,38,62,30,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION9,154,38,60,30,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION10,78,57,62,30,
+                    CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "<< Back",IDC_LAUNCHBOX_TABGENERIC_BUTTON_BACK,4,56,50,
+                    14
+    PUSHBUTTON      "More >>",IDC_LAUNCHBOX_TABGENERIC_BUTTON_MORE,164,56,50,
+                    14
+    LTEXT           "it,",IDC_STATIC,68,22,8,8
+    LTEXT           "it,",IDC_STATIC,142,22,8,8
+    LTEXT           "it,",IDC_STATIC,216,22,8,8
+    LTEXT           "it,",IDC_STATIC,68,41,8,8
+    LTEXT           "it,",IDC_STATIC,142,41,8,8
+    LTEXT           "it,",IDC_STATIC,216,41,8,8
+    RTEXT           "and",IDC_STATIC,59,59,13,8
+    LTEXT           "it.",IDC_STATIC,142,59,8,8
+    LTEXT           "it,",IDC_STATIC,68,3,8,8
+    LTEXT           "it,",IDC_STATIC,142,3,8,8
+    LTEXT           "it,",IDC_STATIC,216,3,8,8
 END
 
 
@@ -310,7 +375,15 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 221
         TOPMARGIN, 7
-        BOTTOMMARGIN, 66
+        BOTTOMMARGIN, 64
+    END
+
+    IDD_LAUNCHBOX_TABGENERIC1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 221
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 63
     END
 
     IDD_LAUNCHBOX_TAB2, DIALOG
@@ -318,7 +391,15 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 221
         TOPMARGIN, 7
-        BOTTOMMARGIN, 66
+        BOTTOMMARGIN, 45
+    END
+
+    IDD_LAUNCHBOX_TABGENERIC2, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 221
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 63
     END
 END
 #endif    // APSTUDIO_INVOKED

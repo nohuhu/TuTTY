@@ -27,7 +27,7 @@
 #define	PLAUNCH_MENUSESSIONS		"ShowSavedSessionsAsASubmenu"
 #define	PLAUNCH_MENURUNNING			"ShowRunningSessionsAsASubmenu"
 
-int GetSystemImageLists(HMODULE hShell32, HIMAGELIST *phLarge, HIMAGELIST *phSmall);
+int GetSystemImageLists(HMODULE *hShell32, HIMAGELIST *phLarge, HIMAGELIST *phSmall);
 void FreeSystemImageLists(HMODULE hShell32);
 
 HTREEITEM treeview_additem(HWND treeview, HTREEITEM parent, struct _config *cfg,

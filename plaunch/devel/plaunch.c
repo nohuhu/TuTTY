@@ -460,10 +460,12 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 #ifdef WINDOWS_NT351_COMPATIBLE
 			config->have_shell &&
 #endif /* WINDOWS_NT351_COMPATIBLE */
-			GetSystemImageLists(shell32, &large_list, &small_list)) {
+			GetSystemImageLists(&shell32, &large_list, &small_list)) {
 			ImageList_GetIconSize(small_list, &config->iconx, &config->icony);
 			config->image_list = ImageList_Create(config->iconx, config->icony, 
-				ILC_MASK | (config->version_major >= 5 ? ILC_COLOR32 : ILC_COLOR8),
+				ILC_MASK | 
+				(COMPAT_WINDOWSXP(config->version_major, config->version_minor) ? 
+					ILC_COLOR32 : ILC_COLOR8),
 				3, 0);
 
 			icon = ImageList_ExtractIcon(0, small_list, IMG_FOLDER_CLOSED);

@@ -111,7 +111,7 @@ unsigned int reg_make_path(char *parent, char *path, char *buffer) {
 };
 
 int reg_read_i(char *keyname, char *valname, int defval, int *value) {
-	HKEY key;
+	HKEY key = 0;
 	DWORD ret, type, size;
 	char munge[BUFSIZE];
 
@@ -119,8 +119,10 @@ int reg_read_i(char *keyname, char *valname, int defval, int *value) {
 	*value = defval;
 
 	mungestr(keyname, munge);
-	if (RegOpenKeyEx(HKEY_CURRENT_USER, munge, 0, KEY_READ, &key) != ERROR_SUCCESS)
+	if (RegOpenKeyEx(HKEY_CURRENT_USER, munge, 0, KEY_READ, &key) != ERROR_SUCCESS) {
+		RegCloseKey(key);
 		return ret;
+	};
 
 	type = REG_DWORD;
 	size = sizeof(DWORD);
@@ -156,14 +158,16 @@ unsigned int reg_write_i(char *keyname, char *valname, int value) {
 
 unsigned int reg_read_s(char *keyname, char *valname, char *defval, 
 						char *buffer, unsigned int bufsize) {
-	HKEY key;
+	HKEY key = 0;
 	DWORD type, size;
 	char munge[BUFSIZE];
 	unsigned int ret;
 
 	mungestr(keyname, munge);
-	if (RegOpenKeyEx(HKEY_CURRENT_USER, munge, 0, KEY_READ, &key) != ERROR_SUCCESS)
+	if (RegOpenKeyEx(HKEY_CURRENT_USER, munge, 0, KEY_READ, &key) != ERROR_SUCCESS) {
+		RegCloseKey(key);
 		return FALSE;
+	};
 
 	type = REG_SZ;
 	size = bufsize;
