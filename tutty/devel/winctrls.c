@@ -1587,25 +1587,6 @@ void winctrl_layout(struct dlgparam *dp, struct winctrls *wc,
                                       ctrl->editbox.shortcut);
             shortcuts[nshortcuts++] = ctrl->editbox.shortcut;
             specialedit(&pos, escaped, base_id, base_id + 1, base_id + 2);
-/*          if (ctrl->editbox.percentwidth == 100) {
-                if (ctrl->editbox.has_list)
-                    combobox(&pos, escaped,
-                             base_id, base_id+1);
-                else {
-                    multiedit(&pos, ctrl->editbox.password, escaped,
-                              base_id, base_id+1, 100, NULL);
-                    staticddl(&pos,
-                };
-            } else {
-                if (ctrl->editbox.has_list) {
-                    staticcombo(&pos, escaped, base_id, base_id+1,
-                                ctrl->editbox.percentwidth);
-                } else {
-                    (ctrl->editbox.password ? staticpassedit : staticedit)
-                        (&pos, escaped, base_id, base_id+1,
-                         ctrl->editbox.percentwidth);
-                }
-            }*/
             sfree(escaped);
             break;
 #endif /* SERIAL_BACKEND */
@@ -2355,6 +2336,26 @@ void dlg_listbox_addwithid(union control *ctrl, void *dlg,
     struct dlgparam *dp = (struct dlgparam *)dlg;
     struct winctrl *c = dlg_findbyctrl(dp, ctrl);
     int msg, msg2, index;
+
+#ifdef SERIAL_BACKEND
+	int base;
+
+    assert(c &&
+           (c->ctrl->generic.type == CTRL_LISTBOX ||
+			c->ctrl->generic.type == CTRL_SPECIALEDIT ||
+            (c->ctrl->generic.type == CTRL_EDITBOX &&
+             c->ctrl->editbox.has_list)));
+    msg = (c->ctrl->generic.type==CTRL_LISTBOX && c->ctrl->listbox.height!=0 ?
+           LB_ADDSTRING : CB_ADDSTRING);
+    msg2 = (c->ctrl->generic.type==CTRL_LISTBOX && c->ctrl->listbox.height!=0 ?
+           LB_SETITEMDATA : CB_SETITEMDATA);
+	if (c->ctrl->generic.type == CTRL_SPECIALEDIT) 
+		base = 2;
+	else
+		base = 1;
+	index = SendDlgItemMessage(dp->hwnd, c->base_id + base, msg, 0, (LPARAM)text);
+	SendDlgItemMessage(dp->hwnd, c->base_id + base, msg2, index, (LPARAM)id);
+#else
     assert(c &&
            (c->ctrl->generic.type == CTRL_LISTBOX ||
             (c->ctrl->generic.type == CTRL_EDITBOX &&
@@ -2365,6 +2366,7 @@ void dlg_listbox_addwithid(union control *ctrl, void *dlg,
            LB_SETITEMDATA : CB_SETITEMDATA);
     index = SendDlgItemMessage(dp->hwnd, c->base_id+1, msg, 0, (LPARAM)text);
     SendDlgItemMessage(dp->hwnd, c->base_id+1, msg2, index, (LPARAM)id);
+#endif /* SERIAL_BACKEND */
 }
 
 int dlg_listbox_getid(union control *ctrl, void *dlg, int index)
@@ -2372,10 +2374,22 @@ int dlg_listbox_getid(union control *ctrl, void *dlg, int index)
     struct dlgparam *dp = (struct dlgparam *)dlg;
     struct winctrl *c = dlg_findbyctrl(dp, ctrl);
     int msg;
+#ifdef SERIAL_BACKEND
+    assert(c && 
+			(c->ctrl->generic.type == CTRL_SPECIALEDIT ||
+			c->ctrl->generic.type == CTRL_LISTBOX));
+    msg = (c->ctrl->generic.type == CTRL_LISTBOX && 
+			c->ctrl->listbox.height != 0 ? LB_GETITEMDATA : CB_GETITEMDATA);
+	if (c->ctrl->generic.type == CTRL_SPECIALEDIT)
+		return SendDlgItemMessage(dp->hwnd, c->base_id + 2, msg, index, 0);
+	else 
+		return SendDlgItemMessage(dp->hwnd, c->base_id+1, msg, index, 0);
+#else
     assert(c && c->ctrl->generic.type == CTRL_LISTBOX);
     msg = (c->ctrl->listbox.height != 0 ? LB_GETITEMDATA : CB_GETITEMDATA);
     return
         SendDlgItemMessage(dp->hwnd, c->base_id+1, msg, index, 0);
+#endif /* SERIAL_BACKEND */
 }
 
 /* dlg_listbox_index returns <0 if no single element is selected. */
@@ -2777,20 +2791,21 @@ void dlg_control_enable(union control *ctrl, void *dlg, int enable)
     };
 };
 
+
 void dlg_specialedit_switch(union control *ctrl, void *dlg, int which)
 {
     struct dlgparam *dp = (struct dlgparam *)dlg;
     struct winctrl *c = dlg_findbyctrl(dp, ctrl);
-
-    HWND ctl1 = GetDlgItem(dp->hwnd, c->base_id + 1);
-    HWND ctl2 = GetDlgItem(dp->hwnd, c->base_id + 2);
+	
+    HWND ctrl1 = GetDlgItem(dp->hwnd, c->base_id + 1);
+    HWND ctrl2 = GetDlgItem(dp->hwnd, c->base_id + 2);
 
     if (which == 0) {
-        ShowWindow(ctl2, SW_HIDE);
-        ShowWindow(ctl1, SW_SHOW);
+        ShowWindow(ctrl2, SW_HIDE);
+        ShowWindow(ctrl1, SW_SHOW);
     } else if (which == 1) {
-        ShowWindow(ctl1, SW_HIDE);
-        ShowWindow(ctl2, SW_SHOW);
+        ShowWindow(ctrl1, SW_HIDE);
+        ShowWindow(ctrl2, SW_SHOW);
     };
 };
 
@@ -2800,6 +2815,17 @@ void dlg_setcontroltext(union control *ctrl, void *dlg, char *stext) {
     HWND ctl = GetDlgItem(dp->hwnd, c->base_id);
 
     SetWindowText(ctl, stext);
+};
+
+int dlg_listbox_getcount(union control *ctrl, void *dlg) {
+	struct dlgparam *dp = (struct dlgparam *)dlg;
+	struct winctrl *c = dlg_findbyctrl(dp, ctrl);
+	HWND ctl = GetDlgItem(dp->hwnd, c->base_id + 2);
+
+	if (ctrl->generic.type == CTRL_LISTBOX && ctrl->listbox.height != 0)
+		return SendMessage(ctl, LB_GETCOUNT, 0, 0);
+	else
+		return SendMessage(ctl, CB_GETCOUNT, 0, 0);
 };
 #endif /* SERIAL_BACKEND */
 

@@ -924,14 +924,6 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
             /* Send the paste buffer if there's anything to send */
             term_paste(term);
 
-#ifdef SERIAL_BACKEND
-                /* Unfortunately, Windows serial API don't have any way to map serial port
-                 * events on Windows events, so we just have to blindly poll the port
-                 * now and then. */
-                if (cfg.protocol == PROT_SERIAL)
-                        do_serial_processing();
-#endif /* SERIAL_BACKEND */
-
             /* If there's nothing new in the queue then we can do everything
              * we've delayed, reading the socket, writing, and repainting
              * the window.
@@ -979,6 +971,15 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
             /* There's no point rescanning everything in the message queue
              * so we do an apparently unnecessary wait here
              */
+#ifdef SERIAL_BACKEND
+			/* 
+			 * ...or, if we're communicating with serial port, we can now do
+			 * waiting for serial event OR window message to come.
+			 */
+			if (cfg.protocol == PROT_SERIAL)
+                        do_serial_processing();
+			else
+#endif /* SERIAL_BACKEND */
             WaitMessage();
             if (GetMessage(&msg, NULL, 0, 0) != 1)
                 break;
@@ -2313,6 +2314,9 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
           case IDM_REDIAL:
               back->special(backhandle, TS_NOP);
               break;
+		  case IDM_UPLOAD:
+		  case IDM_DOWNLOAD:
+			  break;
 #endif /* SERIAL_BACKEND */
           case SC_MOUSEMENU:
             /*

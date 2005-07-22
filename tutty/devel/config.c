@@ -28,19 +28,83 @@ static void port_editbox_handler(union control *ctrl, void *dlg,
 
    if (event == EVENT_REFRESH) {
        char *str;
-       int i;
     
        if (cfg->protocol == PROT_SERIAL) {
+		   int i;
+
            dlg_update_start(ctrl, dlg);
            dlg_specialedit_switch(ctrl, dlg, 1);
            dlg_listbox_clear(ctrl, dlg);
-           for (i = 1; i < 5; i++) {
-               str = dupprintf("COM%d", i);
-               dlg_listbox_add(ctrl, dlg, str);
-               sfree(str);
-           };
-           dlg_listbox_select(ctrl, dlg, cfg->port - 1);
-           dlg_update_done(ctrl, dlg);
+		   /*
+		    * Try to detect available serial ports.
+			* Under NT we're using QueryDosDevice(),
+			* under Win95/98/Me there is no such function
+			* available so we just try to open a port and
+			* determine its status looking at error code.
+			*/
+			{
+				OSVERSIONINFO ver;
+
+				memset(&ver, 0, sizeof(OSVERSIONINFO));
+				ver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+				if (GetVersionEx(&ver) && 
+					ver.dwPlatformId == VER_PLATFORM_WIN32_NT) {
+					char devices[65535];
+					char *curdev; 
+					int len, port;
+
+					memset(devices, 0, sizeof(devices));
+					if (QueryDosDevice(NULL, devices, sizeof(devices))) {
+						i = 0;
+						for (;;) {
+							curdev = &devices[i];
+							len = strlen(curdev);
+							if (len > 3 && _strnicmp(curdev, "COM", 3) == 0 &&
+								(port = atoi(&curdev[3])) > 0)
+								dlg_listbox_addwithid(ctrl, dlg, curdev, port);
+
+							while (devices[i] != '\0') 
+								i++;
+
+							i++;
+
+							if (devices[i] == '\0') 
+								break;
+						};
+					};
+				} else {
+					char name[20];
+					HANDLE port;
+					int success;
+
+					for (i = 1; i < 256; i++) {
+						sprintf(name, "\\\\.\\COM%d", i);
+						success = FALSE;
+						port = CreateFile(name, GENERIC_READ | GENERIC_WRITE,
+										0, 0, OPEN_EXISTING, 0, 0);
+						if (port == INVALID_HANDLE_VALUE) {
+							DWORD error = GetLastError();
+							if (error == ERROR_ACCESS_DENIED ||
+								error == ERROR_GEN_FAILURE)
+								success = TRUE;
+						} else {
+							success = TRUE;
+							CloseHandle(port);
+						};
+
+						if (success) {
+							sprintf(name, "COM%d", i);
+							dlg_listbox_addwithid(ctrl, dlg, name, i);
+						};
+					};
+				};
+			};
+			for (i = 0; i < dlg_listbox_getcount(ctrl, dlg); i++) {
+				if (dlg_listbox_getid(ctrl, dlg, i) == cfg->port)
+					dlg_listbox_select(ctrl, dlg, i);
+			};
+//           dlg_listbox_select(ctrl, dlg, cfg->port - 1);
+			dlg_update_done(ctrl, dlg);
        } else {
            dlg_update_start(ctrl, dlg);
            dlg_specialedit_switch(ctrl, dlg, 0);
@@ -49,17 +113,19 @@ static void port_editbox_handler(union control *ctrl, void *dlg,
            sfree(str);
            dlg_update_done(ctrl, dlg);
        };
-    } else if (event == EVENT_VALCHANGE) {
-       if (cfg->protocol == PROT_SERIAL) {
-           cfg->port = dlg_listbox_index(ctrl, dlg) + 1;
-       } else {
-           char str[10];
-           int i, j;
-           dlg_editbox_get(ctrl, dlg, str, 10);
-           i = sscanf(str, "%d", &j);
-           if (i == 1)
-               cfg->port = j;
-       };
+	} else if (event == EVENT_VALCHANGE) {
+		if (cfg->protocol == PROT_SERIAL) {
+			cfg->port = dlg_listbox_getid(ctrl, dlg, dlg_listbox_index(ctrl, dlg));
+		} else {
+			char str[10];
+			int i, j;
+
+			dlg_editbox_get(ctrl, dlg, str, 10);
+			i = sscanf(str, "%d", &j);
+
+			if (i == 1)
+				cfg->port = j;
+		};
     };
 };
 #endif /* SERIAL_BACKEND */
@@ -1119,6 +1185,7 @@ static void funky_handler(union control *ctrl, void *dlg,
             cfg->scrollbar_in_fullscreen = FALSE;
             cfg->bksp_is_delete = 0;
             cfg->bottom_buttons = 0; /* doesn't show bottom buttons (yet) */
+			cfg->passive_telnet = 1; /* compatibility with c-lan telnetd */
             cfg->colours[0][0] = 255;  cfg->colours[0][1] = 255;  cfg->colours[0][2] = 128;
             cfg->colours[1][0] = 255;  cfg->colours[1][1] = 255;  cfg->colours[1][2] = 128;
             cfg->colours[2][0] = 0;    cfg->colours[2][1] = 0;    cfg->colours[2][2] = 128;

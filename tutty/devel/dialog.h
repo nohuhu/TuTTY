@@ -690,6 +690,7 @@ void dlg_control_show(union control *ctrl, void *dlg);
 void dlg_control_enable(union control *ctrl, void *dlg, int enable);
 void dlg_specialedit_switch(union control *ctrl, void *dlg, int which);
 void dlg_setcontroltext(union control *ctrl, void *dlg, char *stext);
+int dlg_listbox_getcount(union control *ctrl, void *dlg);
 #endif /* SERIAL_BACKEND */
 
 #ifdef ATT513_TERMINAL
