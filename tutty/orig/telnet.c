@@ -196,12 +196,10 @@ static const struct Opt o_tspeed =
     { WILL, WONT, DO, DONT, TELOPT_TSPEED, OPTINDEX_TSPEED, REQUESTED };
 static const struct Opt o_ttype =
     { WILL, WONT, DO, DONT, TELOPT_TTYPE, OPTINDEX_TTYPE, REQUESTED };
-static const struct Opt o_oenv = { WILL, WONT, DO, DONT, TELOPT_OLD_ENVIRON,
-    OPTINDEX_OENV, INACTIVE
-};
-static const struct Opt o_nenv = { WILL, WONT, DO, DONT, TELOPT_NEW_ENVIRON,
-    OPTINDEX_NENV, REQUESTED
-};
+static const struct Opt o_oenv =
+    { WILL, WONT, DO, DONT, TELOPT_OLD_ENVIRON, OPTINDEX_OENV, INACTIVE };
+static const struct Opt o_nenv =
+    { WILL, WONT, DO, DONT, TELOPT_NEW_ENVIRON, OPTINDEX_NENV, REQUESTED };
 static const struct Opt o_echo =
     { DO, DONT, WILL, WONT, TELOPT_ECHO, OPTINDEX_ECHO, REQUESTED };
 static const struct Opt o_we_sga =
@@ -244,6 +242,8 @@ typedef struct telnet_tag {
     } state;
 
     Config cfg;
+
+    Pinger pinger;
 } *Telnet;
 
 #define TELNET_MAX_BACKLOG 4096
@@ -394,9 +394,12 @@ static void proc_rec_opt(Telnet telnet, int cmd, int option)
     }
     /*
      * If we reach here, the option was one we weren't prepared to
-     * cope with. So send a negative ack.
+     * cope with. If the request was positive (WILL or DO), we send
+     * a negative ack to indicate refusal. If the request was
+     * negative (WONT / DONT), we must do nothing.
      */
-    send_opt(telnet, (cmd == WILL ? DONT : WONT), option);
+    if (cmd == WILL || cmd == DO)
+        send_opt(telnet, (cmd == WILL ? DONT : WONT), option);
 }
 
 static void process_subneg(Telnet telnet)
@@ -636,6 +639,22 @@ static void do_telnet_read(Telnet telnet, char *buf, int len)
     }
 }
 
+static void telnet_log(Plug plug, int type, SockAddr addr, int port,
+		       const char *error_msg, int error_code)
+{
+    Telnet telnet = (Telnet) plug;
+    char addrbuf[256], *msg;
+
+    sk_getaddr(addr, addrbuf, lenof(addrbuf));
+
+    if (type == 0)
+	msg = dupprintf("Connecting to %s port %d", addrbuf, port);
+    else
+	msg = dupprintf("Failed to connect to %s: %s", addrbuf, error_msg);
+
+    logevent(telnet->frontend, msg);
+}
+
 static int telnet_closing(Plug plug, const char *error_msg, int error_code,
 			  int calling_back)
 {
@@ -644,12 +663,13 @@ static int telnet_closing(Plug plug, const char *error_msg, int error_code,
     if (telnet->s) {
         sk_close(telnet->s);
         telnet->s = NULL;
+	notify_remote_exit(telnet->frontend);
     }
     if (error_msg) {
-	/* A socket error has occurred. */
 	logevent(telnet->frontend, error_msg);
 	connection_fatal(telnet->frontend, "%s", error_msg);
-    }				       /* Otherwise, the remote side closed the connection normally. */
+    }
+    /* Otherwise, the remote side closed the connection normally. */
     return 0;
 }
 
@@ -682,6 +702,7 @@ static const char *telnet_init(void *frontend_handle, void **backend_handle,
 			       int nodelay, int keepalive)
 {
     static const struct plug_function_table fn_table = {
+	telnet_log,
 	telnet_closing,
 	telnet_receive,
 	telnet_sent
@@ -703,6 +724,8 @@ static const char *telnet_init(void *frontend_handle, void **backend_handle,
     telnet->term_width = telnet->cfg.width;
     telnet->term_height = telnet->cfg.height;
     telnet->state = TOP_LEVEL;
+    telnet->ldisc = NULL;
+    telnet->pinger = NULL;
     *backend_handle = telnet;
 
     /*
@@ -710,11 +733,14 @@ static const char *telnet_init(void *frontend_handle, void **backend_handle,
      */
     {
 	char *buf;
-	buf = dupprintf("Looking up host \"%s\"", host);
+	buf = dupprintf("Looking up host \"%s\"%s", host,
+			(cfg->addressfamily == ADDRTYPE_IPV4 ? " (IPv4)" :
+			 (cfg->addressfamily == ADDRTYPE_IPV6 ? " (IPv6)" :
+			  "")));
 	logevent(telnet->frontend, buf);
 	sfree(buf);
     }
-    addr = name_lookup(host, port, realhost, &telnet->cfg);
+    addr = name_lookup(host, port, realhost, &telnet->cfg, cfg->addressfamily);
     if ((err = sk_addr_error(addr)) != NULL) {
 	sk_addr_free(addr);
 	return err;
@@ -726,17 +752,12 @@ static const char *telnet_init(void *frontend_handle, void **backend_handle,
     /*
      * Open socket.
      */
-    {
-	char *buf, addrbuf[100];
-	sk_getaddr(addr, addrbuf, 100);
-	buf = dupprintf("Connecting to %s port %d", addrbuf, port);
-	logevent(telnet->frontend, buf);
-	sfree(buf);
-    }
     telnet->s = new_connection(addr, *realhost, port, 0, 1,
 			       nodelay, keepalive, (Plug) telnet, &telnet->cfg);
     if ((err = sk_socket_error(telnet->s)) != NULL)
 	return err;
+
+    telnet->pinger = pinger_new(&telnet->cfg, &telnet_backend, telnet);
 
     /*
      * Initialise option states.
@@ -777,6 +798,8 @@ static void telnet_free(void *handle)
     sfree(telnet->sb_buf);
     if (telnet->s)
 	sk_close(telnet->s);
+    if (telnet->pinger)
+	pinger_free(telnet->pinger);
     sfree(telnet);
 }
 /*
@@ -787,6 +810,7 @@ static void telnet_free(void *handle)
 static void telnet_reconfig(void *handle, Config *cfg)
 {
     Telnet telnet = (Telnet) handle;
+    pinger_reconfig(telnet->pinger, &telnet->cfg, cfg);
     telnet->cfg = *cfg;		       /* STRUCTURE COPY */
 }
 
@@ -1040,6 +1064,14 @@ static int telnet_exitcode(void *handle)
         return 0;
 }
 
+/*
+ * cfg_info for Telnet does nothing at all.
+ */
+static int telnet_cfg_info(void *handle)
+{
+    return 0;
+}
+
 Backend telnet_backend = {
     telnet_init,
     telnet_free,
@@ -1056,5 +1088,6 @@ Backend telnet_backend = {
     telnet_provide_ldisc,
     telnet_provide_logctx,
     telnet_unthrottle,
+    telnet_cfg_info,
     23
 };

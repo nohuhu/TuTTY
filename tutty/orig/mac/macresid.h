@@ -1,4 +1,4 @@
-/* $Id: macresid.h 4787 2004-11-16 15:27:00Z simon $ */
+/* $Id: macresid.h 5310 2005-02-15 22:41:00Z owen $ */
 
 /*
  * macresid.h -- Mac resource IDs
@@ -27,11 +27,12 @@
 /* File menu */
 #define iNew		1
 #define iOpen		2
-#define iClose		4
-#define iSave		5
-#define iSaveAs		6
-#define iDuplicate	7
-#define iQuit		9
+#define iChange         4
+#define iClose		6
+#define iSave		7
+#define iSaveAs		8
+#define iDuplicate	9
+#define iQuit		11
 /* Edit menu */
 #define iUndo		1
 #define iCut		3
@@ -55,6 +56,8 @@
 #define wiSettingsOpen		1
 #define wEventLog	133
 #define wQuestion	134
+#define wAbsent         135
+#define wWrong          136
 
 /* Controls */
 #define cVScroll	128
@@ -72,3 +75,5 @@
 #define SYS7_DEFAULT_PROC	(CDEF_Default << 4)
 #define CDEF_ListBox	131
 #define SYS7_LISTBOX_PROC	(CDEF_ListBox << 4)
+#define CDEF_GroupBox   132
+#define SYS7_GROUPBOX_PROC      (CDEF_GroupBox << 4)

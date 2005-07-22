@@ -149,6 +149,11 @@ keys.
 
 \dd Display a message summarizing the available options.
 
+\dt \cw{\-pgpfp}
+
+\dd Display the fingerprints of the PuTTY PGP Master Keys, to aid
+in verifying new files released by the PuTTY team.
+
 \dt \cw{\-load} \e{session}
 
 \dd Load a saved session by name. This allows you to run a saved session
@@ -193,7 +198,7 @@ tunnel all their connections. Only works in SSH.
 \dt \cw{\-A}, \cw{\-a}
 
 \dd Enable (\cw{\-A}) or disable (\cw{\-a}) SSH agent forwarding.
-Currently this only works with OpenSSH and SSH1.
+Currently this only works with OpenSSH and SSH-1.
 
 \dt \cw{\-X}, \cw{\-x}
 
@@ -210,11 +215,11 @@ pseudo-terminal at the server end.
 
 \dt \cw{\-1}, \cw{\-2}
 
-\dd Select SSH protocol v1 or v2.
+\dd Select SSH protocol version 1 or 2.
 
 \dt \cw{\-i} \e{keyfile}
 
-\dd Specify a private key file to use for authentication. For SSH2
+\dd Specify a private key file to use for authentication. For SSH-2
 keys, this key file must be in PuTTY's format, not OpenSSH's or
 anyone else's.
 

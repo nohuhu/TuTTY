@@ -1,6 +1,7 @@
 #include "putty.h"
 #include "network.h"
 #include "mac.h"
+#include "ssh.h"
 
 struct macnet_stack {
     SockAddr (*namelookup)(char const *, char **);
@@ -13,7 +14,7 @@ struct macnet_stack {
     void (*addr_free)(SockAddr);
     Socket (*skregister)(void *, Plug); /* "register" is a reserved word */
     Socket (*new)(SockAddr, int, int, int, int, int, Plug);
-    Socket (*newlistener)(char *, int, Plug, int);
+    Socket (*newlistener)(char *, int, Plug, int, int);
     char *(*addr_error)(SockAddr);
     void (*poll)(void);
     void (*cleanup)(void);
@@ -39,7 +40,7 @@ static struct macnet_stack mactcp = {
 void sk_init(void)
 {
 
-#if 0
+#ifndef NO_OT
     if (ot_init() == noErr)
 	stack = &ot;
     else
@@ -56,7 +57,7 @@ void sk_init(void)
  * Network functions exported to the world.  These choose whether to call
  * MacTCP or OpenTransport and behave accordingly.
  */
-SockAddr sk_namelookup(char const *host, char **canonicalname)
+SockAddr sk_namelookup(char const *host, char **canonicalname, int address_family)
 {
 
     if (stack != NULL)
@@ -137,11 +138,11 @@ Socket sk_new(SockAddr addr, int port, int privport, int oobinline,
     return NULL;
 }
 
-Socket sk_newlistener(char *srcaddr, int port, Plug plug, int local_host_only)
+Socket sk_newlistener(char *srcaddr, int port, Plug plug, int local_host_only, int address_family)
 {
 
     if (stack != NULL)
-	return stack->newlistener(srcaddr, port, plug, local_host_only);
+	return stack->newlistener(srcaddr, port, plug, local_host_only, address_family);
     return NULL;
 }
 
@@ -174,6 +175,10 @@ int net_service_lookup(char *service)
     return 0;
 }
 
+SockAddr platform_get_x11_unix_address(int displaynum, char **canonicalname)
+{
+    return NULL;
+}
 
 /*
  * Local Variables:

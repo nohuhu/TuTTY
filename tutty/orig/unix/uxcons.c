@@ -31,12 +31,25 @@ void cleanup_exit(int code)
     exit(code);
 }
 
+void set_busy_status(void *frontend, int status)
+{
+}
+
 void update_specials_menu(void *frontend)
 {
 }
 
-void verify_ssh_host_key(void *frontend, char *host, int port, char *keytype,
-			 char *keystr, char *fingerprint)
+void notify_remote_exit(void *frontend)
+{
+}
+
+void timer_change_notify(long next)
+{
+}
+
+int verify_ssh_host_key(void *frontend, char *host, int port, char *keytype,
+                        char *keystr, char *fingerprint,
+                        void (*callback)(void *ctx, int result), void *ctx)
 {
     int ret;
 
@@ -95,12 +108,12 @@ void verify_ssh_host_key(void *frontend, char *host, int port, char *keytype,
     ret = verify_host_key(host, port, keytype, keystr);
 
     if (ret == 0)		       /* success - key matched OK */
-	return;
+	return 1;
 
     if (ret == 2) {		       /* key was different */
 	if (console_batch_mode) {
 	    fprintf(stderr, wrongmsg_batch, keytype, fingerprint);
-	    cleanup_exit(1);
+	    return 0;
 	}
 	fprintf(stderr, wrongmsg, keytype, fingerprint);
 	fflush(stderr);
@@ -108,7 +121,7 @@ void verify_ssh_host_key(void *frontend, char *host, int port, char *keytype,
     if (ret == 1) {		       /* key was absent */
 	if (console_batch_mode) {
 	    fprintf(stderr, absentmsg_batch, keytype, fingerprint);
-	    cleanup_exit(1);
+	    return 0;
 	}
 	fprintf(stderr, absentmsg, keytype, fingerprint);
 	fflush(stderr);
@@ -128,25 +141,26 @@ void verify_ssh_host_key(void *frontend, char *host, int port, char *keytype,
     if (line[0] != '\0' && line[0] != '\r' && line[0] != '\n') {
 	if (line[0] == 'y' || line[0] == 'Y')
 	    store_host_key(host, port, keytype, keystr);
+        return 1;
     } else {
 	fprintf(stderr, abandoned);
-	cleanup_exit(0);
+        return 0;
     }
 }
 
 /*
- * Ask whether the selected cipher is acceptable (since it was
+ * Ask whether the selected algorithm is acceptable (since it was
  * below the configured 'warn' threshold).
- * cs: 0 = both ways, 1 = client->server, 2 = server->client
  */
-void askcipher(void *frontend, char *ciphername, int cs)
+int askalg(void *frontend, const char *algtype, const char *algname,
+	   void (*callback)(void *ctx, int result), void *ctx)
 {
     static const char msg[] =
-	"The first %scipher supported by the server is\n"
+	"The first %s supported by the server is\n"
 	"%s, which is below the configured warning threshold.\n"
 	"Continue with connection? (y/n) ";
     static const char msg_batch[] =
-	"The first %scipher supported by the server is\n"
+	"The first %s supported by the server is\n"
 	"%s, which is below the configured warning threshold.\n"
 	"Connection abandoned.\n";
     static const char abandoned[] = "Connection abandoned.\n";
@@ -154,17 +168,11 @@ void askcipher(void *frontend, char *ciphername, int cs)
     char line[32];
 
     if (console_batch_mode) {
-	fprintf(stderr, msg_batch,
-		(cs == 0) ? "" :
-		(cs == 1) ? "client-to-server " : "server-to-client ",
-		ciphername);
-	cleanup_exit(1);
+	fprintf(stderr, msg_batch, algtype, algname);
+	return 0;
     }
 
-    fprintf(stderr, msg,
-	    (cs == 0) ? "" :
-	    (cs == 1) ? "client-to-server " : "server-to-client ",
-	    ciphername);
+    fprintf(stderr, msg, algtype, algname);
     fflush(stderr);
 
     {
@@ -179,10 +187,10 @@ void askcipher(void *frontend, char *ciphername, int cs)
     }
 
     if (line[0] == 'y' || line[0] == 'Y') {
-	return;
+	return 1;
     } else {
 	fprintf(stderr, abandoned);
-	cleanup_exit(0);
+	return 0;
     }
 }
 
@@ -190,7 +198,8 @@ void askcipher(void *frontend, char *ciphername, int cs)
  * Ask whether to wipe a session log file before writing to it.
  * Returns 2 for wipe, 1 for append, 0 for cancel (don't log).
  */
-int askappend(void *frontend, Filename filename)
+int askappend(void *frontend, Filename filename,
+	      void (*callback)(void *ctx, int result), void *ctx)
 {
     static const char msgtemplate[] =
 	"The session log file \"%.*s\" already exists.\n"
@@ -247,7 +256,7 @@ int askappend(void *frontend, Filename filename)
 void old_keyfile_warning(void)
 {
     static const char message[] =
-	"You are loading an SSH 2 private key which has an\n"
+	"You are loading an SSH-2 private key which has an\n"
 	"old version of the file format. This means your key\n"
 	"file is not fully tamperproof. Future versions of\n"
 	"PuTTY may stop supporting this private key format,\n"
@@ -280,6 +289,7 @@ int console_get_line(const char *prompt, char *str,
     if (console_batch_mode) {
 	if (maxlen > 0)
 	    str[0] = '\0';
+	return 0;
     } else {
 	tcgetattr(0, &oldmode);
 	newmode = oldmode;
@@ -302,8 +312,9 @@ int console_get_line(const char *prompt, char *str,
 
 	if (is_pw)
 	    fputs("\n", stdout);
+
+	return 1;
     }
-    return 1;
 }
 
 void frontend_keypress(void *handle)

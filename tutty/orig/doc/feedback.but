@@ -1,6 +1,6 @@
-\versionid $Id: feedback.but 4787 2004-11-16 15:27:00Z simon $
+\define{versionidfeedback} \versionid $Id: feedback.but 5593 2005-04-05 18:01:32Z jacob $
 
-\A{feedback} Feedback and bug reporting
+\A{feedback} \ii{Feedback} and \i{bug reporting}
 
 This is a guide to providing feedback to the PuTTY development team.
 It is provided as both a web page on the PuTTY site, and an appendix
@@ -15,19 +15,18 @@ reports and feature requests.
 
 The PuTTY development team gets a \e{lot} of mail. If you can
 possibly solve your own problem by reading the manual, reading the
-FAQ, reading the web site, asking a fellow user, perhaps posting on
-the newsgroup \W{news:comp.security.ssh}\c{comp.security.ssh}, or
-some other means, then it would make our lives much easier.
+FAQ, reading the web site, asking a fellow user, perhaps posting to a
+newsgroup (see \k{feedback-other-fora}), or some other means, then it
+would make our lives much easier.
 
 We get so much e-mail that we literally do not have time to answer
 it all. We regret this, but there's nothing we can do about it. So
 if you can \e{possibly} avoid sending mail to the PuTTY team, we
 recommend you do so. In particular, support requests
-(\k{feedback-support}) are probably better sent to
-\W{news:comp.security.ssh}\c{comp.security.ssh} or passed to a local
-expert if possible.
+(\k{feedback-support}) are probably better sent to newsgroups, or
+passed to a local expert if possible.
 
-The PuTTY contact email address is a private mailing list containing
+The PuTTY contact email address is a private \i{mailing list} containing
 four or five core developers. Don't be put off by it being a mailing
 list: if you need to send confidential data as part of a bug report,
 you can trust the people on the list to respect that confidence.
@@ -88,6 +87,21 @@ modification. If you've only changed 10 lines, we'd prefer to
 receive a mail that's 30 lines long than one containing multiple
 megabytes of data we already have.
 
+\S{feedback-other-fora} Other places to ask for help
+
+There are two Usenet newsgroups that are particularly relevant to the
+PuTTY tools:
+
+\b \W{news:comp.security.ssh}\c{comp.security.ssh}, for questions
+specific to using the SSH protocol;
+
+\b \W{news:comp.terminals}\c{comp.terminals}, for issues relating to
+terminal emulation (for instance, keyboard problems).
+
+If you don't have direct access to Usenet, you can access these
+newsgroups through Google Groups
+(\W{http://groups.google.com/}\cw{groups.google.com}).
+
 \H{feedback-bugs} Reporting bugs
 
 If you think you have found a bug in PuTTY, your first steps should
@@ -105,7 +119,7 @@ will say so.)
 \b Check the
 \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/changes.html}{Change
 Log} on the PuTTY website, and see if we have already fixed the bug
-in the development snapshots.
+in the \i{development snapshots}.
 
 \b Check the
 \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/faq.html}{FAQ}
@@ -126,9 +140,9 @@ If none of those options solved your problem, and you still need to
 report a bug to us, it is useful if you include some general
 information:
 
-\b Tell us what version of PuTTY you are running. To find this out,
-use the "About PuTTY" option from the System menu. Please \e{do not}
-just tell us \q{I'm running the latest version}; e-mail can be
+\b Tell us what \i{version of PuTTY} you are running. To find this out,
+use the \q{About PuTTY} option from the System menu. Please \e{do
+not} just tell us \q{I'm running the latest version}; e-mail can be
 delayed and it may not be obvious which version was the latest at
 the time you sent the message. 
 
@@ -163,7 +177,7 @@ avoid this problem by telling us exactly what you think it should
 have done, and exactly what it did do.
 
 \b If you think you can, you're welcome to try to fix the problem
-yourself. A patch to the code which fixes a bug is an excellent
+yourself. A \i{patch} to the code which fixes a bug is an excellent
 addition to a bug report. However, a patch is never a \e{substitute}
 for a good bug report; if your patch is wrong or inappropriate, and
 you haven't supplied us with full information about the actual bug,
@@ -180,8 +194,8 @@ think the documentation is unclear or unhelpful. But we do need to
 be given exact details of \e{what} you think the documentation has
 failed to tell you, or \e{how} you think it could be made clearer.
 If your problem is simply that you don't \e{understand} the
-documentation, we suggest posting to the newsgroup
-\W{news:comp.security.ssh}\c{comp.security.ssh} and see if someone
+documentation, we suggest posting to a newsgroup (see
+\k{feedback-other-fora}) and seeing if someone
 will explain what you need to know. \e{Then}, if you think the
 documentation could usefully have told you that, send us a bug
 report and explain how you think we should change it.
@@ -228,7 +242,9 @@ if you confer with us first; there may be design issues you haven't
 thought of, or we may be about to make big changes to the code which
 your patch would clash with, or something. If you check with the
 maintainers first, there is a better chance of your code actually
-being usable.
+being usable. Also, read the design principles listed in \k{udp}: if
+you do not conform to them, we will probably not be able to accept
+your patch.
 
 \H{feedback-feature-priority} Requesting features that have already
 been requested
@@ -261,7 +277,7 @@ high-quality software to the users comes first.)
 way to get a feature implemented quickly, if it's a big one that we
 don't have time to do ourselves.
 
-\H{feedback-support} Support requests
+\H{feedback-support} \ii{Support requests}
 
 If you're trying to make PuTTY do something for you and it isn't
 working, but you're not sure whether it's a bug or not, then
@@ -271,14 +287,14 @@ don't have time to answer all the questions. Questions of this type
 include:
 
 \b If you want to do something with PuTTY but have no idea where to
-start, and reading the manual hasn't helped, try posting to the
-newsgroup \W{news:comp.security.ssh}\c{comp.security.ssh} and see if
-someone can explain it to you.
+start, and reading the manual hasn't helped, try posting to a
+newsgroup (see \k{feedback-other-fora}) and see if someone can explain
+it to you.
 
 \b If you have tried to do something with PuTTY but it hasn't
 worked, and you aren't sure whether it's a bug in PuTTY or a bug in
 your SSH server or simply that you're not doing it right, then try
-posting to \W{news:comp.security.ssh}\c{comp.security.ssh} and see
+posting to a newsgroup (see \k{feedback-other-fora}) and see
 if someone can solve your problem. Or try doing the same thing with
 a different SSH client and see if it works with that. Please do not
 report it as a PuTTY bug unless you are really sure it \e{is} a bug
@@ -303,7 +319,7 @@ time to answer it.
 
 \H{feedback-webadmin} Web server administration
 
-If the PuTTY web site is down (Connection Timed Out), please don't
+If the PuTTY \i{web site} is down (Connection Timed Out), please don't
 bother mailing us to tell us about it. Most of us read our e-mail on
 the same machines that host the web site, so if those machines are
 down then we will notice \e{before} we read our e-mail. So there's

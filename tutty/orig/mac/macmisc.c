@@ -1,4 +1,4 @@
-/* $Id: macmisc.c 4787 2004-11-16 15:27:00Z simon $ */
+/* $Id: macmisc.c 5250 2005-02-05 00:29:20Z owen $ */
 /*
  * Copyright (c) 1999, 2003 Ben Harris
  * All rights reserved.
@@ -38,6 +38,7 @@
 
 #include "putty.h"
 #include "mac.h"
+#include "ssh.h"
 
 #if TARGET_API_MAC_CARBON
 /*
@@ -170,6 +171,33 @@ FILE *f_open(Filename fn, char const *mode)
 	ret = NULL;
     HSetVol(NULL, savevol, savedir);
     return ret;
+}
+
+struct tm ltime(void)
+{
+    struct tm tm;
+    DateTimeRec d;
+    GetTime(&d);
+
+    tm.tm_sec=d.second;
+    tm.tm_min=d.minute;
+    tm.tm_hour=d.hour;
+    tm.tm_mday=d.day;
+    tm.tm_mon=d.month-1;
+    tm.tm_year=d.year-1900;
+    tm.tm_wday=d.dayOfWeek;
+    tm.tm_yday=1; /* GetTime doesn't tell us */
+    tm.tm_isdst=0; /* Have to do DST ourselves */
+
+    /* XXX find out DST adjustment and add it */
+
+    return tm;
+}
+
+const char platform_x11_best_transport[] = "localhost";
+
+char *platform_get_x_display(void) {
+    return NULL;
 }
 
 /*
