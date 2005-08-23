@@ -1,4 +1,4 @@
-/* $Id: testback.c 4787 2004-11-16 15:27:00Z simon $ */
+/* $Id: testback.c 5251 2005-02-05 10:55:09Z simon $ */
 /*
  * Copyright (c) 1999 Simon Tatham
  * Copyright (c) 1999 Ben Harris
@@ -53,17 +53,20 @@ static int null_ldisc(void *, int);
 static void null_provide_ldisc(void *, void *);
 static void null_provide_logctx(void *, void *);
 static void null_unthrottle(void *, int);
+static int null_cfg_info(void *);
 
 Backend null_backend = {
     null_init, null_free, null_reconfig, null_send, null_sendbuffer, null_size,
     null_special, null_get_specials, null_socket, null_exitcode, null_sendok,
-    null_ldisc, null_provide_ldisc, null_provide_logctx, null_unthrottle, 0
+    null_ldisc, null_provide_ldisc, null_provide_logctx, null_unthrottle,
+    null_cfg_info, 0
 };
 
 Backend loop_backend = {
     loop_init, loop_free, null_reconfig, loop_send, null_sendbuffer, null_size,
     null_special, null_get_specials, null_socket, null_exitcode, null_sendok,
-    null_ldisc, null_provide_ldisc, null_provide_logctx, null_unthrottle, 0
+    null_ldisc, null_provide_ldisc, null_provide_logctx, null_unthrottle,
+    null_cfg_info, 0
 };
 
 struct loop_state {
@@ -162,6 +165,12 @@ static void null_provide_ldisc (void *handle, void *ldisc) {
 static void null_provide_logctx(void *handle, void *logctx) {
 
 }
+
+static int null_cfg_info(void *handle)
+{
+    return 0;
+}
+
 
 /*
  * Emacs magic:
