@@ -522,23 +522,6 @@ static int CALLBACK GenericMainDlgProc(HWND hwnd, UINT msg,
 	    }
 	}
 
-#ifdef SESSION_FOLDERS
-		{
-			extern struct sessionsaver_data {
-				union control *editbox, *listbox, *loadbutton, *savebutton, *delbutton;
-				union control *okbutton, *cancelbutton;
-				struct sesslist *sesslist;
-			} *ssd;
-			extern void sessionsaver_handler(union control *ctrl, void *dlg,
-											 void *data, int event);
-
-			if (loaded_session_edit && loaded_session_name[0] != '\0') {
-				dlg_editbox_set(ssd->editbox, &dp, loaded_session_name);
-				sessionsaver_handler(ssd->loadbutton, &dp, NULL, EVENT_ACTION);
-			};
-        };
-#endif /* SESSION_FOLDERS */
-
 	SetWindowLong(hwnd, GWL_USERDATA, 1);
 	return 0;
       case WM_LBUTTONUP:

@@ -232,4 +232,11 @@ SSL_Client_Socket sk_ssl_client_over(Socket s,	/* pre-existing (tcp) connection 
 
 #define sk_renegotiate(s) (((*s)->renegotiate) (s))
 
+#ifdef SERIAL_BACKEND
+/********** Serial stuff **********/
+
+void serial_getportnames(char *portnames);
+
+#endif /* SERIAL_BACKEND */
+
 #endif

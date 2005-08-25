@@ -30,80 +30,29 @@ static void port_editbox_handler(union control *ctrl, void *dlg,
        char *str;
     
        if (cfg->protocol == PROT_SERIAL) {
-		   int i;
+		   int i, port;
+		   char portnames[2048], *curdev, pname[100];
+
+		   memset(portnames, 0, sizeof(portnames));
+		   serial_getportnames(portnames);
 
            dlg_update_start(ctrl, dlg);
            dlg_specialedit_switch(ctrl, dlg, 1);
            dlg_listbox_clear(ctrl, dlg);
-		   /*
-		    * Try to detect available serial ports.
-			* Under NT we're using QueryDosDevice(),
-			* under Win95/98/Me there is no such function
-			* available so we just try to open a port and
-			* determine its status looking at error code.
-			*/
-			{
-				OSVERSIONINFO ver;
+		   curdev = strtok(portnames, "|");
+		   while (curdev != NULL) {
+			   pname[0] = '\0';
+			   port = 0;
+			   if (sscanf(curdev, "%s\t%d", &pname, &port) == 2 &&
+					pname[0])
+					dlg_listbox_addwithid(ctrl, dlg, pname, port);
+			   curdev = strtok(NULL, "|");
+		   };
 
-				memset(&ver, 0, sizeof(OSVERSIONINFO));
-				ver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-				if (GetVersionEx(&ver) && 
-					ver.dwPlatformId == VER_PLATFORM_WIN32_NT) {
-					char devices[65535];
-					char *curdev; 
-					int len, port;
-
-					memset(devices, 0, sizeof(devices));
-					if (QueryDosDevice(NULL, devices, sizeof(devices))) {
-						i = 0;
-						for (;;) {
-							curdev = &devices[i];
-							len = strlen(curdev);
-							if (len > 3 && _strnicmp(curdev, "COM", 3) == 0 &&
-								(port = atoi(&curdev[3])) > 0)
-								dlg_listbox_addwithid(ctrl, dlg, curdev, port);
-
-							while (devices[i] != '\0') 
-								i++;
-
-							i++;
-
-							if (devices[i] == '\0') 
-								break;
-						};
-					};
-				} else {
-					char name[20];
-					HANDLE port;
-					int success;
-
-					for (i = 1; i < 256; i++) {
-						sprintf(name, "\\\\.\\COM%d", i);
-						success = FALSE;
-						port = CreateFile(name, GENERIC_READ | GENERIC_WRITE,
-										0, 0, OPEN_EXISTING, 0, 0);
-						if (port == INVALID_HANDLE_VALUE) {
-							DWORD error = GetLastError();
-							if (error == ERROR_ACCESS_DENIED ||
-								error == ERROR_GEN_FAILURE)
-								success = TRUE;
-						} else {
-							success = TRUE;
-							CloseHandle(port);
-						};
-
-						if (success) {
-							sprintf(name, "COM%d", i);
-							dlg_listbox_addwithid(ctrl, dlg, name, i);
-						};
-					};
-				};
-			};
 			for (i = 0; i < dlg_listbox_getcount(ctrl, dlg); i++) {
 				if (dlg_listbox_getid(ctrl, dlg, i) == cfg->port)
 					dlg_listbox_select(ctrl, dlg, i);
 			};
-//           dlg_listbox_select(ctrl, dlg, cfg->port - 1);
 			dlg_update_done(ctrl, dlg);
        } else {
            dlg_update_start(ctrl, dlg);
@@ -462,12 +411,12 @@ static int load_selected_session(struct sessionsaver_data *ssd,
     return 1;
 }
 
-#ifdef SESSION_FOLDERS
-void sessionsaver_handler(union control *ctrl, void *dlg, void *data, int event)
-#else
+//#ifdef SESSION_FOLDERS
+//void sessionsaver_handler(union control *ctrl, void *dlg, void *data, int event)
+//#else
 static void sessionsaver_handler(union control *ctrl, void *dlg,
 				 void *data, int event)
-#endif /* SESSION_FOLDERS */
+//#endif /* SESSION_FOLDERS */
 {
     Config *cfg = (Config *)data;
     struct sessionsaver_data *ssd =
@@ -483,9 +432,14 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
     if (!ssd->editbox) {
         savedsession = NULL;
     } else if (!dlg_get_privdata(ssd->editbox, dlg)) {
+#ifdef SESSION_FOLDERS
 	savedsession = (char *)
 	    dlg_alloc_privdata(ssd->editbox, dlg, SAVEDSESSION_LEN);
-	savedsession[0] = '\0';
+		if (loaded_session_edit)
+			strcpy(savedsession, loaded_session_name);
+		else
+#endif /* SESSION_FOLDERS */
+		savedsession[0] = '\0';
     } else {
 	savedsession = dlg_get_privdata(ssd->editbox, dlg);
     }
