@@ -31,7 +31,7 @@ int GetSystemImageLists(HMODULE *hShell32, HIMAGELIST *phLarge, HIMAGELIST *phSm
 void FreeSystemImageLists(HMODULE hShell32);
 
 HTREEITEM treeview_additem(HWND treeview, HTREEITEM parent, struct _config *cfg,
-						   char *name, int isfolder);
+						   char *name, char *path, int isfolder);
 HTREEITEM treeview_addtree(HWND hwndTV, HTREEITEM _parent, char *root);
 HMENU menu_addsession(HMENU menu, char *root);
 HMENU menu_refresh(HMENU menu, char *root);

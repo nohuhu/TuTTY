@@ -5,6 +5,7 @@
 #define REGROOT						"Software\\SimonTatham\\PuTTY\\Sessions"
 #define ISFOLDER					"IsFolder"
 #define ISEXPANDED					"IsExpanded"
+#define	SESSIONICON					"WindowIcon"
 #define HOTKEY						"PLaunchHotKey"
 #define PLAUNCH_LIMIT_ENABLE		"PLaunchInstanceLimitEnable"
 #define PLAUNCH_LIMIT_NUMBER		"PLaunchInstanceLimitNumber"

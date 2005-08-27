@@ -327,10 +327,34 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 					icon = ImageList_ExtractIcon(0, config->image_list, config->img_open);
 				else
 					icon = ImageList_ExtractIcon(0, config->image_list, config->img_closed);
-			} else
-				icon = ImageList_ExtractIcon(0, config->image_list, config->img_session);
+			} else {
+				char sesicon[256], buf[1024];
+
+				icon = NULL;
+
+				buf[0] = '\0';
+				reg_make_path("", path, buf);
+				if (reg_read_s(buf, SESSIONICON, "", sesicon, 255) && sesicon[0]) {
+					char iname[256], *comma;
+					int iindex;
+
+					iname[0] = '\0';
+					iindex = 0;
+
+					comma = strrchr(sesicon, ',');
+					if (comma) {
+						comma[0] = '\0';
+						*comma++;
+						iindex = atoi(comma);
+						icon = ExtractIcon(config->hinst, sesicon, iindex);
+					};
+				};
+
+				if (!icon)
+					icon = ImageList_ExtractIcon(0, config->image_list, config->img_session);
+			};
 			DrawIconEx(dis->hDC, x, y, icon, iconx, icony, 0, NULL, DI_NORMAL);
-			DeleteObject(icon);
+			DestroyIcon(icon);
 
 			if (selected) {
 				SetTextColor(dis->hDC, GetSysColor(COLOR_MENUTEXT));

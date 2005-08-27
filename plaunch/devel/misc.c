@@ -80,7 +80,7 @@ static char *firstname(char *path) {
 };
 
 HTREEITEM treeview_additem(HWND treeview, HTREEITEM parent, struct _config *cfg,
-						   char *name, int isfolder) {
+						   char *name, char *path, int isfolder) {
 	HTREEITEM hti;
 	TVITEM tvi;
 	TVINSERTSTRUCT tvins;
@@ -95,8 +95,40 @@ HTREEITEM treeview_additem(HWND treeview, HTREEITEM parent, struct _config *cfg,
 		tvi.iImage = cfg->img_closed;
 		tvi.iSelectedImage = cfg->img_closed;
 	} else {
-		tvi.iImage = cfg->img_session;
-		tvi.iSelectedImage = cfg->img_session;
+		char sesicon[256], buf[1024];
+		HICON icon;
+		int iindex;
+
+		icon = NULL;
+		iindex = 0;
+
+		buf[0] = '\0';
+		reg_make_path("", path, buf);
+		if (reg_read_s(buf, SESSIONICON, "", sesicon, 255) && sesicon[0]) {
+			char iname[256], *comma;
+
+			iname[0] = '\0';
+
+			comma = strrchr(sesicon, ',');
+			if (comma) {
+				comma[0] = '\0';
+				*comma++;
+				iindex = atoi(comma);
+				icon = ExtractIcon(config->hinst, sesicon, iindex);
+
+				if (icon) {
+					iindex = ImageList_AddIcon(config->image_list, icon);
+					DestroyIcon(icon);
+				};
+			};
+		};
+		if (iindex) {
+			tvi.iImage = iindex;
+			tvi.iSelectedImage = iindex;
+		} else {
+			tvi.iImage = cfg->img_session;
+			tvi.iSelectedImage = cfg->img_session;
+		};
 	};
 
 	tvins.item = tvi; 
@@ -125,7 +157,7 @@ static int treeview_callback(char *name, char *path,
 	switch (mode) {
 	case REG_MODE_PREPROCESS:
 		return (int)treeview_additem((HWND)priv2, (HTREEITEM)priv1,
-				(struct _config *)priv3, name, isfolder);
+				(struct _config *)priv3, name, path, isfolder);
 	case REG_MODE_POSTPROCESS:
 		{
 			int ret;

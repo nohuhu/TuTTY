@@ -25,7 +25,7 @@
 #define	TAB_AUTOPROCESS		1
 #define	TAB_LIMITS			2
 #define	TAB_LAST			3
-#define	TAB_ACTIONS			3
+#define	TAB_ACTIONS			4
 
 char * TAB_NAMES[] =
 	{ "Hot Keys", "Auto Processing", "Instance Limits", "Actions", "More Actions"};
@@ -34,7 +34,7 @@ typedef struct tag_dlghdr {
     HWND hwndTab;       // tab control 
     HWND hwndDisplay;   // current child dialog box 
     RECT rcDisplay;     // display rectangle for the tab control 
-    DLGTEMPLATE *apRes[5]; 
+    DLGTEMPLATE *apRes[5];
 } DLGHDR; 
 
 /*
@@ -393,7 +393,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		 */
 		{
 			HTREEITEM item;
-			char buf2[10], name[BUFSIZE], path[BUFSIZE], buf[BUFSIZE];
+			char buf2[100], name[BUFSIZE], path[BUFSIZE], buf[BUFSIZE];
 			unsigned int isfolder, flag, flag2, boolean, htype, hotkey;
 
 			item = (HTREEITEM)lParam;
@@ -437,7 +437,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			if (!cut_or_copy) {
 				flag = MF_ENABLED;
 				flag2 = MF_GRAYED;
-				boolean = FALSE;
+//				boolean = FALSE;
 				EnableMenuItem(context_menu, IDM_CTXM_COPY, flag);
 				EnableMenuItem(context_menu, IDM_CTXM_CUT, flag);
 				ModifyMenu(context_menu, IDM_CTXM_CANCEL, MF_STRING | MF_BYCOMMAND,
@@ -978,10 +978,10 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 					TreeView_SetItem(treeview, &item);
 				};
 
-				SendMessage(hwnd, WM_REFRESHBUTTONS, 0, (LPARAM)item.hItem);
-
 				copying_now = NULL;
 				cut_or_copy = 0;
+
+				SendMessage(hwnd, WM_REFRESHBUTTONS, 0, (LPARAM)item.hItem);
 			};
 			break;
 		case IDC_LAUNCHBOX_BUTTON_NEW_FOLDER:
@@ -1048,7 +1048,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 
 				if (success) {
 					tv_newitem = treeview_additem(treeview, tv_parent, config,
-						to_name, isfolder);
+						to_name, to_path, isfolder);
 					if (isfolder)
 						treeview_addtree(treeview, tv_newitem, to_path);
 					else {

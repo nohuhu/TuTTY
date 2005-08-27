@@ -19,7 +19,7 @@
 
 #pragma comment(linker,"/merge:.rdata=.data")
 #pragma comment(linker,"/merge:.text=.data")
-#pragma comment(linker,"/merge:.reloc=.data")
+//#pragma comment(linker,"/merge:.reloc=.data")
 #pragma comment(linker,"/FILEALIGN:0x200")
 
 //
