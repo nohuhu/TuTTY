@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "putty.h"
+#ifdef SESSION_ICON
+#include "win_res.h"
+#endif /* SESSION_ICON */
 
 OSVERSIONINFO osVersion;
 
@@ -319,3 +322,30 @@ void *minefield_c_realloc(void *p, size_t size)
 }
 
 #endif				/* MINEFIELD */
+
+#ifdef SESSION_ICON
+HICON extract_icon(char *iconpath) {
+	char *iname, *comma;
+	int iindex;
+	HICON hicon;
+
+	hicon = NULL;
+
+	if (iconpath && iconpath[0]) {
+		iname = dupstr(iconpath);
+		comma = strrchr(iname, ',');
+		if (comma) {
+			*comma = '\0';
+			*comma++;
+			iindex = atoi(comma);
+			hicon = ExtractIcon(hinst, iname, iindex);
+		};
+		sfree(iname);
+	};
+
+	if (!hicon)
+		hicon = LoadIcon(hinst, MAKEINTRESOURCE(IDI_MAINICON));
+
+	return hicon;
+};
+#endif /* SESSION_ICON */

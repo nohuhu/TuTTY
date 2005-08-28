@@ -1279,6 +1279,30 @@ static void funky_handler(union control *ctrl, void *dlg,
 struct sessionsaver_data *ssd;
 #endif /* SESSION_FOLDERS */
 
+#ifdef SESSION_ICON
+static void window_icon_handler(union control *ctrl, void *dlg,
+								void *data, int event)
+{
+	Config *cfg = (Config *)data;
+
+	if (event == EVENT_ACTION) {
+		char buf[1024], iname[1024], *ipointer;
+		int iindex;
+
+		memset(&iname, 0, sizeof(iname));
+		memset(&buf, 0, sizeof(buf));
+		iindex = 0;
+		ipointer = iname;
+		if (dlg_pick_icon(dlg, &ipointer, sizeof(iname), &iindex) && iname[0]) {
+				sprintf(buf, "%s,%d", iname, iindex);
+				dlg_icon_set((union control *)ctrl->button.context.p, dlg, buf);
+				strcpy(cfg->win_icon, buf);
+		};
+	};
+};
+
+#endif /* SESSION_ICON */
+
 void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
 		      int midsession, int protocol, int protcfginfo)
 {
@@ -1289,7 +1313,6 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
 #ifndef SESSION_FOLDERS
     struct sessionsaver_data *ssd;
 #endif /* SESSION_FOLDERS */
-//    struct sessionsaver_data *ssd;
     struct charclass_data *ccd;
     struct colour_data *cd;
     struct environ_data *ed;
@@ -1782,6 +1805,19 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
 		 HELPCTX(appearance_title),
 		 dlg_stdeditbox_handler, I(offsetof(Config,wintitle)),
 		 I(sizeof(((Config *)0)->wintitle)));
+#ifdef SESSION_ICON
+	ctrl_columns(s, 3, 40, 20, 40);
+//	c = ctrl_text(s, " ", HELPCTX(appearance_title));
+//	c->generic.column = 0;
+	c = ctrl_text(s, "Window icon:", HELPCTX(appearance_title));
+	c->generic.column = 0;
+	c = ctrl_icon(s, HELPCTX(appearance_title), I(offsetof(Config, win_icon)));
+	c->generic.column = 1;
+	c = ctrl_pushbutton(s, "Change...", 'h', HELPCTX(appearance_title),
+		window_icon_handler, P(c));
+	c->generic.column = 2;
+	ctrl_columns(s, 1, 100);
+#endif /* SESSION_ICON */
     ctrl_checkbox(s, "Separate window and icon titles", 'i',
 		  HELPCTX(appearance_title),
 		  dlg_stdcheckbox_handler,

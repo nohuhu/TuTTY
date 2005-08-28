@@ -311,6 +311,9 @@ void save_open_settings(void *sesskey, int do_host, Config *cfg)
     write_setting_i(sesskey, "DisableArabicShaping", cfg->arabicshaping);
     write_setting_i(sesskey, "DisableBidi", cfg->bidi);
     write_setting_i(sesskey, "WinNameAlways", cfg->win_name_always);
+#ifdef SESSION_ICON
+	write_setting_s(sesskey, "WindowIcon", cfg->win_icon);
+#endif /* SESSION_ICON */
     write_setting_s(sesskey, "WinTitle", cfg->wintitle);
     write_setting_i(sesskey, "TermWidth", cfg->width);
     write_setting_i(sesskey, "TermHeight", cfg->height);
@@ -648,6 +651,9 @@ void load_open_settings(void *sesskey, int do_host, Config *cfg)
     gppi(sesskey, "DisableArabicShaping", 0, &cfg->arabicshaping);
     gppi(sesskey, "DisableBidi", 0, &cfg->bidi);
     gppi(sesskey, "WinNameAlways", 1, &cfg->win_name_always);
+#ifdef SESSION_ICON
+	gpps(sesskey, "WindowIcon", "", cfg->win_icon, sizeof(cfg->win_icon));
+#endif /* SESSION_ICON */
     gpps(sesskey, "WinTitle", "", cfg->wintitle, sizeof(cfg->wintitle));
     gppi(sesskey, "TermWidth", 80, &cfg->width);
     gppi(sesskey, "TermHeight", 24, &cfg->height);

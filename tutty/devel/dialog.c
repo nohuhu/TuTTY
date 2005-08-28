@@ -294,6 +294,17 @@ union control *ctrl_specialeditbox(struct controlset *s, char *label, char short
 };
 #endif /* SERIAL_BACKEND */
 
+#ifdef SESSION_ICON
+/*
+ * A static icon control.
+ */
+union control *ctrl_icon(struct controlset *s, intorptr helpctx, intorptr context)
+{
+	union control *c = ctrl_new(s, CTRL_ICON, helpctx, NULL, context);
+	return c;
+};
+#endif /* SESSION_ICON */
+
 /*
  * `ncolumns' is followed by (alternately) radio button titles and
  * intorptrs, until a NULL in place of a title string is seen. Each

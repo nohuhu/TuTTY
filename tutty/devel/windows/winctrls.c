@@ -19,6 +19,9 @@
 #include "putty.h"
 #include "misc.h"
 #include "dialog.h"
+#ifdef SESSION_ICON
+#include "PickIconDialog.h"
+#endif /* SESSION_ICON */
 
 #include <commctrl.h>
 
@@ -37,6 +40,9 @@
 #define COMBOHEIGHT 12
 #define PUSHBTNHEIGHT 14
 #define PROGBARHEIGHT 14
+#ifdef SESSION_ICON
+#define	ICONHEIGHT 20
+#endif /* SESSION_ICON */
 
 void ctlposinit(struct ctlpos *cp, HWND hwnd,
 		int leftborder, int rightborder, int topborder)
@@ -791,6 +797,26 @@ void specialedit(struct ctlpos *cp, char *stext,
 }
 #endif /* SERIAL_BACKEND */
 
+#ifdef SESSION_ICON
+void staticicon(struct ctlpos *cp, char *stext, char *iname, int id)
+{
+    RECT r;
+	HWND hcontrol;
+	HICON hicon;
+
+	r.left = GAPBETWEEN;
+    r.top = cp->ypos;
+    r.right = cp->width;
+    r.bottom = ICONHEIGHT;
+    cp->ypos += r.bottom + GAPBETWEEN;
+    hcontrol = doctl(cp, r, "STATIC",
+					WS_CHILD | WS_VISIBLE | SS_ICON,
+					0, NULL, id);
+	hicon = extract_icon(iname);
+	SendMessage(hcontrol, STM_SETICON, (WPARAM)hicon, 0);
+}
+#endif /* SESSION_ICON */
+
 /*
  * A big multiline edit control with a static labelling it.
  */
@@ -1371,6 +1397,10 @@ struct winctrl *winctrl_findbyindex(struct winctrls *wc, int index)
     return index234(wc->byid, index);
 }
 
+#ifdef SESSION_ICON
+extern Config cfg;
+#endif /* SESSION_ICON */
+
 void winctrl_layout(struct dlgparam *dp, struct winctrls *wc,
 		    struct ctlpos *cp, struct controlset *s, int *id)
 {
@@ -1589,6 +1619,13 @@ void winctrl_layout(struct dlgparam *dp, struct winctrls *wc,
             sfree(escaped);
             break;
 #endif /* SERIAL_BACKEND */
+#ifdef SESSION_ICON
+		  case CTRL_ICON:
+			  num_ids = 1;				/* static label and icon control itself */
+			  staticicon(&pos, ctrl->icon.label, 
+				  (char *)ATOFFSET(&cfg, ctrl->icon.context.i), base_id);
+			  break;
+#endif /* SESSION_ICON */
 	  case CTRL_RADIO:
 	    num_ids = ctrl->radio.nbuttons + 1;   /* label as well */
 	    {
@@ -2448,6 +2485,19 @@ void dlg_text_set(union control *ctrl, void *dlg, char const *text)
     SetDlgItemText(dp->hwnd, c->base_id, text);
 }
 
+#ifdef SESSION_ICON
+void dlg_icon_set(union control *ctrl, void *dlg, char const *icon)
+{
+	HICON hicon;
+
+	struct dlgparam *dp = (struct dlgparam *)dlg;
+	struct winctrl *c = dlg_findbyctrl(dp, ctrl);
+	assert(c && c->ctrl->generic.type == CTRL_ICON);
+	hicon = extract_icon((char *)icon);
+	SendDlgItemMessage(dp->hwnd, c->base_id, STM_SETICON, (WPARAM)hicon, 0);
+};
+#endif /* SESSION_ICON */
+
 void dlg_filesel_set(union control *ctrl, void *dlg, Filename fn)
 {
     struct dlgparam *dp = (struct dlgparam *)dlg;
@@ -2827,3 +2877,13 @@ int dlg_yesnobox(void *dlg, const char *msg)
     return ret == IDYES ? TRUE : FALSE;
 };
 #endif /* ATT513_TERMINAL */
+
+#ifdef SESSION_ICON
+int dlg_pick_icon(void *dlg, char **iname, int inamesize, int *iindex)
+{
+	struct dlgparam *dp = (struct dlgparam *)dlg;
+	int ret =
+		SelectIcon(dp->hwnd, *iname, inamesize, iindex);
+	return ret == IDOK ? TRUE : FALSE;
+};
+#endif /* SESSION_ICON */

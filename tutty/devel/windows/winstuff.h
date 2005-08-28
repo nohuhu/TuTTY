@@ -358,6 +358,9 @@ void show_help(HWND hwnd);
  */
 extern OSVERSIONINFO osVersion;
 BOOL init_winver(void);
+#ifdef SESSION_ICON
+HICON extract_icon(char *iconpath);
+#endif /* SESSION_ICON */
 
 /*
  * Exports from sizetip.c.

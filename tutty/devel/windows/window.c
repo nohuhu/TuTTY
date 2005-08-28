@@ -648,6 +648,11 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	wndclass.cbClsExtra = 0;
 	wndclass.cbWndExtra = 0;
 	wndclass.hInstance = inst;
+#ifdef SESSION_ICON
+	if (cfg.win_icon[0])
+		wndclass.hIcon = extract_icon(cfg.win_icon);
+	else
+#endif /* SESSION_ICON */
 	wndclass.hIcon = LoadIcon(inst, MAKEINTRESOURCE(IDI_MAINICON));
 	wndclass.hCursor = LoadCursor(NULL, IDC_IBEAM);
 	wndclass.hbrBackground = NULL;

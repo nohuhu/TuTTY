@@ -463,6 +463,7 @@ struct config_tag {
     int rfc_environ;
     int passive_telnet;
 #ifdef SERIAL_BACKEND
+	/* Serial options */
     int ser_baud;                                  /* Serial port baud rate */
     int ser_parity;                                /* Parity, 0-4: None, Odd, Even, Mark, Space */
     int ser_databits;                      /* Data bits in one byte, 4-8 */
@@ -539,6 +540,9 @@ struct config_tag {
     int blinktext;
     int win_name_always;
     int width, height;
+#ifdef SESSION_ICON
+	char win_icon[256];
+#endif /* SESSION_ICON */
     FontSpec font;
     Filename logfilename;
     int logtype;

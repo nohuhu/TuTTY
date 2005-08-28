@@ -37,8 +37,11 @@ enum {
     CTRL_FONTSELECT,		       /* label plus font selector */
     CTRL_TABDELAY		       /* see `tabdelay' below */
 #ifdef SERIAL_BACKEND
-        , CTRL_SPECIALEDIT
+	, CTRL_SPECIALEDIT			/* edit box and combo box in one control */
 #endif /* SERIAL_BACKEND */
+#ifdef SESSION_ICON
+	, CTRL_ICON
+#endif /* SESSION_ICON */
 };
 
 /*
@@ -398,6 +401,12 @@ union control {
 	STANDARD_PREFIX;
 	char shortcut;
     } fontselect;
+#ifdef SESSION_ICON
+	struct {
+		STANDARD_PREFIX;
+		intorptr handle;
+	} icon;
+#endif /* SESSION_ICON */
 };
 
 #undef STANDARD_PREFIX
@@ -520,6 +529,9 @@ union control *ctrl_specialeditbox(struct controlset *, char *label,
                                    intorptr helpctx, handler_fn handler,
                                    intorptr context, intorptr context2);
 #endif /* SERIAL_BACKEND */
+#ifdef SESSION_ICON
+union control *ctrl_icon(struct controlset *, intorptr helpctx, intorptr context);
+#endif /* SESSION_ICON */
 
 /*
  * Standard handler routines to cover most of the common cases in
@@ -604,6 +616,9 @@ int dlg_listbox_index(union control *ctrl, void *dlg);
 int dlg_listbox_issel(union control *ctrl, void *dlg, int index);
 void dlg_listbox_select(union control *ctrl, void *dlg, int index);
 void dlg_text_set(union control *ctrl, void *dlg, char const *text);
+#ifdef SESSION_ICON
+void dlg_icon_set(union control *ctrl, void *dlg, char const *icon);
+#endif /* SESSION_ICON */
 void dlg_filesel_set(union control *ctrl, void *dlg, Filename fn);
 void dlg_filesel_get(union control *ctrl, void *dlg, Filename *fn);
 void dlg_fontsel_set(union control *ctrl, void *dlg, FontSpec fn);
@@ -696,6 +711,10 @@ int dlg_listbox_getcount(union control *ctrl, void *dlg);
 #ifdef ATT513_TERMINAL
 int dlg_yesnobox(void *dlg, const char *msg);
 #endif /* ATT513_TERMINAL */
+
+#ifdef SESSION_ICON
+int dlg_pick_icon(void *dlg, char **iname, int inamesize, int *iindex);
+#endif /* SESSION_ICON */
 
 /*
  * Standard helper functions for reading a controlbox structure.
