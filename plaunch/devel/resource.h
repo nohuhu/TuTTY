@@ -1,4 +1,4 @@
-#ifndef RESOURCE_H      
+#ifndef RESOURCE_H
 #define RESOURCE_H
 
 #define IDI_MAINICON                                            100
@@ -67,4 +67,4 @@
 #define IDC_LAUNCHBOX_SPIN_LIMIT                        149
 #define	IDC_LAUNCHBOX_GROUPBOX_TABVIEW			150
 
-#endif /* RESOURCE_H */
+#endif				/* RESOURCE_H */

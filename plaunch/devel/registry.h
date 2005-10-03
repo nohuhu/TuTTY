@@ -32,7 +32,7 @@
 #define	LIMIT_SEARCHFOR_UMPTEENTH	13
 #define	LIMIT_SEARCHFOR_MAX			14
 
-extern const char * const LIMIT_SEARCHFOR_STRINGS[];
+extern const char *const LIMIT_SEARCHFOR_STRINGS[];
 
 #define	LIMIT_ACTION_NOTHING		0
 #define	LIMIT_ACTION_HIDE			1
@@ -45,14 +45,14 @@ extern const char * const LIMIT_SEARCHFOR_STRINGS[];
 #define	LIMIT_ACTION_RUN			8
 #define LIMIT_ACTION_MAX			9
 
-extern const char * const LIMIT_ACTION_STRINGS[];
+extern const char *const LIMIT_ACTION_STRINGS[];
 
 #define	AUTORUN_WHEN_START			0
 #define	AUTORUN_WHEN_NETWORKSTART	1
 #define	AUTORUN_WHEN_QUIT			2
 #define	AUTORUN_WHEN_MAX			3
 
-extern const char * const AUTORUN_WHEN_STRINGS[];
+extern const char *const AUTORUN_WHEN_STRINGS[];
 
 #define	AUTORUN_ACTION_NOTHING		0
 #define	AUTORUN_ACTION_HIDE			1
@@ -62,7 +62,7 @@ extern const char * const AUTORUN_WHEN_STRINGS[];
 #define	AUTORUN_ACTION_CENTER		5
 #define	AUTORUN_ACTION_MAX			6
 
-extern const char * const AUTORUN_ACTION_STRINGS[];
+extern const char *const AUTORUN_ACTION_STRINGS[];
 
 #define REG_MODE_PREPROCESS			1
 #define	REG_MODE_POSTPROCESS		2
@@ -82,15 +82,15 @@ unsigned int reg_move_tree(char *keyfrom, char *keyto);
 int reg_read_i(char *keyname, char *valname, int defval, int *value);
 unsigned int reg_write_i(char *keyname, char *valname, int value);
 
-unsigned int reg_read_s(char *keyname, char *valname, char *defval, 
-						char *buffer, unsigned int bufsize);
+unsigned int reg_read_s(char *keyname, char *valname, char *defval,
+			char *buffer, unsigned int bufsize);
 unsigned int reg_write_s(char *keyname, char *valname, char *value);
 
-typedef int (*reg_callback)(char *name, char *path, 
-							int isfolder, int mode, 
-							void *priv1, void *priv2, void *priv3);
+typedef int (*reg_callback) (char *name, char *path,
+			     int isfolder, int mode,
+			     void *priv1, void *priv2, void *priv3);
 
 unsigned int reg_walk_over_tree(char *root, reg_callback cb,
-								void *priv1, void *priv2, void *priv3);
+				void *priv1, void *priv2, void *priv3);
 
-#endif /* REGISTRY_H */
+#endif				/* REGISTRY_H */

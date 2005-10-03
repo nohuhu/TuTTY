@@ -4,7 +4,7 @@
 #include "entry.h"
 #else
 #include <stdio.h>
-#endif /* _NDEBUG && MINIRTL */
+#endif				/* _NDEBUG && MINIRTL */
 
 #define HOTKEY_NONE			"None"
 #define HOTKEY_INVALID		"Invalid hotkey"
@@ -18,227 +18,237 @@
 
 static WNDPROC oldwindowproc;
 
-const char * const HOTKEY_STRINGS[HOTKEY_MAX_ACTION + 1] =
-	{"", "", "Launch", "Edit", "Hide", "Kill"};
+const char *const HOTKEY_STRINGS[HOTKEY_MAX_ACTION + 1] =
+    { "", "", "Launch", "Edit", "Hide", "Kill" };
 
-void key_name(UINT modifiers, UINT vkey, char *buffer, unsigned int bufsize) {
-	char buf2[10];
+void key_name(UINT modifiers, UINT vkey, char *buffer,
+	      unsigned int bufsize)
+{
+    char buf2[10];
 
-	memset(buffer, 0, bufsize);
+    memset(buffer, 0, bufsize);
 
-	if (modifiers & MOD_CONTROL) {
-		strcat(buffer, HOTKEY_CONTROL_KEY);
-		strcat(buffer, HOTKEY_PLUS_SIGN);
-	};
-	if (modifiers & MOD_ALT) {
-		strcat(buffer, HOTKEY_ALT_KEY);
-		strcat(buffer, HOTKEY_PLUS_SIGN);
-	};
-	if (modifiers & MOD_SHIFT) {
-		strcat(buffer, HOTKEY_SHIFT_KEY);
-		strcat(buffer, HOTKEY_PLUS_SIGN);
-	};
-	if (modifiers & MOD_WIN) {
-		strcat(buffer, HOTKEY_WIN_KEY);
-		strcat(buffer, HOTKEY_PLUS_SIGN);
-	};
+    if (modifiers & MOD_CONTROL) {
+	strcat(buffer, HOTKEY_CONTROL_KEY);
+	strcat(buffer, HOTKEY_PLUS_SIGN);
+    };
+    if (modifiers & MOD_ALT) {
+	strcat(buffer, HOTKEY_ALT_KEY);
+	strcat(buffer, HOTKEY_PLUS_SIGN);
+    };
+    if (modifiers & MOD_SHIFT) {
+	strcat(buffer, HOTKEY_SHIFT_KEY);
+	strcat(buffer, HOTKEY_PLUS_SIGN);
+    };
+    if (modifiers & MOD_WIN) {
+	strcat(buffer, HOTKEY_WIN_KEY);
+	strcat(buffer, HOTKEY_PLUS_SIGN);
+    };
 
-	if (vkey >= 0x30 && vkey <= 0x5a) {
-		buf2[0] = (char)vkey; buf2[1] = '\0';
-		strcat(buffer, buf2);
-	} else if (vkey >= VK_F1 && vkey <= VK_F24) {
-		unsigned int i, j;
+    if (vkey >= 0x30 && vkey <= 0x5a) {
+	buf2[0] = (char) vkey;
+	buf2[1] = '\0';
+	strcat(buffer, buf2);
+    } else if (vkey >= VK_F1 && vkey <= VK_F24) {
+	unsigned int i, j;
 
-		i = vkey - VK_F1 + 1;
-		j = 0;
+	i = vkey - VK_F1 + 1;
+	j = 0;
 
-		buf2[j++] = 'F';
-		if (i > 9) {
-			buf2[j++] = (char)((i / 10) + 0x30);
-			buf2[j++] = (char)((i - ((i / 10) * 10)) + 0x30);
-		} else
-			buf2[j++] = (char)(i + 0x30);
-		buf2[j++] = '\0';
-		strcat(buffer, buf2);
-	};
+	buf2[j++] = 'F';
+	if (i > 9) {
+	    buf2[j++] = (char) ((i / 10) + 0x30);
+	    buf2[j++] = (char) ((i - ((i / 10) * 10)) + 0x30);
+	} else
+	    buf2[j++] = (char) (i + 0x30);
+	buf2[j++] = '\0';
+	strcat(buffer, buf2);
+    };
 };
 
 static int CALLBACK HotKeyControlProc(HWND hwnd, UINT msg,
-									  WPARAM wParam, LPARAM lParam) {
-	static LONG oldhotkey = 0;
-	static unsigned int firstmessage = FALSE;
+				      WPARAM wParam, LPARAM lParam)
+{
+    static LONG oldhotkey = 0;
+    static unsigned int firstmessage = FALSE;
 
-	switch (msg) {
-	case WM_GETDLGCODE:
-		return DLGC_WANTALLKEYS;
-	case WM_CHAR:
-	case WM_DEADCHAR:
-	case WM_SYSDEADCHAR:
-	case WM_SYSCHAR:
-		return FALSE;
-	case WM_KEYDOWN:
-	case WM_SYSKEYDOWN:
-		{
-			UINT modifiers, vkey;
-			char buf[32];
+    switch (msg) {
+    case WM_GETDLGCODE:
+	return DLGC_WANTALLKEYS;
+    case WM_CHAR:
+    case WM_DEADCHAR:
+    case WM_SYSDEADCHAR:
+    case WM_SYSCHAR:
+	return FALSE;
+    case WM_KEYDOWN:
+    case WM_SYSKEYDOWN:
+	{
+	    UINT modifiers, vkey;
+	    char buf[32];
 
-			firstmessage = TRUE;
+	    firstmessage = TRUE;
 
-			modifiers = 0;
-			vkey = wParam;
+	    modifiers = 0;
+	    vkey = wParam;
 
-			if (GetAsyncKeyState(VK_SHIFT))
-				modifiers |= MOD_SHIFT;
-			if (GetAsyncKeyState(VK_CONTROL))
-				modifiers |= MOD_CONTROL;
-			if (GetAsyncKeyState(VK_MENU))
-				modifiers |= MOD_ALT;
-			if (GetAsyncKeyState(VK_LWIN) || GetAsyncKeyState(VK_RWIN))
-				modifiers |= MOD_WIN;
+	    if (GetAsyncKeyState(VK_SHIFT))
+		modifiers |= MOD_SHIFT;
+	    if (GetAsyncKeyState(VK_CONTROL))
+		modifiers |= MOD_CONTROL;
+	    if (GetAsyncKeyState(VK_MENU))
+		modifiers |= MOD_ALT;
+	    if (GetAsyncKeyState(VK_LWIN) || GetAsyncKeyState(VK_RWIN))
+		modifiers |= MOD_WIN;
 
-			if (!modifiers ||
-				(((modifiers == MOD_CONTROL) ||
-				(modifiers == MOD_ALT) ||
-				(modifiers == MOD_SHIFT)) &&
-				(vkey >= 0x30 && vkey <= 0x5a)))
-				return TRUE;
+	    if (!modifiers ||
+		(((modifiers == MOD_CONTROL) ||
+		  (modifiers == MOD_ALT) ||
+		  (modifiers == MOD_SHIFT)) &&
+		 (vkey >= 0x30 && vkey <= 0x5a)))
+		return TRUE;
 
-			oldhotkey = GetWindowLong(hwnd, GWL_USERDATA);
+	    oldhotkey = GetWindowLong(hwnd, GWL_USERDATA);
 
-			key_name(modifiers, vkey, buf, 32);
-			SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM)buf);
+	    key_name(modifiers, vkey, buf, 32);
+	    SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM) buf);
 
-			return FALSE;
-		};
-	case WM_KEYUP:
-	case WM_SYSKEYUP:
-		{
-			LONG hotkey;
-			UINT modifiers, vkey;
-			char buf[32];
-			unsigned int modf = 0;
-
-			if (!firstmessage)
-				return FALSE;
-			else
-				firstmessage = FALSE;
-
-			modifiers = 0;
-			vkey = wParam;
-
-			switch (vkey) {
-			case VK_BACK:
-			case VK_CLEAR:
-				hotkey = 0;
-				SetWindowLong(hwnd, GWL_USERDATA, hotkey);
-				SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM)HOTKEY_NONE);
-				SendMessage(hwnd, EM_SETMODIFY, (WPARAM)TRUE, 0);
-				SendMessage(GetParent(hwnd), WM_COMMAND,
-							MAKEWPARAM(GetDlgCtrlID(hwnd), HK_CHANGE),
-							(LPARAM)hwnd);
-
-				return FALSE;
-			case VK_TAB:
-				SetFocus(GetNextDlgTabItem(GetParent(hwnd),
-											hwnd,
-											GetAsyncKeyState(VK_SHIFT)));
-
-				return FALSE;
-			case VK_RETURN:
-				PostMessage(GetParent(hwnd), WM_COMMAND, (WPARAM)IDOK, 0);
-
-				return FALSE;
-			case VK_ESCAPE:
-				PostMessage(GetParent(hwnd), WM_COMMAND, (WPARAM)IDCANCEL, 0);
-
-				return FALSE;
-			};
-
-			if (GetAsyncKeyState(VK_SHIFT)) {
-				modifiers |= MOD_SHIFT;
-				modf++;
-			};
-			if (GetAsyncKeyState(VK_CONTROL)) {
-				modifiers |= MOD_CONTROL;
-				modf++;
-			};
-			if (GetAsyncKeyState(VK_MENU)) {
-				modifiers |= MOD_ALT;
-				modf++;
-			};
-			if (GetAsyncKeyState(VK_LWIN) || GetAsyncKeyState(VK_RWIN)) {
-				modifiers |= MOD_WIN;
-				modf++;
-			};
-
-			if (!modifiers ||
-				((modf < 2) && !(modifiers & MOD_WIN)) ||
-				!((vkey >= 0x30 && vkey <= 0x5a) ||
-				  (vkey >= VK_F1 && vkey <= VK_F24))) {
-				SetWindowLong(hwnd, GWL_USERDATA, oldhotkey);
-				SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM)HOTKEY_NONE);
-				SendMessage(hwnd, EM_SETMODIFY, (WPARAM)FALSE, 0);
-				return TRUE;
-			};
-
-			if (RegisterHotKey(hwnd, 0, modifiers, vkey)) {
-				hotkey = MAKELPARAM(modifiers, vkey);
-				SetWindowLong(hwnd, GWL_USERDATA, hotkey);
-				key_name(modifiers, vkey, buf, 32);
-				SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM)buf);
-				UnregisterHotKey(hwnd, 0);
-				SendMessage(hwnd, EM_SETMODIFY, (WPARAM)TRUE, 0);
-				SendMessage(GetParent(hwnd), 
-							WM_COMMAND, 
-							MAKEWPARAM(GetDlgCtrlID(hwnd), HK_CHANGE), 
-							(LPARAM)hwnd);
-			} else {
-				SetWindowLong(hwnd, GWL_USERDATA, oldhotkey);
-				SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM)HOTKEY_INVALID);
-				SendMessage(hwnd, EM_SETMODIFY, (WPARAM)TRUE, 0);
-			};
-
-			return FALSE;
-		};
+	    return FALSE;
 	};
-	return CallWindowProc(oldwindowproc, hwnd, msg, wParam, lParam);
+    case WM_KEYUP:
+    case WM_SYSKEYUP:
+	{
+	    LONG hotkey;
+	    UINT modifiers, vkey;
+	    char buf[32];
+	    unsigned int modf = 0;
+
+	    if (!firstmessage)
+		return FALSE;
+	    else
+		firstmessage = FALSE;
+
+	    modifiers = 0;
+	    vkey = wParam;
+
+	    switch (vkey) {
+	    case VK_BACK:
+	    case VK_CLEAR:
+		hotkey = 0;
+		SetWindowLong(hwnd, GWL_USERDATA, hotkey);
+		SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM) HOTKEY_NONE);
+		SendMessage(hwnd, EM_SETMODIFY, (WPARAM) TRUE, 0);
+		SendMessage(GetParent(hwnd), WM_COMMAND,
+			    MAKEWPARAM(GetDlgCtrlID(hwnd), HK_CHANGE),
+			    (LPARAM) hwnd);
+
+		return FALSE;
+	    case VK_TAB:
+		SetFocus(GetNextDlgTabItem(GetParent(hwnd),
+					   hwnd,
+					   GetAsyncKeyState(VK_SHIFT)));
+
+		return FALSE;
+	    case VK_RETURN:
+		PostMessage(GetParent(hwnd), WM_COMMAND, (WPARAM) IDOK, 0);
+
+		return FALSE;
+	    case VK_ESCAPE:
+		PostMessage(GetParent(hwnd), WM_COMMAND, (WPARAM) IDCANCEL,
+			    0);
+
+		return FALSE;
+	    };
+
+	    if (GetAsyncKeyState(VK_SHIFT)) {
+		modifiers |= MOD_SHIFT;
+		modf++;
+	    };
+	    if (GetAsyncKeyState(VK_CONTROL)) {
+		modifiers |= MOD_CONTROL;
+		modf++;
+	    };
+	    if (GetAsyncKeyState(VK_MENU)) {
+		modifiers |= MOD_ALT;
+		modf++;
+	    };
+	    if (GetAsyncKeyState(VK_LWIN) || GetAsyncKeyState(VK_RWIN)) {
+		modifiers |= MOD_WIN;
+		modf++;
+	    };
+
+	    if (!modifiers ||
+		((modf < 2) && !(modifiers & MOD_WIN)) ||
+		!((vkey >= 0x30 && vkey <= 0x5a) ||
+		  (vkey >= VK_F1 && vkey <= VK_F24))) {
+		SetWindowLong(hwnd, GWL_USERDATA, oldhotkey);
+		SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM) HOTKEY_NONE);
+		SendMessage(hwnd, EM_SETMODIFY, (WPARAM) FALSE, 0);
+		return TRUE;
+	    };
+
+	    if (RegisterHotKey(hwnd, 0, modifiers, vkey)) {
+		hotkey = MAKELPARAM(modifiers, vkey);
+		SetWindowLong(hwnd, GWL_USERDATA, hotkey);
+		key_name(modifiers, vkey, buf, 32);
+		SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM) buf);
+		UnregisterHotKey(hwnd, 0);
+		SendMessage(hwnd, EM_SETMODIFY, (WPARAM) TRUE, 0);
+		SendMessage(GetParent(hwnd),
+			    WM_COMMAND,
+			    MAKEWPARAM(GetDlgCtrlID(hwnd), HK_CHANGE),
+			    (LPARAM) hwnd);
+	    } else {
+		SetWindowLong(hwnd, GWL_USERDATA, oldhotkey);
+		SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM) HOTKEY_INVALID);
+		SendMessage(hwnd, EM_SETMODIFY, (WPARAM) TRUE, 0);
+	    };
+
+	    return FALSE;
+	};
+    };
+    return CallWindowProc(oldwindowproc, hwnd, msg, wParam, lParam);
 };
 
-unsigned int make_hotkey(HWND editbox, LONG defhotkey) {
-	char buf[32];
+unsigned int make_hotkey(HWND editbox, LONG defhotkey)
+{
+    char buf[32];
 
-	oldwindowproc = 
-			(WNDPROC)SetWindowLong(editbox, GWL_WNDPROC, (LONG)HotKeyControlProc);
-	SetWindowLong(editbox, GWL_USERDATA, defhotkey);
-	if (defhotkey) {
-		key_name(LOWORD(defhotkey), HIWORD(defhotkey), buf, 32);
-		SendMessage(editbox, WM_SETTEXT, 0, (LPARAM)buf);
-	} else
-		SendMessage(editbox, WM_SETTEXT, 0, (LPARAM)HOTKEY_NONE);
+    oldwindowproc =
+	(WNDPROC) SetWindowLong(editbox, GWL_WNDPROC,
+				(LONG) HotKeyControlProc);
+    SetWindowLong(editbox, GWL_USERDATA, defhotkey);
+    if (defhotkey) {
+	key_name(LOWORD(defhotkey), HIWORD(defhotkey), buf, 32);
+	SendMessage(editbox, WM_SETTEXT, 0, (LPARAM) buf);
+    } else
+	SendMessage(editbox, WM_SETTEXT, 0, (LPARAM) HOTKEY_NONE);
 
-	return TRUE;
+    return TRUE;
 };
 
-unsigned int unmake_hotkey(HWND editbox) {
-	SetWindowLong(editbox, GWL_WNDPROC, (LONG)oldwindowproc);
-	
-	return TRUE;
+unsigned int unmake_hotkey(HWND editbox)
+{
+    SetWindowLong(editbox, GWL_WNDPROC, (LONG) oldwindowproc);
+
+    return TRUE;
 };
 
-LONG get_hotkey(HWND editbox) {
-	return GetWindowLong(editbox, GWL_USERDATA);
+LONG get_hotkey(HWND editbox)
+{
+    return GetWindowLong(editbox, GWL_USERDATA);
 };
 
-LONG set_hotkey(HWND editbox, LONG newhotkey) {
-	char buf[32];
-	LONG oldhotkey;
+LONG set_hotkey(HWND editbox, LONG newhotkey)
+{
+    char buf[32];
+    LONG oldhotkey;
 
-	oldhotkey = SetWindowLong(editbox, GWL_USERDATA, newhotkey);
-	if (newhotkey) {
-		key_name(LOWORD(newhotkey), HIWORD(newhotkey), buf, 32);
-		SendMessage(editbox, WM_SETTEXT, 0, (LPARAM)buf);
-	} else
-		SendMessage(editbox, WM_SETTEXT, 0, (LPARAM)HOTKEY_NONE);
+    oldhotkey = SetWindowLong(editbox, GWL_USERDATA, newhotkey);
+    if (newhotkey) {
+	key_name(LOWORD(newhotkey), HIWORD(newhotkey), buf, 32);
+	SendMessage(editbox, WM_SETTEXT, 0, (LPARAM) buf);
+    } else
+	SendMessage(editbox, WM_SETTEXT, 0, (LPARAM) HOTKEY_NONE);
 
-	return oldhotkey;
+    return oldhotkey;
 };

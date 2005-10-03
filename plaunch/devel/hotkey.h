@@ -12,11 +12,12 @@
 
 #define	HOTKEY_MAX_ACTION		5
 
-extern const char * const HOTKEY_STRINGS[];
+extern const char *const HOTKEY_STRINGS[];
 
 #define HK_CHANGE	0x9000
 
-void key_name(UINT modifiers, UINT vkey, char *buffer, unsigned int bufsize);
+void key_name(UINT modifiers, UINT vkey, char *buffer,
+	      unsigned int bufsize);
 
 unsigned int make_hotkey(HWND editbox, LONG defhotkey);
 unsigned int unmake_hotkey(HWND editbox);
@@ -24,4 +25,4 @@ unsigned int unmake_hotkey(HWND editbox);
 LONG get_hotkey(HWND editbox);
 LONG set_hotkey(HWND editbox, LONG newhotkey);
 
-#endif /* HOTKEY_H */
+#endif				/* HOTKEY_H */

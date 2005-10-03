@@ -32,7 +32,7 @@
 
 #define IDM_CLOSE	    0x0010
 #define IDM_LAUNCHBOX	0x0020
-//#define IDM_ADDKEY	0x0030
+//#define IDM_ADDKEY    0x0030
 #define IDM_HELP	    0x0040
 #define IDM_ABOUT	    0x0050
 #define	IDM_WINDOWLIST	0x0060
@@ -54,7 +54,7 @@
 #define WINDOWTITLE "PuTTY Launcher"
 #else
 #define WINDOWTITLE "PLaunch"
-#endif /* WINDOWS_NT351_COMPATIBLE */
+#endif				/* WINDOWS_NT351_COMPATIBLE */
 #define APPVERSION "0.56"
 #define PUTTY "PuTTY"
 #define PUTTYTEL "PuTTYtel"
@@ -66,28 +66,28 @@
 #define	OPTION_MENURUNNING		0x0010
 
 struct _config {
-	HINSTANCE hinst;
-	HWND hwnd_mainwindow;
-	HIMAGELIST image_list;
-	HMENU systray_menu;
-	HICON main_icon;
-	unsigned int img_open; 
-	unsigned int img_closed;
-	unsigned int img_session;
-	unsigned int iconx, icony;
-	char putty_path[BUFSIZE];
-	unsigned int nhotkeys;
-	struct _hotkey_action {
-		LONG hotkey;
-		unsigned int action;
-		char *destination;
-	} hotkeys[256];
-	unsigned int options;
-	unsigned int version_major;
-	unsigned int version_minor;
+    HINSTANCE hinst;
+    HWND hwnd_mainwindow;
+    HIMAGELIST image_list;
+    HMENU systray_menu;
+    HICON main_icon;
+    unsigned int img_open;
+    unsigned int img_closed;
+    unsigned int img_session;
+    unsigned int iconx, icony;
+    char putty_path[BUFSIZE];
+    unsigned int nhotkeys;
+    struct _hotkey_action {
+	LONG hotkey;
+	unsigned int action;
+	char *destination;
+    } hotkeys[256];
+    unsigned int options;
+    unsigned int version_major;
+    unsigned int version_minor;
 #ifdef WINDOWS_NT351_COMPATIBLE
-	unsigned int have_shell;
-#endif /* WINDOWS_NT351_COMPATIBLE */
+    unsigned int have_shell;
+#endif				/* WINDOWS_NT351_COMPATIBLE */
 } *config;
 
 /*
@@ -111,9 +111,9 @@ int do_launchbox(void);
  * import from windowlistbox.c
  */
 struct windowlist {
-	unsigned int nhandles;
-	unsigned int current;
-	HWND *handles;
+    unsigned int nhandles;
+    unsigned int current;
+    HWND *handles;
 };
 
 void do_windowlistbox(void);
@@ -123,4 +123,4 @@ void do_windowlistbox(void);
  */
 void do_optionsbox(void);
 
-#endif /* PLAUNCH_H */
+#endif				/* PLAUNCH_H */
