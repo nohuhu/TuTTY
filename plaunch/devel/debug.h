@@ -5,4 +5,4 @@
 
 void _debug_err(int err, char *str, int line, char *file);
 
-#endif /* DEBUG_H */
+#endif				/* DEBUG_H */
