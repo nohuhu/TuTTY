@@ -78,7 +78,7 @@ int dsa_generate(struct dss_key *key, int bits, progfn_t pfn,
      * Now generate p: a prime of length `bits', such that p-1 is
      * divisible by q.
      */
-    key->p = primegen(bits-160, 2, 2, key->q, 2, pfn, pfnparam);
+    key->p = primegen(bits - 160, 2, 2, key->q, 2, pfn, pfnparam);
 
     /*
      * Next we need g. Raise 2 to the power (p-1)/q modulo p, and
@@ -86,14 +86,14 @@ int dsa_generate(struct dss_key *key, int bits, progfn_t pfn,
      * soon as we hit a non-unit (and non-zero!) one, that'll do
      * for g.
      */
-    power = bigdiv(key->p, key->q);    /* this is floor(p/q) == (p-1)/q */
+    power = bigdiv(key->p, key->q);	/* this is floor(p/q) == (p-1)/q */
     h = bignum_from_long(1);
     progress = 0;
     while (1) {
 	pfn(pfnparam, PROGFN_PROGRESS, 3, ++progress);
 	g = modpow(h, power, key->p);
 	if (bignum_cmp(g, One) > 0)
-	    break;		       /* got one */
+	    break;		/* got one */
 	tmp = h;
 	h = bignum_add_long(h, 1);
 	freebn(tmp);

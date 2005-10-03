@@ -5,7 +5,7 @@ CHAPTERS += index
 INPUTS = $(patsubst %,%.but,$(CHAPTERS))
 
 # This is temporary. Hack it locally or something.
-HALIBUT = $(HOME)/src/halibut/build/halibut
+HALIBUT = halibut
 
 all: man index.html
 

@@ -9,9 +9,7 @@
 #define IDD_ABOUTBOX     111
 #define IDD_RECONF       112
 #define IDD_LICENCEBOX   113
-#ifdef SERIAL_BACKEND
 #define IDD_PROGRESSBOX  114
-#endif /* SERIAL_BACKEND */
 
 #define IDN_LIST        1001
 #define IDN_COPY        1002
@@ -30,9 +28,7 @@
 #define IDC_HELPBTN     1005
 #define IDC_ABOUT       1006
 
-#ifdef SERIAL_BACKEND
 #define IDC_PROGRESSBAR 1001
 #define IDC_PROGRESSTEXT        1002
-#endif /* SERIAL_BACKEND */
 
 #endif

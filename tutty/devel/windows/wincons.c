@@ -45,9 +45,10 @@ void timer_change_notify(long next)
 {
 }
 
-int verify_ssh_host_key(void *frontend, char *host, int port, char *keytype,
-                        char *keystr, char *fingerprint,
-                        void (*callback)(void *ctx, int result), void *ctx)
+int verify_ssh_host_key(void *frontend, char *host, int port,
+			char *keytype, char *keystr, char *fingerprint,
+			void (*callback) (void *ctx, int result),
+			void *ctx)
 {
     int ret;
     HANDLE hin;
@@ -58,8 +59,7 @@ int verify_ssh_host_key(void *frontend, char *host, int port, char *keytype,
 	"have no guarantee that the server is the computer you\n"
 	"think it is.\n"
 	"The server's %s key fingerprint is:\n"
-	"%s\n"
-	"Connection abandoned.\n";
+	"%s\n" "Connection abandoned.\n";
     static const char absentmsg[] =
 	"The server's host key is not cached in the registry. You\n"
 	"have no guarantee that the server is the computer you\n"
@@ -71,8 +71,7 @@ int verify_ssh_host_key(void *frontend, char *host, int port, char *keytype,
 	"If you want to carry on connecting just once, without\n"
 	"adding the key to the cache, enter \"n\".\n"
 	"If you do not trust this host, press Return to abandon the\n"
-	"connection.\n"
-	"Store key in cache? (y/n) ";
+	"connection.\n" "Store key in cache? (y/n) ";
 
     static const char wrongmsg_batch[] =
 	"WARNING - POTENTIAL SECURITY BREACH!\n"
@@ -82,8 +81,7 @@ int verify_ssh_host_key(void *frontend, char *host, int port, char *keytype,
 	"have actually connected to another computer pretending\n"
 	"to be the server.\n"
 	"The new %s key fingerprint is:\n"
-	"%s\n"
-	"Connection abandoned.\n";
+	"%s\n" "Connection abandoned.\n";
     static const char wrongmsg[] =
 	"WARNING - POTENTIAL SECURITY BREACH!\n"
 	"The server's host key does not match the one PuTTY has\n"
@@ -111,21 +109,21 @@ int verify_ssh_host_key(void *frontend, char *host, int port, char *keytype,
      */
     ret = verify_host_key(host, port, keytype, keystr);
 
-    if (ret == 0)		       /* success - key matched OK */
+    if (ret == 0)		/* success - key matched OK */
 	return 1;
 
-    if (ret == 2) {		       /* key was different */
+    if (ret == 2) {		/* key was different */
 	if (console_batch_mode) {
 	    fprintf(stderr, wrongmsg_batch, keytype, fingerprint);
-            return 0;
+	    return 0;
 	}
 	fprintf(stderr, wrongmsg, keytype, fingerprint);
 	fflush(stderr);
     }
-    if (ret == 1) {		       /* key was absent */
+    if (ret == 1) {		/* key was absent */
 	if (console_batch_mode) {
 	    fprintf(stderr, absentmsg_batch, keytype, fingerprint);
-            return 0;
+	    return 0;
 	}
 	fprintf(stderr, absentmsg, keytype, fingerprint);
 	fflush(stderr);
@@ -141,10 +139,10 @@ int verify_ssh_host_key(void *frontend, char *host, int port, char *keytype,
     if (line[0] != '\0' && line[0] != '\r' && line[0] != '\n') {
 	if (line[0] == 'y' || line[0] == 'Y')
 	    store_host_key(host, port, keytype, keystr);
-        return 1;
+	return 1;
     } else {
 	fprintf(stderr, abandoned);
-        return 0;
+	return 0;
     }
 }
 
@@ -157,7 +155,7 @@ void update_specials_menu(void *frontend)
  * below the configured 'warn' threshold).
  */
 int askalg(void *frontend, const char *algtype, const char *algname,
-	   void (*callback)(void *ctx, int result), void *ctx)
+	   void (*callback) (void *ctx, int result), void *ctx)
 {
     HANDLE hin;
     DWORD savemode, i;
@@ -202,7 +200,7 @@ int askalg(void *frontend, const char *algtype, const char *algname,
  * Returns 2 for wipe, 1 for append, 0 for cancel (don't log).
  */
 int askappend(void *frontend, Filename filename,
-	      void (*callback)(void *ctx, int result), void *ctx)
+	      void (*callback) (void *ctx, int result), void *ctx)
 {
     HANDLE hin;
     DWORD savemode, i;
@@ -276,15 +274,14 @@ void old_keyfile_warning(void)
  */
 void pgp_fingerprints(void)
 {
-    fputs("These are the fingerprints of the PuTTY PGP Master Keys. They can\n"
-	  "be used to establish a trust path from this executable to another\n"
-	  "one. See the manual for more information.\n"
-	  "(Note: these fingerprints have nothing to do with SSH!)\n"
-	  "\n"
-	  "PuTTY Master Key (RSA), 1024-bit:\n"
-	  "  " PGP_RSA_MASTER_KEY_FP "\n"
-	  "PuTTY Master Key (DSA), 1024-bit:\n"
-	  "  " PGP_DSA_MASTER_KEY_FP "\n", stdout);
+    fputs
+	("These are the fingerprints of the PuTTY PGP Master Keys. They can\n"
+	 "be used to establish a trust path from this executable to another\n"
+	 "one. See the manual for more information.\n"
+	 "(Note: these fingerprints have nothing to do with SSH!)\n" "\n"
+	 "PuTTY Master Key (RSA), 1024-bit:\n" "  " PGP_RSA_MASTER_KEY_FP
+	 "\n" "PuTTY Master Key (DSA), 1024-bit:\n" "  "
+	 PGP_DSA_MASTER_KEY_FP "\n", stdout);
 }
 
 void console_provide_logctx(void *logctx)
@@ -298,8 +295,7 @@ void logevent(void *frontend, const char *string)
 	log_eventlog(console_logctx, string);
 }
 
-int console_get_line(const char *prompt, char *str,
-			    int maxlen, int is_pw)
+int console_get_line(const char *prompt, char *str, int maxlen, int is_pw)
 {
     HANDLE hin, hout;
     DWORD savemode, newmode, i;

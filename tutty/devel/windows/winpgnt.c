@@ -28,7 +28,7 @@
 #define WM_SYSTRAY   (WM_XUSER + 6)
 #define WM_SYSTRAY2  (WM_XUSER + 7)
 
-#define AGENT_COPYDATA_ID 0x804e50ba   /* random goop */
+#define AGENT_COPYDATA_ID 0x804e50ba	/* random goop */
 
 /*
  * FIXME: maybe some day we can sort this out ...
@@ -198,17 +198,17 @@ static int CALLBACK LicenceProc(HWND hwnd, UINT msg,
 				WPARAM wParam, LPARAM lParam)
 {
     switch (msg) {
-      case WM_INITDIALOG:
+    case WM_INITDIALOG:
 	return 1;
-      case WM_COMMAND:
+    case WM_COMMAND:
 	switch (LOWORD(wParam)) {
-	  case IDOK:
-	  case IDCANCEL:
+	case IDOK:
+	case IDCANCEL:
 	    EndDialog(hwnd, 1);
 	    return 0;
 	}
 	return 0;
-      case WM_CLOSE:
+    case WM_CLOSE:
 	EndDialog(hwnd, 1);
 	return 0;
     }
@@ -222,17 +222,17 @@ static int CALLBACK AboutProc(HWND hwnd, UINT msg,
 			      WPARAM wParam, LPARAM lParam)
 {
     switch (msg) {
-      case WM_INITDIALOG:
+    case WM_INITDIALOG:
 	SetDlgItemText(hwnd, 100, ver);
 	return 1;
-      case WM_COMMAND:
+    case WM_COMMAND:
 	switch (LOWORD(wParam)) {
-	  case IDOK:
-	  case IDCANCEL:
+	case IDOK:
+	case IDCANCEL:
 	    aboutbox = NULL;
 	    DestroyWindow(hwnd);
 	    return 0;
-	  case 101:
+	case 101:
 	    EnableWindow(hwnd, 0);
 	    DialogBox(hinst, MAKEINTRESOURCE(214), hwnd, LicenceProc);
 	    EnableWindow(hwnd, 1);
@@ -240,7 +240,7 @@ static int CALLBACK AboutProc(HWND hwnd, UINT msg,
 	    return 0;
 	}
 	return 0;
-      case WM_CLOSE:
+    case WM_CLOSE:
 	aboutbox = NULL;
 	DestroyWindow(hwnd);
 	return 0;
@@ -260,12 +260,12 @@ static int CALLBACK PassphraseProc(HWND hwnd, UINT msg,
     struct PassphraseProcStruct *p;
 
     switch (msg) {
-      case WM_INITDIALOG:
+    case WM_INITDIALOG:
 	passphrase_box = hwnd;
 	/*
 	 * Centre the window.
 	 */
-	{			       /* centre the window */
+	{			/* centre the window */
 	    RECT rs, rd;
 	    HWND hw;
 
@@ -287,18 +287,18 @@ static int CALLBACK PassphraseProc(HWND hwnd, UINT msg,
 	*passphrase = 0;
 	SetDlgItemText(hwnd, 102, passphrase);
 	return 0;
-      case WM_COMMAND:
+    case WM_COMMAND:
 	switch (LOWORD(wParam)) {
-	  case IDOK:
+	case IDOK:
 	    if (*passphrase)
 		EndDialog(hwnd, 1);
 	    else
 		MessageBeep(0);
 	    return 0;
-	  case IDCANCEL:
+	case IDCANCEL:
 	    EndDialog(hwnd, 0);
 	    return 0;
-	  case 102:		       /* edit box */
+	case 102:		/* edit box */
 	    if ((HIWORD(wParam) == EN_CHANGE) && passphrase) {
 		GetDlgItemText(hwnd, 102, passphrase,
 			       PASSPHRASE_MAXLEN - 1);
@@ -307,7 +307,7 @@ static int CALLBACK PassphraseProc(HWND hwnd, UINT msg,
 	    return 0;
 	}
 	return 0;
-      case WM_CLOSE:
+    case WM_CLOSE:
 	EndDialog(hwnd, 0);
 	return 0;
     }
@@ -407,7 +407,7 @@ static void add_keyfile(Filename filename)
     struct PassphraseProcStruct pps;
     int type;
     int original_pass;
-	
+
     type = key_type(&filename);
     if (type != SSH_KEYTYPE_SSH1 && type != SSH_KEYTYPE_SSH2) {
 	char *msg = dupprintf("Couldn't load this key (%s)",
@@ -429,7 +429,8 @@ static void add_keyfile(Filename filename)
 
 	if (type == SSH_KEYTYPE_SSH1) {
 	    if (!rsakey_pubblob(&filename, &blob, &bloblen, &error)) {
-		char *msg = dupprintf("Couldn't load private key (%s)", error);
+		char *msg =
+		    dupprintf("Couldn't load private key (%s)", error);
 		message_box(msg, APPNAME, MB_OK | MB_ICONERROR,
 			    HELPCTXID(errors_cantloadkey));
 		sfree(msg);
@@ -440,14 +441,15 @@ static void add_keyfile(Filename filename)
 	    unsigned char *blob2;
 	    blob = ssh2_userkey_loadpub(&filename, NULL, &bloblen, &error);
 	    if (!blob) {
-		char *msg = dupprintf("Couldn't load private key (%s)", error);
+		char *msg =
+		    dupprintf("Couldn't load private key (%s)", error);
 		message_box(msg, APPNAME, MB_OK | MB_ICONERROR,
 			    HELPCTXID(errors_cantloadkey));
 		sfree(msg);
 		return;
 	    }
 	    /* For our purposes we want the blob prefixed with its length */
-	    blob2 = snewn(bloblen+4, unsigned char);
+	    blob2 = snewn(bloblen + 4, unsigned char);
 	    PUT_32BIT(blob2, bloblen);
 	    memcpy(blob2 + 4, blob, bloblen);
 	    sfree(blob);
@@ -476,8 +478,8 @@ static void add_keyfile(Filename filename)
 		if (type == SSH_KEYTYPE_SSH1) {
 		    int n = rsa_public_blob_len(p, keylistlen);
 		    if (n < 0) {
-			MessageBox(NULL, "Received broken key list?!", APPNAME,
-				   MB_OK | MB_ICONERROR);
+			MessageBox(NULL, "Received broken key list?!",
+				   APPNAME, MB_OK | MB_ICONERROR);
 			return;
 		    }
 		    p += n;
@@ -485,14 +487,14 @@ static void add_keyfile(Filename filename)
 		} else {
 		    int n;
 		    if (keylistlen < 4) {
-			MessageBox(NULL, "Received broken key list?!", APPNAME,
-				   MB_OK | MB_ICONERROR);
+			MessageBox(NULL, "Received broken key list?!",
+				   APPNAME, MB_OK | MB_ICONERROR);
 			return;
 		    }
 		    n = 4 + GET_32BIT(p);
 		    if (keylistlen < n) {
-			MessageBox(NULL, "Received broken key list?!", APPNAME,
-				   MB_OK | MB_ICONERROR);
+			MessageBox(NULL, "Received broken key list?!",
+				   APPNAME, MB_OK | MB_ICONERROR);
 			return;
 		    }
 		    p += n;
@@ -502,14 +504,14 @@ static void add_keyfile(Filename filename)
 		{
 		    int n;
 		    if (keylistlen < 4) {
-			MessageBox(NULL, "Received broken key list?!", APPNAME,
-				   MB_OK | MB_ICONERROR);
+			MessageBox(NULL, "Received broken key list?!",
+				   APPNAME, MB_OK | MB_ICONERROR);
 			return;
 		    }
 		    n = 4 + GET_32BIT(p);
 		    if (keylistlen < n) {
-			MessageBox(NULL, "Received broken key list?!", APPNAME,
-				   MB_OK | MB_ICONERROR);
+			MessageBox(NULL, "Received broken key list?!",
+				   APPNAME, MB_OK | MB_ICONERROR);
 			return;
 		    }
 		    p += n;
@@ -538,20 +540,21 @@ static void add_keyfile(Filename filename)
 	if (needs_pass) {
 	    /* try all the remembered passphrases first */
 	    char *pp = index234(passphrases, attempts);
-	    if(pp) {
+	    if (pp) {
 		strcpy(passphrase, pp);
 	    } else {
 		int dlgret;
 		original_pass = 1;
 		dlgret = DialogBoxParam(hinst, MAKEINTRESOURCE(210),
-					NULL, PassphraseProc, (LPARAM) &pps);
+					NULL, PassphraseProc,
+					(LPARAM) & pps);
 		passphrase_box = NULL;
 		if (!dlgret) {
 		    if (comment)
 			sfree(comment);
 		    if (type == SSH_KEYTYPE_SSH1)
 			sfree(rkey);
-		    return;		       /* operation cancelled */
+		    return;	/* operation cancelled */
 		}
 	    }
 	} else
@@ -571,7 +574,7 @@ static void add_keyfile(Filename filename)
     } while (ret == -1);
 
     /* if they typed in an ok passphrase, remember it */
-    if(original_pass && ret) {
+    if (original_pass && ret) {
 	char *pp = dupstr(passphrase);
 	addpos234(passphrases, pp, 0);
     }
@@ -595,14 +598,9 @@ static void add_keyfile(Filename filename)
 
 	    clen = strlen(rkey->comment);
 
-	    reqlen = 4 + 1 +	       /* length, message type */
-		4 +		       /* bit count */
-		ssh1_bignum_length(rkey->modulus) +
-		ssh1_bignum_length(rkey->exponent) +
-		ssh1_bignum_length(rkey->private_exponent) +
-		ssh1_bignum_length(rkey->iqmp) +
-		ssh1_bignum_length(rkey->p) +
-		ssh1_bignum_length(rkey->q) + 4 + clen	/* comment */
+	    reqlen = 4 + 1 +	/* length, message type */
+		4 +		/* bit count */
+		ssh1_bignum_length(rkey->modulus) + ssh1_bignum_length(rkey->exponent) + ssh1_bignum_length(rkey->private_exponent) + ssh1_bignum_length(rkey->iqmp) + ssh1_bignum_length(rkey->p) + ssh1_bignum_length(rkey->q) + 4 + clen	/* comment */
 		;
 
 	    request = snewn(reqlen, unsigned char);
@@ -637,7 +635,7 @@ static void add_keyfile(Filename filename)
 	    sfree(response);
 	} else {
 	    if (add234(rsakeys, rkey) != rkey)
-		sfree(rkey);	       /* already present, don't waste RAM */
+		sfree(rkey);	/* already present, don't waste RAM */
 	}
     } else {
 	if (already_running) {
@@ -649,10 +647,10 @@ static void add_keyfile(Filename filename)
 
 	    keybloblen = skey->alg->openssh_fmtkey(skey->data, NULL, 0);
 
-	    reqlen = 4 + 1 +	       /* length, message type */
-		4 + alglen +	       /* algorithm name */
-		keybloblen +	       /* key data */
-		4 + clen	       /* comment */
+	    reqlen = 4 + 1 +	/* length, message type */
+		4 + alglen +	/* algorithm name */
+		keybloblen +	/* key data */
+		4 + clen	/* comment */
 		;
 
 	    request = snewn(reqlen, unsigned char);
@@ -685,7 +683,7 @@ static void add_keyfile(Filename filename)
 	} else {
 	    if (add234(ssh2keys, skey) != skey) {
 		skey->alg->freekey(skey->data);
-		sfree(skey);	       /* already present, don't waste RAM */
+		sfree(skey);	/* already present, don't waste RAM */
 	    }
 	}
     }
@@ -717,7 +715,8 @@ static void *make_keylist1(int *length)
 
     /* Allocate the buffer. */
     p = ret = snewn(len, unsigned char);
-    if (length) *length = len;
+    if (length)
+	*length = len;
 
     PUT_32BIT(p, nkeys);
     p += 4;
@@ -753,7 +752,7 @@ static void *make_keylist2(int *length)
     nkeys = 0;
     for (i = 0; NULL != (key = index234(ssh2keys, i)); i++) {
 	nkeys++;
-	len += 4;	       /* length field */
+	len += 4;		/* length field */
 	blob = key->alg->public_blob(key->data, &bloblen);
 	len += bloblen;
 	sfree(blob);
@@ -762,7 +761,8 @@ static void *make_keylist2(int *length)
 
     /* Allocate the buffer. */
     p = ret = snewn(len, unsigned char);
-    if (length) *length = len;
+    if (length)
+	*length = len;
 
     /*
      * Packet header is the obvious five bytes, plus four
@@ -808,12 +808,12 @@ static void *get_keylist1(int *length)
 	if (resplen < 5 || response[4] != SSH1_AGENT_RSA_IDENTITIES_ANSWER)
 	    return NULL;
 
-	ret = snewn(resplen-5, unsigned char);
-	memcpy(ret, response+5, resplen-5);
+	ret = snewn(resplen - 5, unsigned char);
+	memcpy(ret, response + 5, resplen - 5);
 	sfree(response);
 
 	if (length)
-	    *length = resplen-5;
+	    *length = resplen - 5;
     } else {
 	ret = make_keylist1(length);
     }
@@ -843,12 +843,12 @@ static void *get_keylist2(int *length)
 	if (resplen < 5 || response[4] != SSH2_AGENT_IDENTITIES_ANSWER)
 	    return NULL;
 
-	ret = snewn(resplen-5, unsigned char);
-	memcpy(ret, response+5, resplen-5);
+	ret = snewn(resplen - 5, unsigned char);
+	memcpy(ret, response + 5, resplen - 5);
 	sfree(response);
 
 	if (length)
-	    *length = resplen-5;
+	    *length = resplen - 5;
     } else {
 	ret = make_keylist2(length);
     }
@@ -873,13 +873,13 @@ static void answer_msg(void *msg)
     /*
      * Get the message type.
      */
-    if (msgend < p+5)
+    if (msgend < p + 5)
 	goto failure;
     type = p[4];
 
     p += 5;
     switch (type) {
-      case SSH1_AGENTC_REQUEST_RSA_IDENTITIES:
+    case SSH1_AGENTC_REQUEST_RSA_IDENTITIES:
 	/*
 	 * Reply with SSH1_AGENT_RSA_IDENTITIES_ANSWER.
 	 */
@@ -898,7 +898,7 @@ static void answer_msg(void *msg)
 	    sfree(keylist);
 	}
 	break;
-      case SSH2_AGENTC_REQUEST_IDENTITIES:
+    case SSH2_AGENTC_REQUEST_IDENTITIES:
 	/*
 	 * Reply with SSH2_AGENT_IDENTITIES_ANSWER.
 	 */
@@ -917,7 +917,7 @@ static void answer_msg(void *msg)
 	    sfree(keylist);
 	}
 	break;
-      case SSH1_AGENTC_RSA_CHALLENGE:
+    case SSH1_AGENTC_RSA_CHALLENGE:
 	/*
 	 * Reply with either SSH1_AGENT_RSA_RESPONSE or
 	 * SSH_AGENT_FAILURE, depending on whether we have that key
@@ -943,7 +943,7 @@ static void answer_msg(void *msg)
 	    if (i < 0)
 		goto failure;
 	    p += i;
-	    if (msgend < p+16) {
+	    if (msgend < p + 16) {
 		freebn(reqkey.exponent);
 		freebn(reqkey.modulus);
 		freebn(challenge);
@@ -951,7 +951,7 @@ static void answer_msg(void *msg)
 	    }
 	    memcpy(response_source + 32, p, 16);
 	    p += 16;
-	    if (msgend < p+4 ||
+	    if (msgend < p + 4 ||
 		GET_32BIT(p) != 1 ||
 		(key = find234(rsakeys, &reqkey, NULL)) == NULL) {
 		freebn(reqkey.exponent);
@@ -967,10 +967,10 @@ static void answer_msg(void *msg)
 	    MD5Update(&md5c, response_source, 48);
 	    MD5Final(response_md5, &md5c);
 	    memset(response_source, 0, 48);	/* burn the evidence */
-	    freebn(response);	       /* and that evidence */
-	    freebn(challenge);	       /* yes, and that evidence */
-	    freebn(reqkey.exponent);   /* and free some memory ... */
-	    freebn(reqkey.modulus);    /* ... while we're at it. */
+	    freebn(response);	/* and that evidence */
+	    freebn(challenge);	/* yes, and that evidence */
+	    freebn(reqkey.exponent);	/* and free some memory ... */
+	    freebn(reqkey.modulus);	/* ... while we're at it. */
 
 	    /*
 	     * Packet is the obvious five byte header, plus sixteen
@@ -982,7 +982,7 @@ static void answer_msg(void *msg)
 	    memcpy(ret + 5, response_md5, 16);
 	}
 	break;
-      case SSH2_AGENTC_SIGN_REQUEST:
+    case SSH2_AGENTC_SIGN_REQUEST:
 	/*
 	 * Reply with either SSH2_AGENT_SIGN_RESPONSE or
 	 * SSH_AGENT_FAILURE, depending on whether we have that key
@@ -994,19 +994,19 @@ static void answer_msg(void *msg)
 	    unsigned char *data, *signature;
 	    int datalen, siglen, len;
 
-	    if (msgend < p+4)
+	    if (msgend < p + 4)
 		goto failure;
 	    b.len = GET_32BIT(p);
 	    p += 4;
-	    if (msgend < p+b.len)
+	    if (msgend < p + b.len)
 		goto failure;
 	    b.blob = p;
 	    p += b.len;
-	    if (msgend < p+4)
+	    if (msgend < p + 4)
 		goto failure;
 	    datalen = GET_32BIT(p);
 	    p += 4;
-	    if (msgend < p+datalen)
+	    if (msgend < p + datalen)
 		goto failure;
 	    data = p;
 	    key = find234(ssh2keys, &b, cmpkeys_ssh2_asymm);
@@ -1021,7 +1021,7 @@ static void answer_msg(void *msg)
 	    sfree(signature);
 	}
 	break;
-      case SSH1_AGENTC_ADD_RSA_IDENTITY:
+    case SSH1_AGENTC_ADD_RSA_IDENTITY:
 	/*
 	 * Add to the list and return SSH_AGENT_SUCCESS, or
 	 * SSH_AGENT_FAILURE if the key was malformed.
@@ -1029,7 +1029,7 @@ static void answer_msg(void *msg)
 	{
 	    struct RSAKey *key;
 	    char *comment;
-            int n, commentlen;
+	    int n, commentlen;
 
 	    key = snew(struct RSAKey);
 	    memset(key, 0, sizeof(struct RSAKey));
@@ -1050,7 +1050,7 @@ static void answer_msg(void *msg)
 	    }
 	    p += n;
 
-	    n = ssh1_read_bignum(p, msgend - p, &key->iqmp);  /* p^-1 mod q */
+	    n = ssh1_read_bignum(p, msgend - p, &key->iqmp);	/* p^-1 mod q */
 	    if (n < 0) {
 		freersakey(key);
 		sfree(key);
@@ -1058,7 +1058,7 @@ static void answer_msg(void *msg)
 	    }
 	    p += n;
 
-	    n = ssh1_read_bignum(p, msgend - p, &key->p);  /* p */
+	    n = ssh1_read_bignum(p, msgend - p, &key->p);	/* p */
 	    if (n < 0) {
 		freersakey(key);
 		sfree(key);
@@ -1066,7 +1066,7 @@ static void answer_msg(void *msg)
 	    }
 	    p += n;
 
-	    n = ssh1_read_bignum(p, msgend - p, &key->q);  /* q */
+	    n = ssh1_read_bignum(p, msgend - p, &key->q);	/* q */
 	    if (n < 0) {
 		freersakey(key);
 		sfree(key);
@@ -1074,23 +1074,23 @@ static void answer_msg(void *msg)
 	    }
 	    p += n;
 
-	    if (msgend < p+4) {
+	    if (msgend < p + 4) {
 		freersakey(key);
 		sfree(key);
 		goto failure;
 	    }
-            commentlen = GET_32BIT(p);
+	    commentlen = GET_32BIT(p);
 
-	    if (msgend < p+commentlen) {
+	    if (msgend < p + commentlen) {
 		freersakey(key);
 		sfree(key);
 		goto failure;
 	    }
 
-	    comment = snewn(commentlen+1, char);
+	    comment = snewn(commentlen + 1, char);
 	    if (comment) {
 		memcpy(comment, p + 4, commentlen);
-                comment[commentlen] = '\0';
+		comment[commentlen] = '\0';
 		key->comment = comment;
 	    }
 	    PUT_32BIT(ret, 1);
@@ -1104,7 +1104,7 @@ static void answer_msg(void *msg)
 	    }
 	}
 	break;
-      case SSH2_AGENTC_ADD_IDENTITY:
+    case SSH2_AGENTC_ADD_IDENTITY:
 	/*
 	 * Add to the list and return SSH_AGENT_SUCCESS, or
 	 * SSH_AGENT_FAILURE if the key was malformed.
@@ -1116,11 +1116,11 @@ static void answer_msg(void *msg)
 	    int bloblen;
 
 
-	    if (msgend < p+4)
+	    if (msgend < p + 4)
 		goto failure;
 	    alglen = GET_32BIT(p);
 	    p += 4;
-	    if (msgend < p+alglen)
+	    if (msgend < p + alglen)
 		goto failure;
 	    alg = p;
 	    p += alglen;
@@ -1149,7 +1149,7 @@ static void answer_msg(void *msg)
 	     */
 	    assert(p <= msgend);
 
-	    if (msgend < p+4) {
+	    if (msgend < p + 4) {
 		key->alg->freekey(key->data);
 		sfree(key);
 		goto failure;
@@ -1157,7 +1157,7 @@ static void answer_msg(void *msg)
 	    commlen = GET_32BIT(p);
 	    p += 4;
 
-	    if (msgend < p+commlen) {
+	    if (msgend < p + commlen) {
 		key->alg->freekey(key->data);
 		sfree(key);
 		goto failure;
@@ -1181,7 +1181,7 @@ static void answer_msg(void *msg)
 	    }
 	}
 	break;
-      case SSH1_AGENTC_REMOVE_RSA_IDENTITY:
+    case SSH1_AGENTC_REMOVE_RSA_IDENTITY:
 	/*
 	 * Remove from the list and return SSH_AGENT_SUCCESS, or
 	 * perhaps SSH_AGENT_FAILURE if it wasn't in the list to
@@ -1209,7 +1209,7 @@ static void answer_msg(void *msg)
 	    }
 	}
 	break;
-      case SSH2_AGENTC_REMOVE_IDENTITY:
+    case SSH2_AGENTC_REMOVE_IDENTITY:
 	/*
 	 * Remove from the list and return SSH_AGENT_SUCCESS, or
 	 * perhaps SSH_AGENT_FAILURE if it wasn't in the list to
@@ -1219,12 +1219,12 @@ static void answer_msg(void *msg)
 	    struct ssh2_userkey *key;
 	    struct blob b;
 
-	    if (msgend < p+4)
+	    if (msgend < p + 4)
 		goto failure;
 	    b.len = GET_32BIT(p);
 	    p += 4;
 
-	    if (msgend < p+b.len)
+	    if (msgend < p + b.len)
 		goto failure;
 	    b.blob = p;
 	    p += b.len;
@@ -1244,7 +1244,7 @@ static void answer_msg(void *msg)
 	    }
 	}
 	break;
-      case SSH1_AGENTC_REMOVE_ALL_RSA_IDENTITIES:
+    case SSH1_AGENTC_REMOVE_ALL_RSA_IDENTITIES:
 	/*
 	 * Remove all SSH-1 keys. Always returns success.
 	 */
@@ -1262,7 +1262,7 @@ static void answer_msg(void *msg)
 	    ret[4] = SSH_AGENT_SUCCESS;
 	}
 	break;
-      case SSH2_AGENTC_REMOVE_ALL_IDENTITIES:
+    case SSH2_AGENTC_REMOVE_ALL_IDENTITIES:
 	/*
 	 * Remove all SSH-2 keys. Always returns success.
 	 */
@@ -1280,7 +1280,7 @@ static void answer_msg(void *msg)
 	    ret[4] = SSH_AGENT_SUCCESS;
 	}
 	break;
-      default:
+    default:
       failure:
 	/*
 	 * Unrecognised message. Return SSH_AGENT_FAILURE.
@@ -1315,7 +1315,7 @@ static int cmpkeys_rsa(void *av, void *bv)
     /*
      * Now compare by moduli themselves.
      */
-    alen = (alen + 7) / 8;	       /* byte count */
+    alen = (alen + 7) / 8;	/* byte count */
     while (alen-- > 0) {
 	int abyte, bbyte;
 	abyte = bignum_byte(am, alen);
@@ -1360,9 +1360,9 @@ static int cmpkeys_ssh2(void *av, void *bv)
 	}
     }
     if (c == 0 && i < alen)
-	c = +1;			       /* a is longer */
+	c = +1;			/* a is longer */
     if (c == 0 && i < blen)
-	c = -1;			       /* a is longer */
+	c = -1;			/* a is longer */
 
     sfree(ablob);
     sfree(bblob);
@@ -1401,9 +1401,9 @@ static int cmpkeys_ssh2_asymm(void *av, void *bv)
 	}
     }
     if (c == 0 && i < alen)
-	c = +1;			       /* a is longer */
+	c = +1;			/* a is longer */
     if (c == 0 && i < blen)
-	c = -1;			       /* a is longer */
+	c = -1;			/* a is longer */
 
     sfree(bblob);
 
@@ -1417,8 +1417,9 @@ static void prompt_add_keyfile(void)
 {
     OPENFILENAME of;
     char *filelist = snewn(8192, char);
-	
-    if (!keypath) keypath = filereq_new();
+
+    if (!keypath)
+	keypath = filereq_new();
     memset(&of, 0, sizeof(of));
     of.hwndOwner = hwnd;
     of.lpstrFilter = FILTER_KEY_FILES;
@@ -1431,7 +1432,7 @@ static void prompt_add_keyfile(void)
     of.lpstrTitle = "Select Private Key File";
     of.Flags = OFN_ALLOWMULTISELECT | OFN_EXPLORER;
     if (request_file(keypath, &of, TRUE, FALSE)) {
-	if(strlen(filelist) > of.nFileOffset)
+	if (strlen(filelist) > of.nFileOffset)
 	    /* Only one filename returned? */
 	    add_keyfile(filename_from_str(filelist));
 	else {
@@ -1466,11 +1467,11 @@ static int CALLBACK KeyListProc(HWND hwnd, UINT msg,
     struct ssh2_userkey *skey;
 
     switch (msg) {
-      case WM_INITDIALOG:
+    case WM_INITDIALOG:
 	/*
 	 * Centre the window.
 	 */
-	{			       /* centre the window */
+	{			/* centre the window */
 	    RECT rs, rd;
 	    HWND hw;
 
@@ -1482,15 +1483,16 @@ static int CALLBACK KeyListProc(HWND hwnd, UINT msg,
 			   rd.right - rd.left, rd.bottom - rd.top, TRUE);
 	}
 
-        if (help_path)
-            SetWindowLong(hwnd, GWL_EXSTYLE,
-                          GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_CONTEXTHELP);
-        else {
-            HWND item = GetDlgItem(hwnd, 103);   /* the Help button */
-            if (item)
-                DestroyWindow(item);
-        }
-        requested_help = FALSE;
+	if (help_path)
+	    SetWindowLong(hwnd, GWL_EXSTYLE,
+			  GetWindowLong(hwnd,
+					GWL_EXSTYLE) | WS_EX_CONTEXTHELP);
+	else {
+	    HWND item = GetDlgItem(hwnd, 103);	/* the Help button */
+	    if (item)
+		DestroyWindow(item);
+	}
+	requested_help = FALSE;
 
 	keylist = hwnd;
 	{
@@ -1501,14 +1503,14 @@ static int CALLBACK KeyListProc(HWND hwnd, UINT msg,
 	}
 	keylist_update();
 	return 0;
-      case WM_COMMAND:
+    case WM_COMMAND:
 	switch (LOWORD(wParam)) {
-	  case IDOK:
-	  case IDCANCEL:
+	case IDOK:
+	case IDCANCEL:
 	    keylist = NULL;
 	    DestroyWindow(hwnd);
 	    return 0;
-	  case 101:		       /* add key */
+	case 101:		/* add key */
 	    if (HIWORD(wParam) == BN_CLICKED ||
 		HIWORD(wParam) == BN_DOUBLECLICKED) {
 		if (passphrase_box) {
@@ -1519,20 +1521,20 @@ static int CALLBACK KeyListProc(HWND hwnd, UINT msg,
 		prompt_add_keyfile();
 	    }
 	    return 0;
-	  case 102:		       /* remove key */
+	case 102:		/* remove key */
 	    if (HIWORD(wParam) == BN_CLICKED ||
 		HIWORD(wParam) == BN_DOUBLECLICKED) {
 		int i;
 		int rCount, sCount;
 		int *selectedArray;
-		
+
 		/* our counter within the array of selected items */
 		int itemNum;
-		
+
 		/* get the number of items selected in the list */
-		int numSelected = 
-			SendDlgItemMessage(hwnd, 100, LB_GETSELCOUNT, 0, 0);
-		
+		int numSelected =
+		    SendDlgItemMessage(hwnd, 100, LB_GETSELCOUNT, 0, 0);
+
 		/* none selected? that was silly */
 		if (numSelected == 0) {
 		    MessageBeep(0);
@@ -1542,76 +1544,82 @@ static int CALLBACK KeyListProc(HWND hwnd, UINT msg,
 		/* get item indices in an array */
 		selectedArray = snewn(numSelected, int);
 		SendDlgItemMessage(hwnd, 100, LB_GETSELITEMS,
-				numSelected, (WPARAM)selectedArray);
-		
+				   numSelected, (WPARAM) selectedArray);
+
 		itemNum = numSelected - 1;
 		rCount = count234(rsakeys);
 		sCount = count234(ssh2keys);
-		
+
 		/* go through the non-rsakeys until we've covered them all, 
 		 * and/or we're out of selected items to check. note that
 		 * we go *backwards*, to avoid complications from deleting
 		 * things hence altering the offset of subsequent items
 		 */
-	    for (i = sCount - 1; (itemNum >= 0) && (i >= 0); i--) {
-			skey = index234(ssh2keys, i);
-			
-			if (selectedArray[itemNum] == rCount + i) {
-				del234(ssh2keys, skey);
-				skey->alg->freekey(skey->data);
-				sfree(skey);
-			   	itemNum--; 
-			}
+		for (i = sCount - 1; (itemNum >= 0) && (i >= 0); i--) {
+		    skey = index234(ssh2keys, i);
+
+		    if (selectedArray[itemNum] == rCount + i) {
+			del234(ssh2keys, skey);
+			skey->alg->freekey(skey->data);
+			sfree(skey);
+			itemNum--;
+		    }
 		}
-		
+
 		/* do the same for the rsa keys */
 		for (i = rCount - 1; (itemNum >= 0) && (i >= 0); i--) {
-			rkey = index234(rsakeys, i);
+		    rkey = index234(rsakeys, i);
 
-			if(selectedArray[itemNum] == i) {
-				del234(rsakeys, rkey);
-				freersakey(rkey);
-				sfree(rkey);
-				itemNum--;
-			}
+		    if (selectedArray[itemNum] == i) {
+			del234(rsakeys, rkey);
+			freersakey(rkey);
+			sfree(rkey);
+			itemNum--;
+		    }
 		}
 
-		sfree(selectedArray); 
+		sfree(selectedArray);
 		keylist_update();
 	    }
 	    return 0;
-	  case 103:		       /* help */
-            if (HIWORD(wParam) == BN_CLICKED ||
-                HIWORD(wParam) == BN_DOUBLECLICKED) {
-                if (help_path) {
-                    WinHelp(hwnd, help_path, HELP_COMMAND,
-                            (DWORD)"JI(`',`pageant.general')");
-                    requested_help = TRUE;
-                }
-            }
+	case 103:		/* help */
+	    if (HIWORD(wParam) == BN_CLICKED ||
+		HIWORD(wParam) == BN_DOUBLECLICKED) {
+		if (help_path) {
+		    WinHelp(hwnd, help_path, HELP_COMMAND,
+			    (DWORD) "JI(`',`pageant.general')");
+		    requested_help = TRUE;
+		}
+	    }
 	    return 0;
 	}
 	return 0;
-      case WM_HELP:
-        if (help_path) {
-            int id = ((LPHELPINFO)lParam)->iCtrlId;
-            char *topic = NULL;
-            switch (id) {
-              case 100: topic = "pageant.keylist"; break;
-              case 101: topic = "pageant.addkey"; break;
-              case 102: topic = "pageant.remkey"; break;
-            }
-            if (topic) {
+    case WM_HELP:
+	if (help_path) {
+	    int id = ((LPHELPINFO) lParam)->iCtrlId;
+	    char *topic = NULL;
+	    switch (id) {
+	    case 100:
+		topic = "pageant.keylist";
+		break;
+	    case 101:
+		topic = "pageant.addkey";
+		break;
+	    case 102:
+		topic = "pageant.remkey";
+		break;
+	    }
+	    if (topic) {
 		char *cmd = dupprintf("JI(`',`%s')", topic);
-                WinHelp(hwnd, help_path, HELP_COMMAND, (DWORD)cmd);
+		WinHelp(hwnd, help_path, HELP_COMMAND, (DWORD) cmd);
 		sfree(cmd);
-                requested_help = TRUE;
-            } else {
-                MessageBeep(0);
-            }
-        }
-        break;
-      case WM_CLOSE:
+		requested_help = TRUE;
+	    } else {
+		MessageBeep(0);
+	    }
+	}
+	break;
+    case WM_CLOSE:
 	keylist = NULL;
 	DestroyWindow(hwnd);
 	return 0;
@@ -1633,7 +1641,7 @@ static BOOL AddTrayIcon(HWND hwnd)
 
     tnid.cbSize = sizeof(NOTIFYICONDATA);
     tnid.hWnd = hwnd;
-    tnid.uID = 1;	       /* unique within this systray use */
+    tnid.uID = 1;		/* unique within this systray use */
     tnid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
     tnid.uCallbackMessage = WM_SYSTRAY;
     tnid.hIcon = hicon = LoadIcon(hinst, MAKEINTRESOURCE(201));
@@ -1641,8 +1649,9 @@ static BOOL AddTrayIcon(HWND hwnd)
 
     res = Shell_NotifyIcon(NIM_ADD, &tnid);
 
-    if (hicon) DestroyIcon(hicon);
-    
+    if (hicon)
+	DestroyIcon(hicon);
+
     return res;
 }
 
@@ -1659,21 +1668,21 @@ static void update_sessions(void)
     if (!putty_path)
 	return;
 
-    if(ERROR_SUCCESS != RegOpenKey(HKEY_CURRENT_USER, PUTTY_REGKEY, &hkey))
+    if (ERROR_SUCCESS !=
+	RegOpenKey(HKEY_CURRENT_USER, PUTTY_REGKEY, &hkey))
 	return;
 
-    for(num_entries = GetMenuItemCount(session_menu);
-	num_entries > initial_menuitems_count;
-	num_entries--)
+    for (num_entries = GetMenuItemCount(session_menu);
+	 num_entries > initial_menuitems_count; num_entries--)
 	RemoveMenu(session_menu, 0, MF_BYPOSITION);
 
     index_key = 0;
     index_menu = 0;
 
-    while(ERROR_SUCCESS == RegEnumKey(hkey, index_key, buf, MAX_PATH)) {
+    while (ERROR_SUCCESS == RegEnumKey(hkey, index_key, buf, MAX_PATH)) {
 	TCHAR session_name[MAX_PATH + 1];
 	unmungestr(buf, session_name, MAX_PATH);
-	if(strcmp(buf, PUTTY_DEFAULT) != 0) {
+	if (strcmp(buf, PUTTY_DEFAULT) != 0) {
 	    memset(&mii, 0, sizeof(mii));
 	    mii.cbSize = sizeof(mii);
 	    mii.fMask = MIIM_TYPE | MIIM_STATE | MIIM_ID;
@@ -1689,7 +1698,7 @@ static void update_sessions(void)
 
     RegCloseKey(hkey);
 
-    if(index_menu == 0) {
+    if (index_menu == 0) {
 	mii.cbSize = sizeof(mii);
 	mii.fMask = MIIM_TYPE | MIIM_STATE;
 	mii.fType = MFT_STRING;
@@ -1707,20 +1716,20 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
     static UINT msgTaskbarCreated = 0;
 
     switch (message) {
-      case WM_CREATE:
-        msgTaskbarCreated = RegisterWindowMessage(_T("TaskbarCreated"));
-        break;
-      default:
-        if (message==msgTaskbarCreated) {
-            /*
+    case WM_CREATE:
+	msgTaskbarCreated = RegisterWindowMessage(_T("TaskbarCreated"));
+	break;
+    default:
+	if (message == msgTaskbarCreated) {
+	    /*
 	     * Explorer has been restarted, so the tray icon will
 	     * have been lost.
 	     */
 	    AddTrayIcon(hwnd);
-        }
-        break;
-        
-      case WM_SYSTRAY:
+	}
+	break;
+
+    case WM_SYSTRAY:
 	if (lParam == WM_RBUTTONUP) {
 	    POINT cursorpos;
 	    GetCursorPos(&cursorpos);
@@ -1732,7 +1741,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 		PostMessage(hwnd, WM_COMMAND, menuitem, 0);
 	}
 	break;
-      case WM_SYSTRAY2:
+    case WM_SYSTRAY2:
 	if (!menuinprogress) {
 	    menuinprogress = 1;
 	    update_sessions();
@@ -1744,22 +1753,22 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	    menuinprogress = 0;
 	}
 	break;
-      case WM_COMMAND:
-      case WM_SYSCOMMAND:
-	switch (wParam & ~0xF) {       /* low 4 bits reserved to Windows */
-	  case IDM_PUTTY:
-	    if((int)ShellExecute(hwnd, NULL, putty_path, _T(""), _T(""),
-				 SW_SHOW) <= 32) {
+    case WM_COMMAND:
+    case WM_SYSCOMMAND:
+	switch (wParam & ~0xF) {	/* low 4 bits reserved to Windows */
+	case IDM_PUTTY:
+	    if ((int) ShellExecute(hwnd, NULL, putty_path, _T(""), _T(""),
+				   SW_SHOW) <= 32) {
 		MessageBox(NULL, "Unable to execute PuTTY!",
 			   "Error", MB_OK | MB_ICONERROR);
 	    }
 	    break;
-	  case IDM_CLOSE:
+	case IDM_CLOSE:
 	    if (passphrase_box)
 		SendMessage(passphrase_box, WM_CLOSE, 0, 0);
 	    SendMessage(hwnd, WM_CLOSE, 0, 0);
 	    break;
-	  case IDM_VIEWKEYS:
+	case IDM_VIEWKEYS:
 	    if (!keylist) {
 		keylist = CreateDialog(hinst, MAKEINTRESOURCE(211),
 				       NULL, KeyListProc);
@@ -1776,7 +1785,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	    SetWindowPos(keylist, HWND_TOP, 0, 0, 0, 0,
 			 SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
 	    break;
-	  case IDM_ADDKEY:
+	case IDM_ADDKEY:
 	    if (passphrase_box) {
 		MessageBeep(MB_ICONERROR);
 		SetForegroundWindow(passphrase_box);
@@ -1784,7 +1793,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	    }
 	    prompt_add_keyfile();
 	    break;
-	  case IDM_ABOUT:
+	case IDM_ABOUT:
 	    if (!aboutbox) {
 		aboutbox = CreateDialog(hinst, MAKEINTRESOURCE(213),
 					NULL, AboutProc);
@@ -1798,16 +1807,17 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 			     SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
 	    }
 	    break;
-	  case IDM_HELP:
-            if (help_path) {
-                WinHelp(hwnd, help_path, HELP_COMMAND,
-                        (DWORD)"JI(`',`pageant.general')");
-                requested_help = TRUE;
-            }
+	case IDM_HELP:
+	    if (help_path) {
+		WinHelp(hwnd, help_path, HELP_COMMAND,
+			(DWORD) "JI(`',`pageant.general')");
+		requested_help = TRUE;
+	    }
 	    break;
-	  default:
+	default:
 	    {
-		if(wParam >= IDM_SESSIONS_BASE && wParam <= IDM_SESSIONS_MAX) {
+		if (wParam >= IDM_SESSIONS_BASE
+		    && wParam <= IDM_SESSIONS_MAX) {
 		    MENUITEMINFO mii;
 		    TCHAR buf[MAX_PATH + 1];
 		    TCHAR param[MAX_PATH + 1];
@@ -1819,24 +1829,24 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 		    GetMenuItemInfo(session_menu, wParam, FALSE, &mii);
 		    strcpy(param, "@");
 		    strcat(param, mii.dwTypeData);
-		    if((int)ShellExecute(hwnd, NULL, putty_path, param,
-					 _T(""), SW_SHOW) <= 32) {
-			MessageBox(NULL, "Unable to execute PuTTY!", "Error",
-				   MB_OK | MB_ICONERROR);
+		    if ((int) ShellExecute(hwnd, NULL, putty_path, param,
+					   _T(""), SW_SHOW) <= 32) {
+			MessageBox(NULL, "Unable to execute PuTTY!",
+				   "Error", MB_OK | MB_ICONERROR);
 		    }
 		}
 	    }
 	    break;
 	}
 	break;
-      case WM_DESTROY:
-        if (requested_help) {
-            WinHelp(hwnd, help_path, HELP_QUIT, 0);
-            requested_help = FALSE;
-        }
+    case WM_DESTROY:
+	if (requested_help) {
+	    WinHelp(hwnd, help_path, HELP_QUIT, 0);
+	    requested_help = FALSE;
+	}
 	PostQuitMessage(0);
 	return 0;
-      case WM_COPYDATA:
+    case WM_COPYDATA:
 	{
 	    COPYDATASTRUCT *cds;
 	    char *mapname;
@@ -1851,10 +1861,10 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 
 	    cds = (COPYDATASTRUCT *) lParam;
 	    if (cds->dwData != AGENT_COPYDATA_ID)
-		return 0;	       /* not our message, mate */
+		return 0;	/* not our message, mate */
 	    mapname = (char *) cds->lpData;
 	    if (mapname[cds->cbData - 1] != '\0')
-		return 0;	       /* failure to be ASCIZ! */
+		return 0;	/* failure to be ASCIZ! */
 #ifdef DEBUG_IPC
 	    debug(("mapname is :%s:\n", mapname));
 #endif
@@ -1882,7 +1892,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 			debug(("couldn't get owner info for process\n"));
 #endif
 			CloseHandle(proc);
-			return 0;      /* unable to get security info */
+			return 0;	/* unable to get security info */
 		    }
 		    CloseHandle(proc);
 		    if ((rc = getsecurityinfo(filemap, SE_KERNEL_OBJECT,
@@ -1890,8 +1900,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 					      &mapowner, NULL, NULL, NULL,
 					      &psd1) != ERROR_SUCCESS)) {
 #ifdef DEBUG_IPC
-			debug(
-			      ("couldn't get owner info for filemap: %d\n",
+			debug(("couldn't get owner info for filemap: %d\n",
 			       rc));
 #endif
 			return 0;
@@ -1900,7 +1909,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 		    debug(("got security stuff\n"));
 #endif
 		    if (!EqualSid(mapowner, procowner))
-			return 0;      /* security ID mismatch! */
+			return 0;	/* security ID mismatch! */
 #ifdef DEBUG_IPC
 		    debug(("security stuff matched\n"));
 #endif
@@ -1918,9 +1927,9 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 		{
 		    int i;
 		    for (i = 0; i < 5; i++)
-			debug(
-			      ("p[%d]=%02x\n", i,
-			       ((unsigned char *) p)[i]));}
+			debug(("p[%d]=%02x\n", i,
+			       ((unsigned char *) p)[i]));
+		}
 #endif
 		answer_msg(p);
 		ret = 1;
@@ -1937,13 +1946,13 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 /*
  * Fork and Exec the command in cmdline. [DBW]
  */
-void spawn_cmd(char *cmdline, char * args, int show)
+void spawn_cmd(char *cmdline, char *args, int show)
 {
     if (ShellExecute(NULL, _T("open"), cmdline,
 		     args, NULL, show) <= (HINSTANCE) 32) {
 	char *msg;
 	msg = dupprintf("Failed to run \"%.100s\", Error: %d", cmdline,
-			(int)GetLastError());
+			(int) GetLastError());
 	MessageBox(NULL, msg, APPNAME, MB_OK | MB_ICONEXCLAMATION);
 	sfree(msg);
     }
@@ -1953,13 +1962,16 @@ void spawn_cmd(char *cmdline, char * args, int show)
  * This is a can't-happen stub, since Pageant never makes
  * asynchronous agent requests.
  */
-void agent_schedule_callback(void (*callback)(void *, void *, int),
+void agent_schedule_callback(void (*callback) (void *, void *, int),
 			     void *callback_ctx, void *data, int len)
 {
     assert(!"We shouldn't get here");
 }
 
-void cleanup_exit(int code) { exit(code); }
+void cleanup_exit(int code)
+{
+    exit(code);
+}
 
 int flags = FLAG_SYNCAGENT;
 
@@ -1980,8 +1992,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
      * Determine whether we're an NT system (should have security
      * APIs) or a non-NT system (don't do security).
      */
-    if (!init_winver())
-    {
+    if (!init_winver()) {
 	modalfatalbox("Windows refuses to report a version");
     }
     if (osVersion.dwPlatformId == VER_PLATFORM_WIN32_NT) {
@@ -2018,20 +2029,22 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
      * See if we can find our Help file.
      */
     {
-        char b[2048], *p, *q, *r;
-        FILE *fp;
-        GetModuleFileName(NULL, b, sizeof(b) - 1);
-        r = b;
-        p = strrchr(b, '\\');
-        if (p && p >= r) r = p+1;
-        q = strrchr(b, ':');
-        if (q && q >= r) r = q+1;
-        strcpy(r, PUTTY_HELP_FILE);
-        if ( (fp = fopen(b, "r")) != NULL) {
-            help_path = dupstr(b);
-            fclose(fp);
-        } else
-            help_path = NULL;
+	char b[2048], *p, *q, *r;
+	FILE *fp;
+	GetModuleFileName(NULL, b, sizeof(b) - 1);
+	r = b;
+	p = strrchr(b, '\\');
+	if (p && p >= r)
+	    r = p + 1;
+	q = strrchr(b, ':');
+	if (q && q >= r)
+	    r = q + 1;
+	strcpy(r, PUTTY_HELP_FILE);
+	if ((fp = fopen(b, "r")) != NULL) {
+	    help_path = dupstr(b);
+	    fclose(fp);
+	} else
+	    help_path = NULL;
     }
 
     /*
@@ -2039,20 +2052,22 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
      * submenu if we find it).
      */
     {
-        char b[2048], *p, *q, *r;
-        FILE *fp;
-        GetModuleFileName(NULL, b, sizeof(b) - 1);
-        r = b;
-        p = strrchr(b, '\\');
-        if (p && p >= r) r = p+1;
-        q = strrchr(b, ':');
-        if (q && q >= r) r = q+1;
-        strcpy(r, "putty.exe");
-        if ( (fp = fopen(b, "r")) != NULL) {
-            putty_path = dupstr(b);
-            fclose(fp);
-        } else
-            putty_path = NULL;
+	char b[2048], *p, *q, *r;
+	FILE *fp;
+	GetModuleFileName(NULL, b, sizeof(b) - 1);
+	r = b;
+	p = strrchr(b, '\\');
+	if (p && p >= r)
+	    r = p + 1;
+	q = strrchr(b, ':');
+	if (q && q >= r)
+	    r = q + 1;
+	strcpy(r, "putty.exe");
+	if ((fp = fopen(b, "r")) != NULL) {
+	    putty_path = dupstr(b);
+	    fclose(fp);
+	} else
+	    putty_path = NULL;
     }
 
     /*
@@ -2089,8 +2104,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	     * command line should be treated as a
 	     * command to be spawned.
 	     */
-	    if (i < argc-1)
-		command = argstart[i+1];
+	    if (i < argc - 1)
+		command = argstart[i + 1];
 	    else
 		command = "";
 	    break;
@@ -2114,7 +2129,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	    args = strchr(command, ' ');
 	if (args) {
 	    *args++ = 0;
-	    while(*args && isspace(*args)) args++;
+	    while (*args && isspace(*args))
+		args++;
 	}
 	spawn_cmd(command, args, show);
     }
@@ -2168,8 +2184,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 		   (UINT) session_menu, "&Saved Sessions");
 	AppendMenu(systray_menu, MF_SEPARATOR, 0, 0);
     }
-    AppendMenu(systray_menu, MF_ENABLED, IDM_VIEWKEYS,
-	   "&View Keys");
+    AppendMenu(systray_menu, MF_ENABLED, IDM_VIEWKEYS, "&View Keys");
     AppendMenu(systray_menu, MF_ENABLED, IDM_ADDKEY, "Add &Key");
     AppendMenu(systray_menu, MF_SEPARATOR, 0, 0);
     if (help_path)
@@ -2208,7 +2223,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	DestroyMenu(systray_menu);
     }
 
-    if (keypath) filereq_free(keypath);
+    if (keypath)
+	filereq_free(keypath);
 
     if (advapi)
 	FreeLibrary(advapi);

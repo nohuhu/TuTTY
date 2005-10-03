@@ -50,14 +50,15 @@ struct progress {
     struct {
 	int exponential;
 	unsigned startpoint, total;
-	unsigned param, current, n;    /* if exponential */
-	unsigned mult;		       /* if linear */
+	unsigned param, current, n;	/* if exponential */
+	unsigned mult;		/* if linear */
     } phases[MAXPHASE];
     unsigned total, divisor, range;
     HWND progbar;
 };
 
-static void progress_update(void *param, int action, int phase, int iprogress)
+static void progress_update(void *param, int action, int phase,
+			    int iprogress)
 {
     struct progress *p = (struct progress *) param;
     unsigned progress = iprogress;
@@ -66,23 +67,23 @@ static void progress_update(void *param, int action, int phase, int iprogress)
     if (action < PROGFN_READY && p->nphases < phase)
 	p->nphases = phase;
     switch (action) {
-      case PROGFN_INITIALISE:
+    case PROGFN_INITIALISE:
 	p->nphases = 0;
 	break;
-      case PROGFN_LIN_PHASE:
-	p->phases[phase-1].exponential = 0;
-	p->phases[phase-1].mult = p->phases[phase].total / progress;
+    case PROGFN_LIN_PHASE:
+	p->phases[phase - 1].exponential = 0;
+	p->phases[phase - 1].mult = p->phases[phase].total / progress;
 	break;
-      case PROGFN_EXP_PHASE:
-	p->phases[phase-1].exponential = 1;
-	p->phases[phase-1].param = 0x10000 + progress;
-	p->phases[phase-1].current = p->phases[phase-1].total;
-	p->phases[phase-1].n = 0;
+    case PROGFN_EXP_PHASE:
+	p->phases[phase - 1].exponential = 1;
+	p->phases[phase - 1].param = 0x10000 + progress;
+	p->phases[phase - 1].current = p->phases[phase - 1].total;
+	p->phases[phase - 1].n = 0;
 	break;
-      case PROGFN_PHASE_EXTENT:
-	p->phases[phase-1].total = progress;
+    case PROGFN_PHASE_EXTENT:
+	p->phases[phase - 1].total = progress;
 	break;
-      case PROGFN_READY:
+    case PROGFN_READY:
 	{
 	    unsigned total = 0;
 	    int i;
@@ -93,21 +94,23 @@ static void progress_update(void *param, int action, int phase, int iprogress)
 	    p->total = total;
 	    p->divisor = ((p->total + PROGRESSRANGE - 1) / PROGRESSRANGE);
 	    p->range = p->total / p->divisor;
-	    SendMessage(p->progbar, PBM_SETRANGE, 0, MAKELPARAM(0, p->range));
+	    SendMessage(p->progbar, PBM_SETRANGE, 0,
+			MAKELPARAM(0, p->range));
 	}
 	break;
-      case PROGFN_PROGRESS:
-	if (p->phases[phase-1].exponential) {
-	    while (p->phases[phase-1].n < progress) {
-		p->phases[phase-1].n++;
-		p->phases[phase-1].current *= p->phases[phase-1].param;
-		p->phases[phase-1].current /= 0x10000;
+    case PROGFN_PROGRESS:
+	if (p->phases[phase - 1].exponential) {
+	    while (p->phases[phase - 1].n < progress) {
+		p->phases[phase - 1].n++;
+		p->phases[phase - 1].current *= p->phases[phase - 1].param;
+		p->phases[phase - 1].current /= 0x10000;
 	    }
-	    position = (p->phases[phase-1].startpoint +
-			p->phases[phase-1].total - p->phases[phase-1].current);
+	    position = (p->phases[phase - 1].startpoint +
+			p->phases[phase - 1].total - p->phases[phase -
+							       1].current);
 	} else {
-	    position = (p->phases[phase-1].startpoint +
-			progress * p->phases[phase-1].mult);
+	    position = (p->phases[phase - 1].startpoint +
+			progress * p->phases[phase - 1].mult);
 	}
 	SendMessage(p->progbar, PBM_SETPOS, position / p->divisor, 0);
 	break;
@@ -133,7 +136,7 @@ static int CALLBACK PassphraseProc(HWND hwnd, UINT msg,
     struct PassphraseProcStruct *p;
 
     switch (msg) {
-      case WM_INITDIALOG:
+    case WM_INITDIALOG:
 	SetForegroundWindow(hwnd);
 	SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0,
 		     SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
@@ -141,7 +144,7 @@ static int CALLBACK PassphraseProc(HWND hwnd, UINT msg,
 	/*
 	 * Centre the window.
 	 */
-	{			       /* centre the window */
+	{			/* centre the window */
 	    RECT rs, rd;
 	    HWND hw;
 
@@ -160,18 +163,18 @@ static int CALLBACK PassphraseProc(HWND hwnd, UINT msg,
 	*passphrase = 0;
 	SetDlgItemText(hwnd, 102, passphrase);
 	return 0;
-      case WM_COMMAND:
+    case WM_COMMAND:
 	switch (LOWORD(wParam)) {
-	  case IDOK:
+	case IDOK:
 	    if (*passphrase)
 		EndDialog(hwnd, 1);
 	    else
 		MessageBeep(0);
 	    return 0;
-	  case IDCANCEL:
+	case IDCANCEL:
 	    EndDialog(hwnd, 0);
 	    return 0;
-	  case 102:		       /* edit box */
+	case 102:		/* edit box */
 	    if ((HIWORD(wParam) == EN_CHANGE) && passphrase) {
 		GetDlgItemText(hwnd, 102, passphrase,
 			       PASSPHRASE_MAXLEN - 1);
@@ -180,7 +183,7 @@ static int CALLBACK PassphraseProc(HWND hwnd, UINT msg,
 	    return 0;
 	}
 	return 0;
-      case WM_CLOSE:
+    case WM_CLOSE:
 	EndDialog(hwnd, 0);
 	return 0;
     }
@@ -222,11 +225,11 @@ static int CALLBACK LicenceProc(HWND hwnd, UINT msg,
 				WPARAM wParam, LPARAM lParam)
 {
     switch (msg) {
-      case WM_INITDIALOG:
+    case WM_INITDIALOG:
 	/*
 	 * Centre the window.
 	 */
-	{			       /* centre the window */
+	{			/* centre the window */
 	    RECT rs, rd;
 	    HWND hw;
 
@@ -239,15 +242,15 @@ static int CALLBACK LicenceProc(HWND hwnd, UINT msg,
 	}
 
 	return 1;
-      case WM_COMMAND:
+    case WM_COMMAND:
 	switch (LOWORD(wParam)) {
-	  case IDOK:
-	  case IDCANCEL:
+	case IDOK:
+	case IDCANCEL:
 	    EndDialog(hwnd, 1);
 	    return 0;
 	}
 	return 0;
-      case WM_CLOSE:
+    case WM_CLOSE:
 	EndDialog(hwnd, 1);
 	return 0;
     }
@@ -261,11 +264,11 @@ static int CALLBACK AboutProc(HWND hwnd, UINT msg,
 			      WPARAM wParam, LPARAM lParam)
 {
     switch (msg) {
-      case WM_INITDIALOG:
+    case WM_INITDIALOG:
 	/*
 	 * Centre the window.
 	 */
-	{			       /* centre the window */
+	{			/* centre the window */
 	    RECT rs, rd;
 	    HWND hw;
 
@@ -279,13 +282,13 @@ static int CALLBACK AboutProc(HWND hwnd, UINT msg,
 
 	SetDlgItemText(hwnd, 100, ver);
 	return 1;
-      case WM_COMMAND:
+    case WM_COMMAND:
 	switch (LOWORD(wParam)) {
-	  case IDOK:
-	  case IDCANCEL:
+	case IDOK:
+	case IDCANCEL:
 	    EndDialog(hwnd, 1);
 	    return 0;
-	  case 101:
+	case 101:
 	    EnableWindow(hwnd, 0);
 	    DialogBox(hinst, MAKEINTRESOURCE(214), hwnd, LicenceProc);
 	    EnableWindow(hwnd, 1);
@@ -293,7 +296,7 @@ static int CALLBACK AboutProc(HWND hwnd, UINT msg,
 	    return 0;
 	}
 	return 0;
-      case WM_CLOSE:
+    case WM_CLOSE:
 	EndDialog(hwnd, 1);
 	return 0;
     }
@@ -304,9 +307,9 @@ static int CALLBACK AboutProc(HWND hwnd, UINT msg,
  * Thread to generate a key.
  */
 struct rsa_key_thread_params {
-    HWND progressbar;		       /* notify this with progress */
-    HWND dialog;		       /* notify this on completion */
-    int keysize;		       /* bits in key */
+    HWND progressbar;		/* notify this with progress */
+    HWND dialog;		/* notify this on completion */
+    int keysize;		/* bits in key */
     int is_dsa;
     struct RSAKey *key;
     struct dss_key *dsskey;
@@ -321,7 +324,8 @@ static DWORD WINAPI generate_rsa_key_thread(void *param)
     progress_update(&prog, PROGFN_INITIALISE, 0, 0);
 
     if (params->is_dsa)
-	dsa_generate(params->dsskey, params->keysize, progress_update, &prog);
+	dsa_generate(params->dsskey, params->keysize, progress_update,
+		     &prog);
     else
 	rsa_generate(params->key, params->keysize, progress_update, &prog);
 
@@ -338,7 +342,7 @@ struct MainDlgState {
     int entropy_got, entropy_required, entropy_size;
     int keysize;
     int ssh2, is_dsa;
-    char **commentptr;		       /* points to key.comment or ssh2key.comment */
+    char **commentptr;		/* points to key.comment or ssh2key.comment */
     struct ssh2_userkey ssh2key;
     unsigned *entropy;
     struct RSAKey key;
@@ -353,7 +357,8 @@ static void hidemany(HWND hwnd, const int *ids, int hideit)
     }
 }
 
-static void setupbigedit1(HWND hwnd, int id, int idstatic, struct RSAKey *key)
+static void setupbigedit1(HWND hwnd, int id, int idstatic,
+			  struct RSAKey *key)
 {
     char *buffer;
     char *dec1, *dec2;
@@ -478,7 +483,7 @@ static int save_ssh2_pubkey(char *filename, struct ssh2_userkey *key)
     }
     if (column > 0)
 	fputc('\n', fp);
-    
+
     fprintf(fp, "---- END SSH2 PUBLIC KEY ----\n");
     fclose(fp);
     sfree(pub_blob);
@@ -529,7 +534,7 @@ void ui_set_state(HWND hwnd, struct MainDlgState *state, int status)
     int type;
 
     switch (status) {
-      case 0:			       /* no key */
+    case 0:			/* no key */
 	hidemany(hwnd, nokey_ids, FALSE);
 	hidemany(hwnd, generating_ids, TRUE);
 	hidemany(hwnd, gotkey_ids, TRUE);
@@ -541,20 +546,28 @@ void ui_set_state(HWND hwnd, struct MainDlgState *state, int status)
 	EnableWindow(GetDlgItem(hwnd, IDC_KEYSSH2RSA), 1);
 	EnableWindow(GetDlgItem(hwnd, IDC_KEYSSH2DSA), 1);
 	EnableWindow(GetDlgItem(hwnd, IDC_BITS), 1);
-	EnableMenuItem(state->filemenu, IDC_LOAD, MF_ENABLED|MF_BYCOMMAND);
-	EnableMenuItem(state->filemenu, IDC_SAVE, MF_GRAYED|MF_BYCOMMAND);
-	EnableMenuItem(state->filemenu, IDC_SAVEPUB, MF_GRAYED|MF_BYCOMMAND);
-	EnableMenuItem(state->keymenu, IDC_GENERATE, MF_ENABLED|MF_BYCOMMAND);
-	EnableMenuItem(state->keymenu, IDC_KEYSSH1, MF_ENABLED|MF_BYCOMMAND);
-	EnableMenuItem(state->keymenu, IDC_KEYSSH2RSA, MF_ENABLED|MF_BYCOMMAND);
-	EnableMenuItem(state->keymenu, IDC_KEYSSH2DSA, MF_ENABLED|MF_BYCOMMAND);
-	EnableMenuItem(state->cvtmenu, IDC_IMPORT, MF_ENABLED|MF_BYCOMMAND);
+	EnableMenuItem(state->filemenu, IDC_LOAD,
+		       MF_ENABLED | MF_BYCOMMAND);
+	EnableMenuItem(state->filemenu, IDC_SAVE,
+		       MF_GRAYED | MF_BYCOMMAND);
+	EnableMenuItem(state->filemenu, IDC_SAVEPUB,
+		       MF_GRAYED | MF_BYCOMMAND);
+	EnableMenuItem(state->keymenu, IDC_GENERATE,
+		       MF_ENABLED | MF_BYCOMMAND);
+	EnableMenuItem(state->keymenu, IDC_KEYSSH1,
+		       MF_ENABLED | MF_BYCOMMAND);
+	EnableMenuItem(state->keymenu, IDC_KEYSSH2RSA,
+		       MF_ENABLED | MF_BYCOMMAND);
+	EnableMenuItem(state->keymenu, IDC_KEYSSH2DSA,
+		       MF_ENABLED | MF_BYCOMMAND);
+	EnableMenuItem(state->cvtmenu, IDC_IMPORT,
+		       MF_ENABLED | MF_BYCOMMAND);
 	EnableMenuItem(state->cvtmenu, IDC_EXPORT_OPENSSH,
-		       MF_GRAYED|MF_BYCOMMAND);
+		       MF_GRAYED | MF_BYCOMMAND);
 	EnableMenuItem(state->cvtmenu, IDC_EXPORT_SSHCOM,
-		       MF_GRAYED|MF_BYCOMMAND);
+		       MF_GRAYED | MF_BYCOMMAND);
 	break;
-      case 1:			       /* generating key */
+    case 1:			/* generating key */
 	hidemany(hwnd, nokey_ids, TRUE);
 	hidemany(hwnd, generating_ids, FALSE);
 	hidemany(hwnd, gotkey_ids, TRUE);
@@ -566,20 +579,28 @@ void ui_set_state(HWND hwnd, struct MainDlgState *state, int status)
 	EnableWindow(GetDlgItem(hwnd, IDC_KEYSSH2RSA), 0);
 	EnableWindow(GetDlgItem(hwnd, IDC_KEYSSH2DSA), 0);
 	EnableWindow(GetDlgItem(hwnd, IDC_BITS), 0);
-	EnableMenuItem(state->filemenu, IDC_LOAD, MF_GRAYED|MF_BYCOMMAND);
-	EnableMenuItem(state->filemenu, IDC_SAVE, MF_GRAYED|MF_BYCOMMAND);
-	EnableMenuItem(state->filemenu, IDC_SAVEPUB, MF_GRAYED|MF_BYCOMMAND);
-	EnableMenuItem(state->keymenu, IDC_GENERATE, MF_GRAYED|MF_BYCOMMAND);
-	EnableMenuItem(state->keymenu, IDC_KEYSSH1, MF_GRAYED|MF_BYCOMMAND);
-	EnableMenuItem(state->keymenu, IDC_KEYSSH2RSA, MF_GRAYED|MF_BYCOMMAND);
-	EnableMenuItem(state->keymenu, IDC_KEYSSH2DSA, MF_GRAYED|MF_BYCOMMAND);
-	EnableMenuItem(state->cvtmenu, IDC_IMPORT, MF_GRAYED|MF_BYCOMMAND);
+	EnableMenuItem(state->filemenu, IDC_LOAD,
+		       MF_GRAYED | MF_BYCOMMAND);
+	EnableMenuItem(state->filemenu, IDC_SAVE,
+		       MF_GRAYED | MF_BYCOMMAND);
+	EnableMenuItem(state->filemenu, IDC_SAVEPUB,
+		       MF_GRAYED | MF_BYCOMMAND);
+	EnableMenuItem(state->keymenu, IDC_GENERATE,
+		       MF_GRAYED | MF_BYCOMMAND);
+	EnableMenuItem(state->keymenu, IDC_KEYSSH1,
+		       MF_GRAYED | MF_BYCOMMAND);
+	EnableMenuItem(state->keymenu, IDC_KEYSSH2RSA,
+		       MF_GRAYED | MF_BYCOMMAND);
+	EnableMenuItem(state->keymenu, IDC_KEYSSH2DSA,
+		       MF_GRAYED | MF_BYCOMMAND);
+	EnableMenuItem(state->cvtmenu, IDC_IMPORT,
+		       MF_GRAYED | MF_BYCOMMAND);
 	EnableMenuItem(state->cvtmenu, IDC_EXPORT_OPENSSH,
-		       MF_GRAYED|MF_BYCOMMAND);
+		       MF_GRAYED | MF_BYCOMMAND);
 	EnableMenuItem(state->cvtmenu, IDC_EXPORT_SSHCOM,
-		       MF_GRAYED|MF_BYCOMMAND);
+		       MF_GRAYED | MF_BYCOMMAND);
 	break;
-      case 2:
+    case 2:
 	hidemany(hwnd, nokey_ids, TRUE);
 	hidemany(hwnd, generating_ids, TRUE);
 	hidemany(hwnd, gotkey_ids, FALSE);
@@ -591,14 +612,22 @@ void ui_set_state(HWND hwnd, struct MainDlgState *state, int status)
 	EnableWindow(GetDlgItem(hwnd, IDC_KEYSSH2RSA), 1);
 	EnableWindow(GetDlgItem(hwnd, IDC_KEYSSH2DSA), 1);
 	EnableWindow(GetDlgItem(hwnd, IDC_BITS), 1);
-	EnableMenuItem(state->filemenu, IDC_LOAD, MF_ENABLED|MF_BYCOMMAND);
-	EnableMenuItem(state->filemenu, IDC_SAVE, MF_ENABLED|MF_BYCOMMAND);
-	EnableMenuItem(state->filemenu, IDC_SAVEPUB, MF_ENABLED|MF_BYCOMMAND);
-	EnableMenuItem(state->keymenu, IDC_GENERATE, MF_ENABLED|MF_BYCOMMAND);
-	EnableMenuItem(state->keymenu, IDC_KEYSSH1, MF_ENABLED|MF_BYCOMMAND);
-	EnableMenuItem(state->keymenu, IDC_KEYSSH2RSA,MF_ENABLED|MF_BYCOMMAND);
-	EnableMenuItem(state->keymenu, IDC_KEYSSH2DSA,MF_ENABLED|MF_BYCOMMAND);
-	EnableMenuItem(state->cvtmenu, IDC_IMPORT, MF_ENABLED|MF_BYCOMMAND);
+	EnableMenuItem(state->filemenu, IDC_LOAD,
+		       MF_ENABLED | MF_BYCOMMAND);
+	EnableMenuItem(state->filemenu, IDC_SAVE,
+		       MF_ENABLED | MF_BYCOMMAND);
+	EnableMenuItem(state->filemenu, IDC_SAVEPUB,
+		       MF_ENABLED | MF_BYCOMMAND);
+	EnableMenuItem(state->keymenu, IDC_GENERATE,
+		       MF_ENABLED | MF_BYCOMMAND);
+	EnableMenuItem(state->keymenu, IDC_KEYSSH1,
+		       MF_ENABLED | MF_BYCOMMAND);
+	EnableMenuItem(state->keymenu, IDC_KEYSSH2RSA,
+		       MF_ENABLED | MF_BYCOMMAND);
+	EnableMenuItem(state->keymenu, IDC_KEYSSH2DSA,
+		       MF_ENABLED | MF_BYCOMMAND);
+	EnableMenuItem(state->cvtmenu, IDC_IMPORT,
+		       MF_ENABLED | MF_BYCOMMAND);
 	/*
 	 * Enable export menu items if and only if the key type
 	 * supports this kind of export.
@@ -629,8 +658,7 @@ void load_key_file(HWND hwnd, struct MainDlgState *state,
 
     type = realtype = key_type(&filename);
     if (type != SSH_KEYTYPE_SSH1 &&
-	type != SSH_KEYTYPE_SSH2 &&
-	!import_possible(type)) {
+	type != SSH_KEYTYPE_SSH2 && !import_possible(type)) {
 	char *msg = dupprintf("Couldn't load private key (%s)",
 			      key_type_to_str(type));
 	message_box(msg, "PuTTYgen Error", MB_OK | MB_ICONERROR,
@@ -639,8 +667,7 @@ void load_key_file(HWND hwnd, struct MainDlgState *state,
 	return;
     }
 
-    if (type != SSH_KEYTYPE_SSH1 &&
-	type != SSH_KEYTYPE_SSH2) {
+    if (type != SSH_KEYTYPE_SSH1 && type != SSH_KEYTYPE_SSH2) {
 	realtype = type;
 	type = import_target_type(type);
     }
@@ -649,11 +676,9 @@ void load_key_file(HWND hwnd, struct MainDlgState *state,
     if (realtype == SSH_KEYTYPE_SSH1)
 	needs_pass = rsakey_encrypted(&filename, &comment);
     else if (realtype == SSH_KEYTYPE_SSH2)
-	needs_pass =
-	ssh2_userkey_encrypted(&filename, &comment);
+	needs_pass = ssh2_userkey_encrypted(&filename, &comment);
     else
-	needs_pass = import_encrypted(&filename, realtype,
-				      &comment);
+	needs_pass = import_encrypted(&filename, realtype, &comment);
     pps.passphrase = passphrase;
     pps.comment = comment;
     do {
@@ -661,8 +686,7 @@ void load_key_file(HWND hwnd, struct MainDlgState *state,
 	    int dlgret;
 	    dlgret = DialogBoxParam(hinst,
 				    MAKEINTRESOURCE(210),
-				    NULL, PassphraseProc,
-				    (LPARAM) &pps);
+				    NULL, PassphraseProc, (LPARAM) & pps);
 	    if (!dlgret) {
 		ret = -2;
 		break;
@@ -671,8 +695,7 @@ void load_key_file(HWND hwnd, struct MainDlgState *state,
 	    *passphrase = '\0';
 	if (type == SSH_KEYTYPE_SSH1) {
 	    if (realtype == type)
-		ret = loadrsakey(&filename, &newkey1,
-				 passphrase, &errmsg);
+		ret = loadrsakey(&filename, &newkey1, passphrase, &errmsg);
 	    else
 		ret = import_ssh1(&filename, realtype,
 				  &newkey1, passphrase, &errmsg);
@@ -704,10 +727,8 @@ void load_key_file(HWND hwnd, struct MainDlgState *state,
 	 * key data.
 	 */
 	{
-	    SetDlgItemText(hwnd, IDC_PASSPHRASE1EDIT,
-			   passphrase);
-	    SetDlgItemText(hwnd, IDC_PASSPHRASE2EDIT,
-			   passphrase);
+	    SetDlgItemText(hwnd, IDC_PASSPHRASE1EDIT, passphrase);
+	    SetDlgItemText(hwnd, IDC_PASSPHRASE2EDIT, passphrase);
 	    if (type == SSH_KEYTYPE_SSH1) {
 		char buf[128];
 		char *savecomment;
@@ -721,8 +742,7 @@ void load_key_file(HWND hwnd, struct MainDlgState *state,
 		 */
 		savecomment = state->key.comment;
 		state->key.comment = NULL;
-		rsa_fingerprint(buf, sizeof(buf),
-				&state->key);
+		rsa_fingerprint(buf, sizeof(buf), &state->key);
 		state->key.comment = savecomment;
 
 		SetDlgItemText(hwnd, IDC_FINGERPRINT, buf);
@@ -738,16 +758,13 @@ void load_key_file(HWND hwnd, struct MainDlgState *state,
 		char *savecomment;
 
 		state->ssh2 = TRUE;
-		state->commentptr =
-		    &state->ssh2key.comment;
+		state->commentptr = &state->ssh2key.comment;
 		state->ssh2key = *newkey2;	/* structure copy */
 		sfree(newkey2);
 
 		savecomment = state->ssh2key.comment;
 		state->ssh2key.comment = NULL;
-		fp =
-		    state->ssh2key.alg->
-		    fingerprint(state->ssh2key.data);
+		fp = state->ssh2key.alg->fingerprint(state->ssh2key.data);
 		state->ssh2key.comment = savecomment;
 
 		SetDlgItemText(hwnd, IDC_FINGERPRINT, fp);
@@ -756,8 +773,7 @@ void load_key_file(HWND hwnd, struct MainDlgState *state,
 		setupbigedit2(hwnd, IDC_KEYDISPLAY,
 			      IDC_PKSTATIC, &state->ssh2key);
 	    }
-	    SetDlgItemText(hwnd, IDC_COMMENTEDIT,
-			   *state->commentptr);
+	    SetDlgItemText(hwnd, IDC_COMMENTEDIT, *state->commentptr);
 	}
 	/*
 	 * Finally, hide the progress bar and show
@@ -799,17 +815,18 @@ static int CALLBACK MainDlgProc(HWND hwnd, UINT msg,
     struct MainDlgState *state;
 
     switch (msg) {
-      case WM_INITDIALOG:
-        if (help_path)
-            SetWindowLong(hwnd, GWL_EXSTYLE,
-                          GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_CONTEXTHELP);
-        else {
-            /*
-             * If we add a Help button, this is where we destroy it
-             * if the help file isn't present.
-             */
-        }
-        requested_help = FALSE;
+    case WM_INITDIALOG:
+	if (help_path)
+	    SetWindowLong(hwnd, GWL_EXSTYLE,
+			  GetWindowLong(hwnd,
+					GWL_EXSTYLE) | WS_EX_CONTEXTHELP);
+	else {
+	    /*
+	     * If we add a Help button, this is where we destroy it
+	     * if the help file isn't present.
+	     */
+	}
+	requested_help = FALSE;
 	SendMessage(hwnd, WM_SETICON, (WPARAM) ICON_BIG,
 		    (LPARAM) LoadIcon(hinst, MAKEINTRESOURCE(200)));
 
@@ -834,11 +851,14 @@ static int CALLBACK MainDlgProc(HWND hwnd, UINT msg,
 	    state->filemenu = menu1;
 
 	    menu1 = CreateMenu();
-	    AppendMenu(menu1, MF_ENABLED, IDC_GENERATE, "&Generate key pair");
+	    AppendMenu(menu1, MF_ENABLED, IDC_GENERATE,
+		       "&Generate key pair");
 	    AppendMenu(menu1, MF_SEPARATOR, 0, 0);
 	    AppendMenu(menu1, MF_ENABLED, IDC_KEYSSH1, "SSH-&1 key (RSA)");
-	    AppendMenu(menu1, MF_ENABLED, IDC_KEYSSH2RSA, "SSH-2 &RSA key");
-	    AppendMenu(menu1, MF_ENABLED, IDC_KEYSSH2DSA, "SSH-2 &DSA key");
+	    AppendMenu(menu1, MF_ENABLED, IDC_KEYSSH2RSA,
+		       "SSH-2 &RSA key");
+	    AppendMenu(menu1, MF_ENABLED, IDC_KEYSSH2DSA,
+		       "SSH-2 &DSA key");
 	    AppendMenu(menu, MF_POPUP | MF_ENABLED, (UINT) menu1, "&Key");
 	    state->keymenu = menu1;
 
@@ -865,7 +885,7 @@ static int CALLBACK MainDlgProc(HWND hwnd, UINT msg,
 	/*
 	 * Centre the window.
 	 */
-	{			       /* centre the window */
+	{			/* centre the window */
 	    RECT rs, rd;
 	    HWND hw;
 
@@ -922,7 +942,8 @@ static int CALLBACK MainDlgProc(HWND hwnd, UINT msg,
 		       IDC_BITSSTATIC, IDC_BITS, 20);
 	    endbox(&cp);
 	}
-	CheckRadioButton(hwnd, IDC_KEYSSH1, IDC_KEYSSH2DSA, IDC_KEYSSH2RSA);
+	CheckRadioButton(hwnd, IDC_KEYSSH1, IDC_KEYSSH2DSA,
+			 IDC_KEYSSH2RSA);
 	CheckMenuRadioItem(state->keymenu, IDC_KEYSSH1, IDC_KEYSSH2DSA,
 			   IDC_KEYSSH2RSA, MF_BYCOMMAND);
 	SetDlgItemInt(hwnd, IDC_BITS, DEFAULT_KEYSIZE, FALSE);
@@ -939,13 +960,15 @@ static int CALLBACK MainDlgProc(HWND hwnd, UINT msg,
 	 * Load a key file if one was provided on the command line.
 	 */
 	if (cmdline_keyfile)
-	    load_key_file(hwnd, state, filename_from_str(cmdline_keyfile), 0);
+	    load_key_file(hwnd, state, filename_from_str(cmdline_keyfile),
+			  0);
 
 	return 1;
-      case WM_MOUSEMOVE:
+    case WM_MOUSEMOVE:
 	state = (struct MainDlgState *) GetWindowLong(hwnd, GWL_USERDATA);
 	if (state->collecting_entropy &&
-	    state->entropy && state->entropy_got < state->entropy_required) {
+	    state->entropy
+	    && state->entropy_got < state->entropy_required) {
 	    state->entropy[state->entropy_got++] = lParam;
 	    state->entropy[state->entropy_got++] = GetMessageTime();
 	    SendDlgItemMessage(hwnd, IDC_PROGRESS, PBM_SETPOS,
@@ -987,25 +1010,26 @@ static int CALLBACK MainDlgProc(HWND hwnd, UINT msg,
 	    }
 	}
 	break;
-      case WM_COMMAND:
+    case WM_COMMAND:
 	switch (LOWORD(wParam)) {
-	  case IDC_KEYSSH1:
-	  case IDC_KEYSSH2RSA:
-	  case IDC_KEYSSH2DSA:
+	case IDC_KEYSSH1:
+	case IDC_KEYSSH2RSA:
+	case IDC_KEYSSH2DSA:
 	    {
 		state = (struct MainDlgState *)
 		    GetWindowLong(hwnd, GWL_USERDATA);
 		if (!IsDlgButtonChecked(hwnd, LOWORD(wParam)))
 		    CheckRadioButton(hwnd, IDC_KEYSSH1, IDC_KEYSSH2DSA,
 				     LOWORD(wParam));
-		CheckMenuRadioItem(state->keymenu, IDC_KEYSSH1, IDC_KEYSSH2DSA,
-				   LOWORD(wParam), MF_BYCOMMAND);
+		CheckMenuRadioItem(state->keymenu, IDC_KEYSSH1,
+				   IDC_KEYSSH2DSA, LOWORD(wParam),
+				   MF_BYCOMMAND);
 	    }
 	    break;
-	  case IDC_QUIT:
+	case IDC_QUIT:
 	    PostMessage(hwnd, WM_CLOSE, 0, 0);
 	    break;
-	  case IDC_COMMENTEDIT:
+	case IDC_COMMENTEDIT:
 	    if (HIWORD(wParam) == EN_CHANGE) {
 		state = (struct MainDlgState *)
 		    GetWindowLong(hwnd, GWL_USERDATA);
@@ -1026,25 +1050,25 @@ static int CALLBACK MainDlgProc(HWND hwnd, UINT msg,
 		}
 	    }
 	    break;
-	  case IDC_ABOUT:
+	case IDC_ABOUT:
 	    EnableWindow(hwnd, 0);
 	    DialogBox(hinst, MAKEINTRESOURCE(213), hwnd, AboutProc);
 	    EnableWindow(hwnd, 1);
 	    SetActiveWindow(hwnd);
 	    return 0;
-	  case IDC_GIVEHELP:
-            if (HIWORD(wParam) == BN_CLICKED ||
-                HIWORD(wParam) == BN_DOUBLECLICKED) {
-                if (help_path) {
-                    WinHelp(hwnd, help_path, HELP_COMMAND,
-                            (DWORD)"JI(`',`puttygen.general')");
-                    requested_help = TRUE;
-                }
-            }
+	case IDC_GIVEHELP:
+	    if (HIWORD(wParam) == BN_CLICKED ||
+		HIWORD(wParam) == BN_DOUBLECLICKED) {
+		if (help_path) {
+		    WinHelp(hwnd, help_path, HELP_COMMAND,
+			    (DWORD) "JI(`',`puttygen.general')");
+		    requested_help = TRUE;
+		}
+	    }
 	    return 0;
-	  case IDC_GENERATE:
-            if (HIWORD(wParam) != BN_CLICKED &&
-                HIWORD(wParam) != BN_DOUBLECLICKED)
+	case IDC_GENERATE:
+	    if (HIWORD(wParam) != BN_CLICKED &&
+		HIWORD(wParam) != BN_DOUBLECLICKED)
 		break;
 	    state =
 		(struct MainDlgState *) GetWindowLong(hwnd, GWL_USERDATA);
@@ -1097,9 +1121,9 @@ static int CALLBACK MainDlgProc(HWND hwnd, UINT msg,
 		SendDlgItemMessage(hwnd, IDC_PROGRESS, PBM_SETPOS, 0, 0);
 	    }
 	    break;
-	  case IDC_SAVE:
-          case IDC_EXPORT_OPENSSH:
-          case IDC_EXPORT_SSHCOM:
+	case IDC_SAVE:
+	case IDC_EXPORT_OPENSSH:
+	case IDC_EXPORT_SSHCOM:
 	    if (HIWORD(wParam) != BN_CLICKED)
 		break;
 	    state =
@@ -1108,30 +1132,30 @@ static int CALLBACK MainDlgProc(HWND hwnd, UINT msg,
 		char filename[FILENAME_MAX];
 		char passphrase[PASSPHRASE_MAXLEN];
 		char passphrase2[PASSPHRASE_MAXLEN];
-                int type, realtype;
+		int type, realtype;
 
-                if (state->ssh2)
-                    realtype = SSH_KEYTYPE_SSH2;
-                else
-                    realtype = SSH_KEYTYPE_SSH1;
+		if (state->ssh2)
+		    realtype = SSH_KEYTYPE_SSH2;
+		else
+		    realtype = SSH_KEYTYPE_SSH1;
 
-                if (LOWORD(wParam) == IDC_EXPORT_OPENSSH)
-                    type = SSH_KEYTYPE_OPENSSH;
-                else if (LOWORD(wParam) == IDC_EXPORT_SSHCOM)
-                    type = SSH_KEYTYPE_SSHCOM;
-                else
-                    type = realtype;
+		if (LOWORD(wParam) == IDC_EXPORT_OPENSSH)
+		    type = SSH_KEYTYPE_OPENSSH;
+		else if (LOWORD(wParam) == IDC_EXPORT_SSHCOM)
+		    type = SSH_KEYTYPE_SSHCOM;
+		else
+		    type = realtype;
 
-                if (type != realtype &&
-                    import_target_type(type) != realtype) {
-                    char msg[256];
-                    sprintf(msg, "Cannot export an SSH-%d key in an SSH-%d"
-                            " format", (state->ssh2 ? 2 : 1),
-                            (state->ssh2 ? 1 : 2));
+		if (type != realtype &&
+		    import_target_type(type) != realtype) {
+		    char msg[256];
+		    sprintf(msg, "Cannot export an SSH-%d key in an SSH-%d"
+			    " format", (state->ssh2 ? 2 : 1),
+			    (state->ssh2 ? 1 : 2));
 		    MessageBox(hwnd, msg,
-                               "PuTTYgen Error", MB_OK | MB_ICONERROR);
+			       "PuTTYgen Error", MB_OK | MB_ICONERROR);
 		    break;
-                }
+		}
 
 		GetDlgItemText(hwnd, IDC_PASSPHRASE1EDIT,
 			       passphrase, sizeof(passphrase));
@@ -1171,21 +1195,24 @@ static int CALLBACK MainDlgProc(HWND hwnd, UINT msg,
 
 		    if (state->ssh2) {
 			Filename fn = filename_from_str(filename);
-                        if (type != realtype)
-                            ret = export_ssh2(&fn, type, &state->ssh2key,
-                                              *passphrase ? passphrase : NULL);
-                        else
-                            ret = ssh2_save_userkey(&fn, &state->ssh2key,
-                                                    *passphrase ? passphrase :
-                                                    NULL);
+			if (type != realtype)
+			    ret = export_ssh2(&fn, type, &state->ssh2key,
+					      *passphrase ? passphrase :
+					      NULL);
+			else
+			    ret = ssh2_save_userkey(&fn, &state->ssh2key,
+						    *passphrase ?
+						    passphrase : NULL);
 		    } else {
 			Filename fn = filename_from_str(filename);
-                        if (type != realtype)
-                            ret = export_ssh1(&fn, type, &state->key,
-                                              *passphrase ? passphrase : NULL);
-                        else
-                            ret = saversakey(&fn, &state->key,
-                                             *passphrase ? passphrase : NULL);
+			if (type != realtype)
+			    ret = export_ssh1(&fn, type, &state->key,
+					      *passphrase ? passphrase :
+					      NULL);
+			else
+			    ret = saversakey(&fn, &state->key,
+					     *passphrase ? passphrase :
+					     NULL);
 		    }
 		    if (ret <= 0) {
 			MessageBox(hwnd, "Unable to save key file",
@@ -1194,7 +1221,7 @@ static int CALLBACK MainDlgProc(HWND hwnd, UINT msg,
 		}
 	    }
 	    break;
-	  case IDC_SAVEPUB:
+	case IDC_SAVEPUB:
 	    if (HIWORD(wParam) != BN_CLICKED)
 		break;
 	    state =
@@ -1228,8 +1255,8 @@ static int CALLBACK MainDlgProc(HWND hwnd, UINT msg,
 		}
 	    }
 	    break;
-	  case IDC_LOAD:
-	  case IDC_IMPORT:
+	case IDC_LOAD:
+	case IDC_IMPORT:
 	    if (HIWORD(wParam) != BN_CLICKED)
 		break;
 	    state =
@@ -1237,20 +1264,22 @@ static int CALLBACK MainDlgProc(HWND hwnd, UINT msg,
 	    if (!state->generation_thread_exists) {
 		char filename[FILENAME_MAX];
 		if (prompt_keyfile(hwnd, "Load private key:",
-				   filename, 0, LOWORD(wParam)==IDC_LOAD))
+				   filename, 0,
+				   LOWORD(wParam) == IDC_LOAD))
 		    load_key_file(hwnd, state, filename_from_str(filename),
 				  LOWORD(wParam) != IDC_LOAD);
 	    }
 	    break;
 	}
 	return 0;
-      case WM_DONEKEY:
+    case WM_DONEKEY:
 	state = (struct MainDlgState *) GetWindowLong(hwnd, GWL_USERDATA);
 	state->generation_thread_exists = FALSE;
 	state->key_exists = TRUE;
 	SendDlgItemMessage(hwnd, IDC_PROGRESS, PBM_SETRANGE, 0,
 			   MAKELPARAM(0, PROGRESSRANGE));
-	SendDlgItemMessage(hwnd, IDC_PROGRESS, PBM_SETPOS, PROGRESSRANGE, 0);
+	SendDlgItemMessage(hwnd, IDC_PROGRESS, PBM_SETPOS, PROGRESSRANGE,
+			   0);
 	if (state->ssh2) {
 	    if (state->is_dsa) {
 		state->ssh2key.data = &state->dsskey;
@@ -1329,75 +1358,89 @@ static int CALLBACK MainDlgProc(HWND hwnd, UINT msg,
 	 */
 	ui_set_state(hwnd, state, 2);
 	break;
-      case WM_HELP:
-        if (help_path) {
-            int id = ((LPHELPINFO)lParam)->iCtrlId;
-            char *topic = NULL;
-            switch (id) {
-              case IDC_GENERATING:
-              case IDC_PROGRESS:
-              case IDC_GENSTATIC:
-              case IDC_GENERATE:
-                topic = "puttygen.generate"; break;
-              case IDC_PKSTATIC:
-              case IDC_KEYDISPLAY:
-                topic = "puttygen.pastekey"; break;
-              case IDC_FPSTATIC:
-              case IDC_FINGERPRINT:
-                topic = "puttygen.fingerprint"; break;
-              case IDC_COMMENTSTATIC:
-              case IDC_COMMENTEDIT:
-                topic = "puttygen.comment"; break;
-              case IDC_PASSPHRASE1STATIC:
-              case IDC_PASSPHRASE1EDIT:
-              case IDC_PASSPHRASE2STATIC:
-              case IDC_PASSPHRASE2EDIT:
-                topic = "puttygen.passphrase"; break;
-              case IDC_LOADSTATIC:
-              case IDC_LOAD:
-                topic = "puttygen.load"; break;
-              case IDC_SAVESTATIC:
-              case IDC_SAVE:
-                topic = "puttygen.savepriv"; break;
-              case IDC_SAVEPUB:
-                topic = "puttygen.savepub"; break;
-              case IDC_TYPESTATIC:
-              case IDC_KEYSSH1:
-              case IDC_KEYSSH2RSA:
-              case IDC_KEYSSH2DSA:
-                topic = "puttygen.keytype"; break;
-              case IDC_BITSSTATIC:
-              case IDC_BITS:
-                topic = "puttygen.bits"; break;
-              case IDC_IMPORT:
-              case IDC_EXPORT_OPENSSH:
-              case IDC_EXPORT_SSHCOM:
-                topic = "puttygen.conversions"; break;
-            }
-            if (topic) {
+    case WM_HELP:
+	if (help_path) {
+	    int id = ((LPHELPINFO) lParam)->iCtrlId;
+	    char *topic = NULL;
+	    switch (id) {
+	    case IDC_GENERATING:
+	    case IDC_PROGRESS:
+	    case IDC_GENSTATIC:
+	    case IDC_GENERATE:
+		topic = "puttygen.generate";
+		break;
+	    case IDC_PKSTATIC:
+	    case IDC_KEYDISPLAY:
+		topic = "puttygen.pastekey";
+		break;
+	    case IDC_FPSTATIC:
+	    case IDC_FINGERPRINT:
+		topic = "puttygen.fingerprint";
+		break;
+	    case IDC_COMMENTSTATIC:
+	    case IDC_COMMENTEDIT:
+		topic = "puttygen.comment";
+		break;
+	    case IDC_PASSPHRASE1STATIC:
+	    case IDC_PASSPHRASE1EDIT:
+	    case IDC_PASSPHRASE2STATIC:
+	    case IDC_PASSPHRASE2EDIT:
+		topic = "puttygen.passphrase";
+		break;
+	    case IDC_LOADSTATIC:
+	    case IDC_LOAD:
+		topic = "puttygen.load";
+		break;
+	    case IDC_SAVESTATIC:
+	    case IDC_SAVE:
+		topic = "puttygen.savepriv";
+		break;
+	    case IDC_SAVEPUB:
+		topic = "puttygen.savepub";
+		break;
+	    case IDC_TYPESTATIC:
+	    case IDC_KEYSSH1:
+	    case IDC_KEYSSH2RSA:
+	    case IDC_KEYSSH2DSA:
+		topic = "puttygen.keytype";
+		break;
+	    case IDC_BITSSTATIC:
+	    case IDC_BITS:
+		topic = "puttygen.bits";
+		break;
+	    case IDC_IMPORT:
+	    case IDC_EXPORT_OPENSSH:
+	    case IDC_EXPORT_SSHCOM:
+		topic = "puttygen.conversions";
+		break;
+	    }
+	    if (topic) {
 		char *cmd = dupprintf("JI(`',`%s')", topic);
-                WinHelp(hwnd, help_path, HELP_COMMAND, (DWORD)cmd);
+		WinHelp(hwnd, help_path, HELP_COMMAND, (DWORD) cmd);
 		sfree(cmd);
-                requested_help = TRUE;
-            } else {
-                MessageBeep(0);
-            }
-        }
-        break;
-      case WM_CLOSE:
+		requested_help = TRUE;
+	    } else {
+		MessageBeep(0);
+	    }
+	}
+	break;
+    case WM_CLOSE:
 	state = (struct MainDlgState *) GetWindowLong(hwnd, GWL_USERDATA);
 	sfree(state);
-        if (requested_help) {
-            WinHelp(hwnd, help_path, HELP_QUIT, 0);
-            requested_help = FALSE;
-        }
+	if (requested_help) {
+	    WinHelp(hwnd, help_path, HELP_QUIT, 0);
+	    requested_help = FALSE;
+	}
 	EndDialog(hwnd, 1);
 	return 0;
     }
     return 0;
 }
 
-void cleanup_exit(int code) { exit(code); }
+void cleanup_exit(int code)
+{
+    exit(code);
+}
 
 int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 {
@@ -1412,20 +1455,22 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
      * See if we can find our Help file.
      */
     {
-        char b[2048], *p, *q, *r;
-        FILE *fp;
-        GetModuleFileName(NULL, b, sizeof(b) - 1);
-        r = b;
-        p = strrchr(b, '\\');
-        if (p && p >= r) r = p+1;
-        q = strrchr(b, ':');
-        if (q && q >= r) r = q+1;
-        strcpy(r, PUTTY_HELP_FILE);
-        if ( (fp = fopen(b, "r")) != NULL) {
-            help_path = dupstr(b);
-            fclose(fp);
-        } else
-            help_path = NULL;
+	char b[2048], *p, *q, *r;
+	FILE *fp;
+	GetModuleFileName(NULL, b, sizeof(b) - 1);
+	r = b;
+	p = strrchr(b, '\\');
+	if (p && p >= r)
+	    r = p + 1;
+	q = strrchr(b, ':');
+	if (q && q >= r)
+	    r = q + 1;
+	strcpy(r, PUTTY_HELP_FILE);
+	if ((fp = fopen(b, "r")) != NULL) {
+	    help_path = dupstr(b);
+	    fclose(fp);
+	} else
+	    help_path = NULL;
     }
 
     split_into_argv(cmdline, &argc, &argv, NULL);

@@ -4,7 +4,7 @@
 
 #include "ssh.h"
 
-#define RSA_EXPONENT 37		       /* we like this prime */
+#define RSA_EXPONENT 37		/* we like this prime */
 
 int rsa_generate(struct RSAKey *key, int bits, progfn_t pfn,
 		 void *pfnparam)
@@ -59,8 +59,7 @@ int rsa_generate(struct RSAKey *key, int bits, progfn_t pfn,
      * general that's slightly more fiddly to arrange. By choosing
      * a prime e, we can simplify the criterion.)
      */
-    key->p = primegen(bits / 2, RSA_EXPONENT, 1, NULL,
-		      1, pfn, pfnparam);
+    key->p = primegen(bits / 2, RSA_EXPONENT, 1, NULL, 1, pfn, pfnparam);
     key->q = primegen(bits - bits / 2, RSA_EXPONENT, 1, NULL,
 		      2, pfn, pfnparam);
 

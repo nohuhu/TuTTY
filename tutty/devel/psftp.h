@@ -89,15 +89,15 @@ typedef struct WFile WFile;
 RFile *open_existing_file(char *name, unsigned long *size,
 			  unsigned long *mtime, unsigned long *atime);
 /* Returns <0 on error, 0 on eof, or number of bytes read, as usual */
-int read_from_file(RFile *f, void *buffer, int length);
+int read_from_file(RFile * f, void *buffer, int length);
 /* Closes and frees the RFile */
-void close_rfile(RFile *f);
+void close_rfile(RFile * f);
 WFile *open_new_file(char *name);
 /* Returns <0 on error, 0 on eof, or number of bytes written, as usual */
-int write_to_file(WFile *f, void *buffer, int length);
-void set_file_times(WFile *f, unsigned long mtime, unsigned long atime);
+int write_to_file(WFile * f, void *buffer, int length);
+void set_file_times(WFile * f, unsigned long mtime, unsigned long atime);
 /* Closes and frees the WFile */
-void close_wfile(WFile *f);
+void close_wfile(WFile * f);
 
 /*
  * Determine the type of a file: nonexistent, file, directory or
@@ -108,7 +108,8 @@ void close_wfile(WFile *f);
  * it allows a slightly more sane error message.
  */
 enum {
-    FILE_TYPE_NONEXISTENT, FILE_TYPE_FILE, FILE_TYPE_DIRECTORY, FILE_TYPE_WEIRD
+    FILE_TYPE_NONEXISTENT, FILE_TYPE_FILE, FILE_TYPE_DIRECTORY,
+	FILE_TYPE_WEIRD
 };
 int file_type(char *name);
 
@@ -118,8 +119,8 @@ int file_type(char *name);
 typedef struct DirHandle DirHandle;
 DirHandle *open_directory(char *name);
 /* The string returned from this will need freeing if not NULL */
-char *read_filename(DirHandle *dir);
-void close_directory(DirHandle *dir);
+char *read_filename(DirHandle * dir);
+void close_directory(DirHandle * dir);
 
 /*
  * Test a filespec to see whether it's a local wildcard or not.
@@ -146,8 +147,8 @@ int test_wildcard(char *name, int cmdline);
 typedef struct WildcardMatcher WildcardMatcher;
 WildcardMatcher *begin_wildcard_matching(char *name);
 /* The string returned from this will need freeing if not NULL */
-char *wildcard_get_filename(WildcardMatcher *dir);
-void finish_wildcard_matching(WildcardMatcher *dir);
+char *wildcard_get_filename(WildcardMatcher * dir);
+void finish_wildcard_matching(WildcardMatcher * dir);
 
 /*
  * Vet a filename returned from the remote host, to ensure it isn't
@@ -170,4 +171,4 @@ int create_directory(char *name);
  */
 char *dir_file_cat(char *dir, char *file);
 
-#endif /* PUTTY_PSFTP_H */
+#endif				/* PUTTY_PSFTP_H */

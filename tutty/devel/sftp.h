@@ -113,7 +113,8 @@ int fxp_init(void);
  * with a separating slash, unless the second is NULL.
  */
 struct sftp_request *fxp_realpath_send(char *path);
-char *fxp_realpath_recv(struct sftp_packet *pktin, struct sftp_request *req);
+char *fxp_realpath_recv(struct sftp_packet *pktin,
+			struct sftp_request *req);
 
 /*
  * Open a file.

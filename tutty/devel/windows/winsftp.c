@@ -145,9 +145,9 @@ char *psftp_lcd(char *dir)
 		      FORMAT_MESSAGE_IGNORE_INSERTS,
 		      NULL, GetLastError(),
 		      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		      (LPTSTR)&message, 0, NULL);
-	i = strcspn((char *)message, "\n");
-	ret = dupprintf("%.*s", i, (LPCTSTR)message);
+		      (LPTSTR) & message, 0, NULL);
+	i = strcspn((char *) message, "\n");
+	ret = dupprintf("%.*s", i, (LPCTSTR) message);
 	LocalFree(message);
     }
 
@@ -206,17 +206,17 @@ RFile *open_existing_file(char *name, unsigned long *size,
     return ret;
 }
 
-int read_from_file(RFile *f, void *buffer, int length)
+int read_from_file(RFile * f, void *buffer, int length)
 {
     int ret, read;
     ret = ReadFile(f->h, buffer, length, &read, NULL);
     if (!ret)
-	return -1;		       /* error */
+	return -1;		/* error */
     else
 	return read;
 }
 
-void close_rfile(RFile *f)
+void close_rfile(RFile * f)
 {
     CloseHandle(f->h);
     sfree(f);
@@ -242,17 +242,17 @@ WFile *open_new_file(char *name)
     return ret;
 }
 
-int write_to_file(WFile *f, void *buffer, int length)
+int write_to_file(WFile * f, void *buffer, int length)
 {
     int ret, written;
     ret = WriteFile(f->h, buffer, length, &written, NULL);
     if (!ret)
-	return -1;		       /* error */
+	return -1;		/* error */
     else
 	return written;
 }
 
-void set_file_times(WFile *f, unsigned long mtime, unsigned long atime)
+void set_file_times(WFile * f, unsigned long mtime, unsigned long atime)
 {
     FILETIME actime, wrtime;
     TIME_POSIX_TO_WIN(atime, actime);
@@ -260,7 +260,7 @@ void set_file_times(WFile *f, unsigned long mtime, unsigned long atime)
     SetFileTime(f->h, NULL, &actime, &wrtime);
 }
 
-void close_wfile(WFile *f)
+void close_wfile(WFile * f)
 {
     CloseHandle(f->h);
     sfree(f);
@@ -271,7 +271,7 @@ int file_type(char *name)
     DWORD attr;
     attr = GetFileAttributes(name);
     /* We know of no `weird' files under Windows. */
-    if (attr == (DWORD)-1)
+    if (attr == (DWORD) - 1)
 	return FILE_TYPE_NONEXISTENT;
     else if (attr & FILE_ATTRIBUTE_DIRECTORY)
 	return FILE_TYPE_DIRECTORY;
@@ -304,7 +304,7 @@ DirHandle *open_directory(char *name)
     return ret;
 }
 
-char *read_filename(DirHandle *dir)
+char *read_filename(DirHandle * dir)
 {
     do {
 
@@ -335,7 +335,7 @@ char *read_filename(DirHandle *dir)
 	return NULL;
 }
 
-void close_directory(DirHandle *dir)
+void close_directory(DirHandle * dir)
 {
     FindClose(dir->h);
     if (dir->name)
@@ -349,7 +349,7 @@ int test_wildcard(char *name, int cmdline)
     WIN32_FIND_DATA fdat;
 
     /* First see if the exact name exists. */
-    if (GetFileAttributes(name) != (DWORD)-1)
+    if (GetFileAttributes(name) != (DWORD) - 1)
 	return WCTYPE_FILENAME;
 
     /* Otherwise see if a wildcard match finds anything. */
@@ -376,16 +376,19 @@ static char *stripslashes(char *str, int local)
     char *p;
 
     if (local) {
-        p = strchr(str, ':');
-        if (p) str = p+1;
+	p = strchr(str, ':');
+	if (p)
+	    str = p + 1;
     }
 
     p = strrchr(str, '/');
-    if (p) str = p+1;
+    if (p)
+	str = p + 1;
 
     if (local) {
 	p = strrchr(str, '\\');
-	if (p) str = p+1;
+	if (p)
+	    str = p + 1;
     }
 
     return str;
@@ -417,7 +420,7 @@ WildcardMatcher *begin_wildcard_matching(char *name)
     return ret;
 }
 
-char *wildcard_get_filename(WildcardMatcher *dir)
+char *wildcard_get_filename(WildcardMatcher * dir)
 {
     while (!dir->name) {
 	WIN32_FIND_DATA fdat;
@@ -442,7 +445,7 @@ char *wildcard_get_filename(WildcardMatcher *dir)
 	return NULL;
 }
 
-void finish_wildcard_matching(WildcardMatcher *dir)
+void finish_wildcard_matching(WildcardMatcher * dir)
 {
     FindClose(dir->h);
     if (dir->name)
@@ -456,7 +459,7 @@ int vet_filename(char *name)
     if (strchr(name, '/') || strchr(name, '\\') || strchr(name, ':'))
 	return FALSE;
 
-    if (!name[strspn(name, ".")])      /* entirely composed of dots */
+    if (!name[strspn(name, ".")])	/* entirely composed of dots */
 	return FALSE;
 
     return TRUE;
@@ -499,9 +502,9 @@ char *do_select(SOCKET skt, int startup)
 	}
 	if (p_WSAEventSelect(skt, netevent, events) == SOCKET_ERROR) {
 	    switch (p_WSAGetLastError()) {
-	      case WSAENETDOWN:
+	    case WSAENETDOWN:
 		return "Network is down";
-	      default:
+	    default:
 		return "WSAEventSelect(): unknown error";
 	    }
 	}
@@ -520,7 +523,7 @@ int do_eventsel_loop(HANDLE other_event)
     long now = GETTICKCOUNT();
 
     if (!netevent) {
-	return -1;		       /* doom */
+	return -1;		/* doom */
     }
 
     handles[0] = netevent;
@@ -528,13 +531,14 @@ int do_eventsel_loop(HANDLE other_event)
 
     if (run_timers(now, &next)) {
 	ticks = next - GETTICKCOUNT();
-	if (ticks < 0) ticks = 0;  /* just in case */
+	if (ticks < 0)
+	    ticks = 0;		/* just in case */
     } else {
 	ticks = INFINITE;
     }
 
-    n = MsgWaitForMultipleObjects(other_event ? 2 : 1, handles, FALSE, ticks,
-				  QS_POSTMESSAGE);
+    n = MsgWaitForMultipleObjects(other_event ? 2 : 1, handles, FALSE,
+				  ticks, QS_POSTMESSAGE);
 
     if (n == WAIT_OBJECT_0 + 0) {
 	WSANETWORKEVENTS things;
@@ -552,8 +556,8 @@ int do_eventsel_loop(HANDLE other_event)
 	/* Count the active sockets. */
 	i = 0;
 	for (socket = first_socket(&socketstate);
-	     socket != INVALID_SOCKET;
-	     socket = next_socket(&socketstate)) i++;
+	     socket != INVALID_SOCKET; socket = next_socket(&socketstate))
+	    i++;
 
 	/* Expand the buffer if necessary. */
 	sklist = snewn(i, SOCKET);
@@ -572,14 +576,16 @@ int do_eventsel_loop(HANDLE other_event)
 	    socket = sklist[i];
 	    wp = (WPARAM) socket;
 	    if (!p_WSAEnumNetworkEvents(socket, NULL, &things)) {
-		static const struct { int bit, mask; } eventtypes[] = {
-		    {FD_CONNECT_BIT, FD_CONNECT},
-		    {FD_READ_BIT, FD_READ},
-		    {FD_CLOSE_BIT, FD_CLOSE},
-		    {FD_OOB_BIT, FD_OOB},
-		    {FD_WRITE_BIT, FD_WRITE},
-		    {FD_ACCEPT_BIT, FD_ACCEPT},
-		};
+		static const struct {
+		    int bit, mask;
+		} eventtypes[] = {
+		    {
+		    FD_CONNECT_BIT, FD_CONNECT}, {
+		    FD_READ_BIT, FD_READ}, {
+		    FD_CLOSE_BIT, FD_CLOSE}, {
+		    FD_OOB_BIT, FD_OOB}, {
+		    FD_WRITE_BIT, FD_WRITE}, {
+		FD_ACCEPT_BIT, FD_ACCEPT},};
 		int e;
 
 		noise_ultralight(socket);
@@ -622,7 +628,7 @@ int do_eventsel_loop(HANDLE other_event)
 int ssh_sftp_loop_iteration(void)
 {
     if (sftp_ssh_socket == INVALID_SOCKET)
-	return -1;		       /* doom */
+	return -1;		/* doom */
 
     if (p_WSAEventSelect == NULL) {
 	fd_set readfds;
@@ -639,7 +645,7 @@ int ssh_sftp_loop_iteration(void)
 	    if (run_timers(now, &next)) {
 		ticks = next - GETTICKCOUNT();
 		if (ticks <= 0)
-		    ticks = 1;	       /* just in case */
+		    ticks = 1;	/* just in case */
 		tv.tv_sec = ticks / 1000;
 		tv.tv_usec = ticks % 1000 * 1000;
 		ptv = &tv;
@@ -652,7 +658,7 @@ int ssh_sftp_loop_iteration(void)
 	    ret = p_select(1, &readfds, NULL, NULL, ptv);
 
 	    if (ret < 0)
-		return -1;		       /* doom */
+		return -1;	/* doom */
 	    else if (ret == 0)
 		now = next;
 	    else
@@ -704,7 +710,7 @@ char *ssh_sftp_get_cmdline(char *prompt, int no_fds_ok)
 
     if ((sftp_ssh_socket == INVALID_SOCKET && no_fds_ok) ||
 	p_WSAEventSelect == NULL) {
-	return fgetline(stdin);	       /* very simple */
+	return fgetline(stdin);	/* very simple */
     }
 
     /*
@@ -714,8 +720,7 @@ char *ssh_sftp_get_cmdline(char *prompt, int no_fds_ok)
     ctx->event = CreateEvent(NULL, FALSE, FALSE, NULL);
     ctx->line = NULL;
 
-    if (!CreateThread(NULL, 0, command_read_thread,
-		      ctx, 0, &threadid)) {
+    if (!CreateThread(NULL, 0, command_read_thread, ctx, 0, &threadid)) {
 	fprintf(stderr, "Unable to create command input thread\n");
 	cleanup_exit(1);
     }

@@ -40,6 +40,7 @@ char *get_random_data(int len)
     memset(buf, 'x', len);
     return buf;
 }
+
 #define console_get_line console_get_line_diagnostic
 int nprompts, promptsgot;
 const char *prompts[3];
@@ -50,10 +51,11 @@ int console_get_line(const char *prompt, char *str, int maxlen, int is_pw)
 	strcpy(str, prompts[promptsgot++]);
 	return TRUE;
     } else {
-	promptsgot++;		       /* track number of requests anyway */
+	promptsgot++;		/* track number of requests anyway */
 	return FALSE;
     }
 }
+
 #define main cmdgen_main
 #endif
 
@@ -61,9 +63,10 @@ struct progress {
     int phase, current;
 };
 
-static void progress_update(void *param, int action, int phase, int iprogress)
+static void progress_update(void *param, int action, int phase,
+			    int iprogress)
 {
-    struct progress *p = (struct progress *)param;
+    struct progress *p = (struct progress *) param;
     if (action != PROGFN_PROGRESS)
 	return;
     if (phase > p->phase) {
@@ -151,14 +154,13 @@ void help(void)
 	    "  -o    specify output file\n"
 	    "  -l    equivalent to `-O fingerprint'\n"
 	    "  -L    equivalent to `-O public-openssh'\n"
-	    "  -p    equivalent to `-O public'\n"
-	    );
+	    "  -p    equivalent to `-O public'\n");
 }
 
 static int save_ssh2_pubkey(char *filename, char *comment,
 			    void *v_pub_blob, int pub_len)
 {
-    unsigned char *pub_blob = (unsigned char *)v_pub_blob;
+    unsigned char *pub_blob = (unsigned char *) v_pub_blob;
     char *p;
     int i, column;
     FILE *fp;
@@ -198,7 +200,7 @@ static int save_ssh2_pubkey(char *filename, char *comment,
     }
     if (column > 0)
 	fputc('\n', fp);
-    
+
     fprintf(fp, "---- END SSH2 PUBLIC KEY ----\n");
     if (filename)
 	fclose(fp);
@@ -249,10 +251,11 @@ int main(int argc, char **argv)
 {
     char *infile = NULL;
     Filename infilename;
-    enum { NOKEYGEN, RSA1, RSA2, DSA } keytype = NOKEYGEN;    
+    enum { NOKEYGEN, RSA1, RSA2, DSA } keytype = NOKEYGEN;
     char *outfile = NULL, *outfiletmp = NULL;
     Filename outfilename;
-    enum { PRIVATE, PUBLIC, PUBLICO, FP, OPENSSH, SSHCOM } outtype = PRIVATE;
+    enum { PRIVATE, PUBLIC, PUBLICO, FP, OPENSSH, SSHCOM } outtype =
+	PRIVATE;
     int bits = 1024;
     char *comment = NULL, *origcomment = NULL;
     int change_passphrase = FALSE;
@@ -266,7 +269,7 @@ int main(int argc, char **argv)
     int ssh2bloblen;
     char *passphrase = NULL;
     int load_encrypted;
-    progfn_t progressfn = is_interactive() ? progress_update : no_progress;
+    progfn_t progressfn = is_interactive()? progress_update : no_progress;
 
     /* ------------------------------------------------------------------
      * Parse the command line to figure out what we've been asked to do.
@@ -293,15 +296,15 @@ int main(int argc, char **argv)
 	    while (p && *++p) {
 		char c = *p;
 		switch (c) {
-		  case '-':
+		case '-':
 		    /*
 		     * Long option.
 		     */
 		    {
 			char *opt, *val;
-			opt = p++;     /* opt will have _one_ leading - */
+			opt = p++;	/* opt will have _one_ leading - */
 			while (*p && *p != '=')
-			    p++;	       /* find end of option */
+			    p++;	/* find end of option */
 			if (*p == '=') {
 			    *p++ = '\0';
 			    val = p;
@@ -314,10 +317,10 @@ int main(int argc, char **argv)
 			    showversion();
 			    nogo = TRUE;
 			} else if (!strcmp(opt, "-pgpfp")) {
-                            /* support "-pgpfp" for consistency with others */
-                            pgp_fingerprints();
-                            nogo = TRUE;
-                        }
+			    /* support "-pgpfp" for consistency with others */
+			    pgp_fingerprints();
+			    nogo = TRUE;
+			}
 			/*
 			 * A sample option requiring an argument:
 			 * 
@@ -331,52 +334,53 @@ int main(int argc, char **argv)
 			else {
 			    errs = TRUE;
 			    fprintf(stderr,
-				    "puttygen: no such option `--%s'\n", opt);
+				    "puttygen: no such option `--%s'\n",
+				    opt);
 			}
 		    }
 		    p = NULL;
 		    break;
-		  case 'h':
-		  case 'V':
-		  case 'P':
-		  case 'l':
-		  case 'L':
-		  case 'p':
-		  case 'q':
+		case 'h':
+		case 'V':
+		case 'P':
+		case 'l':
+		case 'L':
+		case 'p':
+		case 'q':
 		    /*
 		     * Option requiring no parameter.
 		     */
 		    switch (c) {
-		      case 'h':
+		    case 'h':
 			help();
 			nogo = TRUE;
 			break;
-		      case 'V':
+		    case 'V':
 			showversion();
 			nogo = TRUE;
 			break;
-		      case 'P':
+		    case 'P':
 			change_passphrase = TRUE;
 			break;
-		      case 'l':
+		    case 'l':
 			outtype = FP;
 			break;
-		      case 'L':
+		    case 'L':
 			outtype = PUBLICO;
 			break;
-		      case 'p':
+		    case 'p':
 			outtype = PUBLIC;
 			break;
-		      case 'q':
+		    case 'q':
 			progressfn = no_progress;
 			break;
 		    }
 		    break;
-		  case 't':
-		  case 'b':
-		  case 'C':
-		  case 'O':
-		  case 'o':
+		case 't':
+		case 'b':
+		case 'C':
+		case 'O':
+		case 'o':
 		    /*
 		     * Option requiring parameter.
 		     */
@@ -392,7 +396,7 @@ int main(int argc, char **argv)
 		     * Now c is the option and p is the parameter.
 		     */
 		    switch (c) {
-		      case 't':
+		    case 't':
 			if (!strcmp(p, "rsa") || !strcmp(p, "rsa2"))
 			    keytype = RSA2, sshver = 2;
 			else if (!strcmp(p, "rsa1"))
@@ -401,17 +405,18 @@ int main(int argc, char **argv)
 			    keytype = DSA, sshver = 2;
 			else {
 			    fprintf(stderr,
-				    "puttygen: unknown key type `%s'\n", p);
+				    "puttygen: unknown key type `%s'\n",
+				    p);
 			    errs = TRUE;
 			}
-                        break;
-		      case 'b':
+			break;
+		    case 'b':
 			bits = atoi(p);
-                        break;
-		      case 'C':
+			break;
+		    case 'C':
 			comment = p;
-                        break;
-		      case 'O':
+			break;
+		    case 'O':
 			if (!strcmp(p, "public"))
 			    outtype = PUBLIC;
 			else if (!strcmp(p, "public-openssh"))
@@ -426,17 +431,18 @@ int main(int argc, char **argv)
 			    outtype = SSHCOM, sshver = 2;
 			else {
 			    fprintf(stderr,
-				    "puttygen: unknown output type `%s'\n", p);
+				    "puttygen: unknown output type `%s'\n",
+				    p);
 			    errs = TRUE;
 			}
-                        break;
-		      case 'o':
+			break;
+		    case 'o':
 			outfile = p;
-                        break;
+			break;
 		    }
-		    p = NULL;	       /* prevent continued processing */
+		    p = NULL;	/* prevent continued processing */
 		    break;
-		  default:
+		default:
 		    /*
 		     * Unrecognised option.
 		     */
@@ -519,26 +525,28 @@ int main(int argc, char **argv)
 	     * your encrypted private key file to the network. Ooh!
 	     */
 
-	  case SSH_KEYTYPE_UNOPENABLE:
-	  case SSH_KEYTYPE_UNKNOWN:
+	case SSH_KEYTYPE_UNOPENABLE:
+	case SSH_KEYTYPE_UNKNOWN:
 	    fprintf(stderr, "puttygen: unable to load file `%s': %s\n",
 		    infile, key_type_to_str(intype));
 	    return 1;
 
-	  case SSH_KEYTYPE_SSH1:
+	case SSH_KEYTYPE_SSH1:
 	    if (sshver == 2) {
-		fprintf(stderr, "puttygen: conversion from SSH-1 to SSH-2 keys"
+		fprintf(stderr,
+			"puttygen: conversion from SSH-1 to SSH-2 keys"
 			" not supported\n");
 		return 1;
 	    }
 	    sshver = 1;
 	    break;
 
-	  case SSH_KEYTYPE_SSH2:
-	  case SSH_KEYTYPE_OPENSSH:
-	  case SSH_KEYTYPE_SSHCOM:
+	case SSH_KEYTYPE_SSH2:
+	case SSH_KEYTYPE_OPENSSH:
+	case SSH_KEYTYPE_SSHCOM:
 	    if (sshver == 1) {
-		fprintf(stderr, "puttygen: conversion from SSH-2 to SSH-1 keys"
+		fprintf(stderr,
+			"puttygen: conversion from SSH-2 to SSH-1 keys"
 			" not supported\n");
 		return 1;
 	    }
@@ -567,7 +575,8 @@ int main(int argc, char **argv)
 	}
 
 	if (!change_passphrase && !comment) {
-	    fprintf(stderr, "puttygen: this command would perform no useful"
+	    fprintf(stderr,
+		    "puttygen: this command would perform no useful"
 		    " action\n");
 	    return 1;
 	}
@@ -577,8 +586,10 @@ int main(int argc, char **argv)
 	     * Bomb out rather than automatically choosing to write
 	     * a private key file to stdout.
 	     */
-	    if (outtype==PRIVATE || outtype==OPENSSH || outtype==SSHCOM) {
-		fprintf(stderr, "puttygen: need to specify an output file\n");
+	    if (outtype == PRIVATE || outtype == OPENSSH
+		|| outtype == SSHCOM) {
+		fprintf(stderr,
+			"puttygen: need to specify an output file\n");
 		return 1;
 	    }
 	}
@@ -621,7 +632,7 @@ int main(int argc, char **argv)
 	random_ref();
 	entropy = get_random_data(bits / 8);
 	random_add_heavynoise(entropy, bits / 8);
-	memset(entropy, 0, bits/8);
+	memset(entropy, 0, bits / 8);
 	sfree(entropy);
 
 	if (keytype == DSA) {
@@ -664,7 +675,8 @@ int main(int argc, char **argv)
 	else if (intype == SSH_KEYTYPE_SSH2)
 	    encrypted = ssh2_userkey_encrypted(&infilename, &origcomment);
 	else
-	    encrypted = import_encrypted(&infilename, intype, &origcomment);
+	    encrypted =
+		import_encrypted(&infilename, intype, &origcomment);
 
 	/*
 	 * If so, ask for a passphrase.
@@ -683,18 +695,19 @@ int main(int argc, char **argv)
 	switch (intype) {
 	    int ret;
 
-	  case SSH_KEYTYPE_SSH1:
+	case SSH_KEYTYPE_SSH1:
 	    ssh1key = snew(struct RSAKey);
 	    if (!load_encrypted) {
 		void *vblob;
 		char *blob;
 		int n, l, bloblen;
 
-		ret = rsakey_pubblob(&infilename, &vblob, &bloblen, &error);
-		blob = (char *)vblob;
+		ret =
+		    rsakey_pubblob(&infilename, &vblob, &bloblen, &error);
+		blob = (char *) vblob;
 
-		n = 4;		       /* skip modulus bits */
-		
+		n = 4;		/* skip modulus bits */
+
 		l = ssh1_read_bignum(blob + n, bloblen - n,
 				     &ssh1key->exponent);
 		if (l < 0) {
@@ -719,7 +732,7 @@ int main(int argc, char **argv)
 		error = "unknown error";
 	    break;
 
-	  case SSH_KEYTYPE_SSH2:
+	case SSH_KEYTYPE_SSH2:
 	    if (!load_encrypted) {
 		ssh2blob = ssh2_userkey_loadpub(&infilename, &ssh2alg,
 						&ssh2bloblen, &error);
@@ -729,7 +742,8 @@ int main(int argc, char **argv)
 		else
 		    bits = -1;
 	    } else {
-		ssh2key = ssh2_load_userkey(&infilename, passphrase, &error);
+		ssh2key =
+		    ssh2_load_userkey(&infilename, passphrase, &error);
 	    }
 	    if ((ssh2key && ssh2key != SSH2_WRONG_PASSPHRASE) || ssh2blob)
 		error = NULL;
@@ -741,8 +755,8 @@ int main(int argc, char **argv)
 	    }
 	    break;
 
-	  case SSH_KEYTYPE_OPENSSH:
-	  case SSH_KEYTYPE_SSHCOM:
+	case SSH_KEYTYPE_OPENSSH:
+	case SSH_KEYTYPE_SSHCOM:
 	    ssh2key = import_ssh2(&infilename, intype, passphrase, &error);
 	    if (ssh2key) {
 		if (ssh2key != SSH2_WRONG_PASSPHRASE)
@@ -753,7 +767,7 @@ int main(int argc, char **argv)
 		error = "unknown error";
 	    break;
 
-	  default:
+	default:
 	    assert(0);
 	}
 
@@ -828,30 +842,32 @@ int main(int argc, char **argv)
     switch (outtype) {
 	int ret;
 
-      case PRIVATE:
+    case PRIVATE:
 	if (sshver == 1) {
 	    assert(ssh1key);
 	    ret = saversakey(&outfilename, ssh1key, passphrase);
 	    if (!ret) {
-		fprintf(stderr, "puttygen: unable to save SSH-1 private key\n");
+		fprintf(stderr,
+			"puttygen: unable to save SSH-1 private key\n");
 		return 1;
 	    }
 	} else {
 	    assert(ssh2key);
 	    ret = ssh2_save_userkey(&outfilename, ssh2key, passphrase);
- 	    if (!ret) {
-		fprintf(stderr, "puttygen: unable to save SSH-2 private key\n");
+	    if (!ret) {
+		fprintf(stderr,
+			"puttygen: unable to save SSH-2 private key\n");
 		return 1;
 	    }
 	}
 	if (outfiletmp) {
 	    if (!move(outfiletmp, outfile))
-		return 1;	       /* rename failed */
+		return 1;	/* rename failed */
 	}
 	break;
 
-      case PUBLIC:
-      case PUBLICO:
+    case PUBLIC:
+    case PUBLICO:
 	if (sshver == 1) {
 	    FILE *fp;
 	    char *dec1, *dec2;
@@ -876,7 +892,8 @@ int main(int argc, char **argv)
 		ssh2blob = ssh2key->alg->public_blob(ssh2key->data,
 						     &ssh2bloblen);
 	    }
-	    save_ssh2_pubkey(outfile, ssh2key ? ssh2key->comment : origcomment,
+	    save_ssh2_pubkey(outfile,
+			     ssh2key ? ssh2key->comment : origcomment,
 			     ssh2blob, ssh2bloblen);
 	} else if (outtype == PUBLICO) {
 	    char *buffer, *p;
@@ -898,7 +915,7 @@ int main(int argc, char **argv)
 		comment = origcomment;
 
 	    buffer = snewn(strlen(ssh2alg) +
-			   4 * ((ssh2bloblen+2) / 3) +
+			   4 * ((ssh2bloblen + 2) / 3) +
 			   strlen(comment) + 3, char);
 	    strcpy(buffer, ssh2alg);
 	    p = buffer + strlen(buffer);
@@ -928,7 +945,7 @@ int main(int argc, char **argv)
 	}
 	break;
 
-      case FP:
+    case FP:
 	{
 	    FILE *fp;
 	    char *fingerprint;
@@ -942,7 +959,8 @@ int main(int argc, char **argv)
 		    fingerprint = ssh2key->alg->fingerprint(ssh2key->data);
 		} else {
 		    assert(ssh2blob);
-		    fingerprint = blobfp(ssh2alg, bits, ssh2blob, ssh2bloblen);
+		    fingerprint =
+			blobfp(ssh2alg, bits, ssh2blob, ssh2bloblen);
 		}
 	    }
 
@@ -957,9 +975,9 @@ int main(int argc, char **argv)
 	    sfree(fingerprint);
 	}
 	break;
-	
-      case OPENSSH:
-      case SSHCOM:
+
+    case OPENSSH:
+    case SSHCOM:
 	assert(sshver == 2);
 	assert(ssh2key);
 	ret = export_ssh2(&outfilename, outtype, ssh2key, passphrase);
@@ -969,7 +987,7 @@ int main(int argc, char **argv)
 	}
 	if (outfiletmp) {
 	    if (!move(outfiletmp, outfile))
-		return 1;	       /* rename failed */
+		return 1;	/* rename failed */
 	}
 	break;
     }
@@ -1023,10 +1041,10 @@ void test(int retval, ...)
     argc = 0;
     va_start(ap, retval);
     while (va_arg(ap, char *) != NULL)
-	argc++;
+	 argc++;
     va_end(ap);
 
-    argv = snewn(argc+1, char *);
+    argv = snewn(argc + 1, char *);
     va_start(ap, retval);
     for (i = 0; i <= argc; i++)
 	argv[i] = va_arg(ap, char *);
@@ -1186,9 +1204,9 @@ int main(int argc, char **argv)
 	    fp = NULL;
 	    sprintf(cmdbuf, "ssh-keygen -l -f '%s' > '%s'",
 		    pubfilename, tmpfilename1);
-	    if (system(cmdbuf) ||
-		(fp = get_fp(tmpfilename1)) == NULL) {
-		printf("UNABLE to test fingerprint matching against OpenSSH");
+	    if (system(cmdbuf) || (fp = get_fp(tmpfilename1)) == NULL) {
+		printf
+		    ("UNABLE to test fingerprint matching against OpenSSH");
 	    }
 	}
 
@@ -1256,15 +1274,16 @@ int main(int argc, char **argv)
 	 * For RSA1 keys, this should give an error.
 	 */
 	setup_passphrases(NULL);
-	test((i==0), "puttygen", "-O", "private-openssh", "-o", osfilename,
-	     filename, NULL);
+	test((i == 0), "puttygen", "-O", "private-openssh", "-o",
+	     osfilename, filename, NULL);
 
 	if (i) {
 	    /*
 	     * List the fingerprint of the OpenSSH-formatted key.
 	     */
 	    setup_passphrases(NULL);
-	    test(0, "puttygen", "-l", osfilename, "-o", tmpfilename1, NULL);
+	    test(0, "puttygen", "-l", osfilename, "-o", tmpfilename1,
+		 NULL);
 	    check_fp(tmpfilename1, fp, "%s openssh clear fp", keytypes[i]);
 
 	    /*
@@ -1288,15 +1307,16 @@ int main(int argc, char **argv)
 	 * For RSA1 keys, this should give an error.
 	 */
 	setup_passphrases(NULL);
-	test((i==0), "puttygen", "-O", "private-sshcom", "-o", scfilename,
-	     filename, NULL);
+	test((i == 0), "puttygen", "-O", "private-sshcom", "-o",
+	     scfilename, filename, NULL);
 
 	if (i) {
 	    /*
 	     * List the fingerprint of the ssh.com-formatted key.
 	     */
 	    setup_passphrases(NULL);
-	    test(0, "puttygen", "-l", scfilename, "-o", tmpfilename1, NULL);
+	    test(0, "puttygen", "-l", scfilename, "-o", tmpfilename1,
+		 NULL);
 	    check_fp(tmpfilename1, fp, "%s ssh.com clear fp", keytypes[i]);
 
 	    /*
@@ -1393,19 +1413,21 @@ int main(int argc, char **argv)
 	 * error.
 	 */
 	if (i == 0)
-	    setup_passphrases(NULL);   /* error, hence no passphrase read */
+	    setup_passphrases(NULL);	/* error, hence no passphrase read */
 	else
 	    setup_passphrases("sponge2", NULL);
-	test((i==0), "puttygen", "-O", "private-openssh", "-o", osfilename,
-	     filename, NULL);
+	test((i == 0), "puttygen", "-O", "private-openssh", "-o",
+	     osfilename, filename, NULL);
 
 	if (i) {
 	    /*
 	     * List the fingerprint of the OpenSSH-formatted key.
 	     */
 	    setup_passphrases("sponge2", NULL);
-	    test(0, "puttygen", "-l", osfilename, "-o", tmpfilename1, NULL);
-	    check_fp(tmpfilename1, fp, "%s openssh encrypted fp", keytypes[i]);
+	    test(0, "puttygen", "-l", osfilename, "-o", tmpfilename1,
+		 NULL);
+	    check_fp(tmpfilename1, fp, "%s openssh encrypted fp",
+		     keytypes[i]);
 
 	    /*
 	     * List the public half of the OpenSSH-formatted key in
@@ -1428,19 +1450,21 @@ int main(int argc, char **argv)
 	 * error.
 	 */
 	if (i == 0)
-	    setup_passphrases(NULL);   /* error, hence no passphrase read */
+	    setup_passphrases(NULL);	/* error, hence no passphrase read */
 	else
 	    setup_passphrases("sponge2", NULL);
-	test((i==0), "puttygen", "-O", "private-sshcom", "-o", scfilename,
-	     filename, NULL);
+	test((i == 0), "puttygen", "-O", "private-sshcom", "-o",
+	     scfilename, filename, NULL);
 
 	if (i) {
 	    /*
 	     * List the fingerprint of the ssh.com-formatted key.
 	     */
 	    setup_passphrases("sponge2", NULL);
-	    test(0, "puttygen", "-l", scfilename, "-o", tmpfilename1, NULL);
-	    check_fp(tmpfilename1, fp, "%s ssh.com encrypted fp", keytypes[i]);
+	    test(0, "puttygen", "-l", scfilename, "-o", tmpfilename1,
+		 NULL);
+	    check_fp(tmpfilename1, fp, "%s ssh.com encrypted fp",
+		     keytypes[i]);
 
 	    /*
 	     * List the public half of the ssh.com-formatted key in
@@ -1528,7 +1552,8 @@ int main(int argc, char **argv)
 	 * Load a totally bogus file.
 	 */
 	setup_passphrases(NULL);
-	test(1, "puttygen", "-C", "spurious-new-comment", pubfilename, NULL);
+	test(1, "puttygen", "-C", "spurious-new-comment", pubfilename,
+	     NULL);
     }
     printf("%d passes, %d fails\n", passes, fails);
     return 0;

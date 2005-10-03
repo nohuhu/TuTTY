@@ -18,7 +18,7 @@
 #endif
 #endif
 
-#endif /* end #ifdef __LCC__ */
+#endif				/* end #ifdef __LCC__ */
 
 /* Some systems don't define this, so I do it myself if necessary */
 #ifndef TCS_MULTILINE
@@ -30,4 +30,4 @@
 #define RT_MANIFEST 24
 #endif
 
-#endif /* PUTTY_RCSTUFF_H */
+#endif				/* PUTTY_RCSTUFF_H */

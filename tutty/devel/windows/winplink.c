@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <stdarg.h>
 
-#define PUTTY_DO_GLOBALS	       /* actually _define_ globals */
+#define PUTTY_DO_GLOBALS	/* actually _define_ globals */
 #include "putty.h"
 #include "storage.h"
 #include "tree234.h"
@@ -17,7 +17,7 @@
 #define MAX_STDIN_BACKLOG 4096
 
 struct agent_callback {
-    void (*callback)(void *, void *, int);
+    void (*callback) (void *, void *, int);
     void *callback_ctx;
     void *data;
     int len;
@@ -73,7 +73,7 @@ static Backend *back;
 static void *backhandle;
 static Config cfg;
 
-int term_ldisc(Terminal *term, int mode)
+int term_ldisc(Terminal * term, int mode)
 {
     return FALSE;
 }
@@ -189,7 +189,7 @@ int from_backend(void *frontend_handle, int is_stderr,
 
 static DWORD main_thread_id;
 
-void agent_schedule_callback(void (*callback)(void *, void *, int),
+void agent_schedule_callback(void (*callback) (void *, void *, int),
 			     void *callback_ctx, void *data, int len)
 {
     struct agent_callback *c = snew(struct agent_callback);
@@ -197,7 +197,7 @@ void agent_schedule_callback(void (*callback)(void *, void *, int),
     c->callback_ctx = callback_ctx;
     c->data = data;
     c->len = len;
-    PostThreadMessage(main_thread_id, WM_AGENT_CALLBACK, 0, (LPARAM)c);
+    PostThreadMessage(main_thread_id, WM_AGENT_CALLBACK, 0, (LPARAM) c);
 }
 
 /*
@@ -235,7 +235,8 @@ static void usage(void)
     printf("  -C        enable compression\n");
     printf("  -i key    private key file for authentication\n");
     printf("  -m file   read remote command(s) from file\n");
-    printf("  -s        remote command is an SSH subsystem (SSH-2 only)\n");
+    printf
+	("  -s        remote command is an SSH subsystem (SSH-2 only)\n");
     printf("  -N        don't start a shell/command (SSH-2 only)\n");
     exit(1);
 }
@@ -257,9 +258,9 @@ char *do_select(SOCKET skt, int startup)
     }
     if (p_WSAEventSelect(skt, netevent, events) == SOCKET_ERROR) {
 	switch (p_WSAGetLastError()) {
-	  case WSAENETDOWN:
+	case WSAENETDOWN:
 	    return "Network is down";
-	  default:
+	default:
 	    return "WSAEventSelect(): unknown error";
 	}
     }
@@ -339,10 +340,10 @@ int main(int argc, char **argv)
 		/* Save status to write to cfg later. */
 		use_subsystem = 1;
 	    } else if (!strcmp(p, "-V")) {
-                version();
-            } else if (!strcmp(p, "-pgpfp")) {
-                pgp_fingerprints();
-                exit(1);
+		version();
+	    } else if (!strcmp(p, "-pgpfp")) {
+		pgp_fingerprints();
+		exit(1);
 	    } else {
 		fprintf(stderr, "plink: unknown option \"%s\"\n", p);
 		errors = 1;
@@ -406,7 +407,7 @@ int main(int argc, char **argv)
 		     */
 		    r = strrchr(p, '@');
 		    if (r == p)
-			p++, r = NULL; /* discount initial @ */
+			p++, r = NULL;	/* discount initial @ */
 		    if (r) {
 			*r++ = '\0';
 			user = p, host = r;
@@ -452,22 +453,24 @@ int main(int argc, char **argv)
 			    cmdsize = cmdlen + 512;
 			    command = sresize(command, cmdsize, char);
 			}
-			command[cmdlen++]=*p++;
+			command[cmdlen++] = *p++;
 		    }
 		    if (cmdlen >= cmdsize) {
 			cmdsize = cmdlen + 512;
 			command = sresize(command, cmdsize, char);
 		    }
-		    command[cmdlen++]=' '; /* always add trailing space */
-		    if (--argc) p = *++argv;
+		    command[cmdlen++] = ' ';	/* always add trailing space */
+		    if (--argc)
+			p = *++argv;
 		}
-		if (cmdlen) command[--cmdlen]='\0';
-				       /* change trailing blank to NUL */
+		if (cmdlen)
+		    command[--cmdlen] = '\0';
+		/* change trailing blank to NUL */
 		cfg.remote_cmd_ptr = command;
 		cfg.remote_cmd_ptr2 = NULL;
-		cfg.nopty = TRUE;      /* command => no terminal */
+		cfg.nopty = TRUE;	/* command => no terminal */
 
-		break;		       /* done with cmdline */
+		break;		/* done with cmdline */
 	    }
 	}
     }
@@ -484,7 +487,7 @@ int main(int argc, char **argv)
      */
     {
 	int space = strspn(cfg.host, " \t");
-	memmove(cfg.host, cfg.host+space, 1+strlen(cfg.host)-space);
+	memmove(cfg.host, cfg.host + space, 1 + strlen(cfg.host) - space);
     }
 
     /* See if host is of the form user@host */
@@ -574,7 +577,8 @@ int main(int argc, char **argv)
 	char *realhost;
 	/* nodelay is only useful if stdin is a character device (console) */
 	int nodelay = cfg.tcp_nodelay &&
-	    (GetFileType(GetStdHandle(STD_INPUT_HANDLE)) == FILE_TYPE_CHAR);
+	    (GetFileType(GetStdHandle(STD_INPUT_HANDLE)) ==
+	     FILE_TYPE_CHAR);
 
 	error = back->init(NULL, &backhandle, &cfg, cfg.host, cfg.port,
 			   &realhost, nodelay, cfg.tcp_keepalives);
@@ -671,7 +675,8 @@ int main(int argc, char **argv)
 
 	if (run_timers(now, &next)) {
 	    ticks = next - GETTICKCOUNT();
-	    if (ticks < 0) ticks = 0;  /* just in case */
+	    if (ticks < 0)
+		ticks = 0;	/* just in case */
 	} else {
 	    ticks = INFINITE;
 	}
@@ -695,7 +700,8 @@ int main(int argc, char **argv)
 	    i = 0;
 	    for (socket = first_socket(&socketstate);
 		 socket != INVALID_SOCKET;
-		 socket = next_socket(&socketstate)) i++;
+		 socket = next_socket(&socketstate))
+		i++;
 
 	    /* Expand the buffer if necessary. */
 	    if (i > sksize) {
@@ -717,26 +723,29 @@ int main(int argc, char **argv)
 		socket = sklist[i];
 		wp = (WPARAM) socket;
 		if (!p_WSAEnumNetworkEvents(socket, NULL, &things)) {
-                    static const struct { int bit, mask; } eventtypes[] = {
-                        {FD_CONNECT_BIT, FD_CONNECT},
-                        {FD_READ_BIT, FD_READ},
-                        {FD_CLOSE_BIT, FD_CLOSE},
-                        {FD_OOB_BIT, FD_OOB},
-                        {FD_WRITE_BIT, FD_WRITE},
-                        {FD_ACCEPT_BIT, FD_ACCEPT},
-                    };
-                    int e;
+		    static const struct {
+			int bit, mask;
+		    } eventtypes[] = {
+			{
+			FD_CONNECT_BIT, FD_CONNECT}, {
+			FD_READ_BIT, FD_READ}, {
+			FD_CLOSE_BIT, FD_CLOSE}, {
+			FD_OOB_BIT, FD_OOB}, {
+			FD_WRITE_BIT, FD_WRITE}, {
+		    FD_ACCEPT_BIT, FD_ACCEPT},};
+		    int e;
 
 		    noise_ultralight(socket);
 		    noise_ultralight(things.lNetworkEvents);
 
-                    for (e = 0; e < lenof(eventtypes); e++)
-                        if (things.lNetworkEvents & eventtypes[e].mask) {
-                            LPARAM lp;
-                            int err = things.iErrorCode[eventtypes[e].bit];
-                            lp = WSAMAKESELECTREPLY(eventtypes[e].mask, err);
-                            connopen &= select_result(wp, lp);
-                        }
+		    for (e = 0; e < lenof(eventtypes); e++)
+			if (things.lNetworkEvents & eventtypes[e].mask) {
+			    LPARAM lp;
+			    int err = things.iErrorCode[eventtypes[e].bit];
+			    lp = WSAMAKESELECTREPLY(eventtypes[e].mask,
+						    err);
+			    connopen &= select_result(wp, lp);
+			}
 		}
 	    }
 	} else if (n == WAIT_OBJECT_0 + 1) {
@@ -780,7 +789,8 @@ int main(int argc, char **argv)
 	    while (PeekMessage(&msg, INVALID_HANDLE_VALUE,
 			       WM_AGENT_CALLBACK, WM_AGENT_CALLBACK,
 			       PM_REMOVE)) {
-		struct agent_callback *c = (struct agent_callback *)msg.lParam;
+		struct agent_callback *c =
+		    (struct agent_callback *) msg.lParam;
 		c->callback(c->callback_ctx, c->data, c->len);
 		sfree(c);
 	    }
@@ -799,13 +809,13 @@ int main(int argc, char **argv)
 	if ((!connopen || back->socket(backhandle) == NULL) &&
 	    bufchain_size(&stdout_data) == 0 &&
 	    bufchain_size(&stderr_data) == 0)
-	    break;		       /* we closed the connection */
+	    break;		/* we closed the connection */
     }
     exitcode = back->exitcode(backhandle);
     if (exitcode < 0) {
 	fprintf(stderr, "Remote process exit code unavailable\n");
-	exitcode = 1;		       /* this is an error condition */
+	exitcode = 1;		/* this is an error condition */
     }
     cleanup_exit(exitcode);
-    return 0;			       /* placate compiler warning */
+    return 0;			/* placate compiler warning */
 }
