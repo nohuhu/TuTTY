@@ -2,22 +2,21 @@
  * PuTTY version numbering
  */
 
+#include "build.h"
+
 #define STR1(x) #x
 #define STR(x) STR1(x)
 
 #if defined SNAPSHOT
 
-char ver[] = "Development snapshot " STR(SNAPSHOT);
+char ver[] = "Development build " STR(BUILDNUMBER) ", based on PuTTY 0.58"
+    "\n compiled at " __DATE__ " " __TIME__;
 char sshver[] = "PuTTY-Snapshot-" STR(SNAPSHOT);
-
-#elif defined(DWALIN) && defined(RELEASE)
-
-char ver[] = "dwalin's build, " __DATE__ " " __TIME__ " based on " STR(RELEASE) " release";
-char sshver[] = "PuTTY-Local: " __DATE__ " " __TIME__;
 
 #elif defined RELEASE
 
-char ver[] = "Release " STR(RELEASE);
+char ver[] = 
+    "Release " STR(RELEASE) " build " STR(BUILDNUMBER) ", based on PuTTY " STR(RELEASE);
 char sshver[] = "PuTTY-Release-" STR(RELEASE);
 
 #else

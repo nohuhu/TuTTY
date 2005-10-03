@@ -9,7 +9,7 @@
 #include <winsock2.h>
 #endif
 #include <windows.h>
-#include <stdio.h>		       /* for FILENAME_MAX */
+#include <stdio.h>		/* for FILENAME_MAX */
 
 #include "tree234.h"
 
@@ -62,7 +62,7 @@ typedef struct terminal_tag Terminal;
 
 #define GETTICKCOUNT GetTickCount
 #define CURSORBLINK GetCaretBlinkTime()
-#define TICKSPERSEC 1000	       /* GetTickCount returns milliseconds */
+#define TICKSPERSEC 1000	/* GetTickCount returns milliseconds */
 
 #define DEFAULT_CODEPAGE CP_ACP
 
@@ -72,7 +72,7 @@ typedef HDC Context;
  * Window handles for the windows that can be running during a
  * PuTTY session.
  */
-GLOBAL HWND hwnd;	/* the main terminal window */
+GLOBAL HWND hwnd;		/* the main terminal window */
 GLOBAL HWND logbox;
 
 /*
@@ -94,6 +94,8 @@ GLOBAL int requested_help;
  */
 GLOBAL Terminal *term;
 GLOBAL void *logctx;
+
+GLOBAL HICON fldr_open, fldr_closed, main_icon;
 
 /*
  * I've just looked in the windows standard headr files for WM_USER, there
@@ -153,16 +155,16 @@ GLOBAL void *logctx;
  * that module must be exported from it as function pointers. So
  * here they are.
  */
-extern int (WINAPI *p_WSAAsyncSelect)
-    (SOCKET s, HWND hWnd, u_int wMsg, long lEvent);
-extern int (WINAPI *p_WSAEventSelect)
-    (SOCKET s, WSAEVENT hEventObject, long lNetworkEvents);
-extern int (WINAPI *p_select)
-    (int nfds, fd_set FAR * readfds, fd_set FAR * writefds,
-     fd_set FAR *exceptfds, const struct timeval FAR * timeout);
-extern int (WINAPI *p_WSAGetLastError)(void);
-extern int (WINAPI *p_WSAEnumNetworkEvents)
-    (SOCKET s, WSAEVENT hEventObject, LPWSANETWORKEVENTS lpNetworkEvents);
+extern int (WINAPI * p_WSAAsyncSelect)
+ (SOCKET s, HWND hWnd, u_int wMsg, long lEvent);
+extern int (WINAPI * p_WSAEventSelect)
+ (SOCKET s, WSAEVENT hEventObject, long lNetworkEvents);
+extern int (WINAPI * p_select)
+ (int nfds, fd_set FAR * readfds, fd_set FAR * writefds,
+  fd_set FAR * exceptfds, const struct timeval FAR * timeout);
+extern int (WINAPI * p_WSAGetLastError) (void);
+extern int (WINAPI * p_WSAEnumNetworkEvents)
+ (SOCKET s, WSAEVENT hEventObject, LPWSANETWORKEVENTS lpNetworkEvents);
 
 extern int socket_writable(SOCKET skt);
 
@@ -183,11 +185,13 @@ struct ctlpos {
 /*
  * Exports from winutils.c.
  */
-typedef struct filereq_tag filereq; /* cwd for file requester */
-BOOL request_file(filereq *state, OPENFILENAME *of, int preserve, int save);
+typedef struct filereq_tag filereq;	/* cwd for file requester */
+BOOL request_file(filereq * state, OPENFILENAME * of, int preserve,
+		  int save);
 filereq *filereq_new(void);
-void filereq_free(filereq *state);
-int message_box(LPCTSTR text, LPCTSTR caption, DWORD style, DWORD helpctxid);
+void filereq_free(filereq * state);
+int message_box(LPCTSTR text, LPCTSTR caption, DWORD style,
+		DWORD helpctxid);
 void split_into_argv(char *, int *, char ***, char ***);
 
 /*
@@ -206,19 +210,21 @@ struct prefslist {
  * parameter, and hence is passed back to winctrls access functions.
  */
 struct dlgparam {
-    HWND hwnd;			       /* the hwnd of the dialog box */
-    struct winctrls *controltrees[8];  /* can have several of these */
+    HWND hwnd;			/* the hwnd of the dialog box */
+    struct winctrls *controltrees[8];	/* can have several of these */
     int nctrltrees;
-    char *wintitle;		       /* title of actual window */
-    char *errtitle;		       /* title of error sub-messageboxes */
-    void *data;			       /* data to pass in refresh events */
-    union control *focused, *lastfocused; /* which ctrl has focus now/before */
-    char shortcuts[128];	       /* track which shortcuts in use */
-    int coloursel_wanted;	       /* has an event handler asked for
-					* a colour selector? */
-    struct { unsigned char r, g, b, ok; } coloursel_result;   /* 0-255 */
-    tree234 *privdata;		       /* stores per-control private data */
-    int ended, endresult;	       /* has the dialog been ended? */
+    char *wintitle;		/* title of actual window */
+    char *errtitle;		/* title of error sub-messageboxes */
+    void *data;			/* data to pass in refresh events */
+    union control *focused, *lastfocused;	/* which ctrl has focus now/before */
+    char shortcuts[128];	/* track which shortcuts in use */
+    int coloursel_wanted;	/* has an event handler asked for
+				 * a colour selector? */
+    struct {
+	unsigned char r, g, b, ok;
+    } coloursel_result;		/* 0-255 */
+    tree234 *privdata;		/* stores per-control private data */
+    int ended, endresult;	/* has the dialog been ended? */
 };
 
 /*
@@ -338,7 +344,7 @@ void dp_cleanup(struct dlgparam *dp);
 /*
  * Exports from wincfg.c.
  */
-void win_setup_config_box(struct controlbox *b, HWND *hwndp, int has_help,
+void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
 			  int midsession);
 
 /*
@@ -358,9 +364,7 @@ void show_help(HWND hwnd);
  */
 extern OSVERSIONINFO osVersion;
 BOOL init_winver(void);
-#ifdef SESSION_ICON
 HICON extract_icon(char *iconpath);
-#endif /* SESSION_ICON */
 
 /*
  * Exports from sizetip.c.
@@ -382,7 +386,7 @@ void init_ucs(Config *, struct unicode_data *);
  * Also, we supply FLAG_SYNCAGENT to force agent requests to be
  * synchronous in pscp and psftp.
  */
-void agent_schedule_callback(void (*callback)(void *, void *, int),
+void agent_schedule_callback(void (*callback) (void *, void *, int),
 			     void *callback_ctx, void *data, int len);
 #define FLAG_SYNCAGENT 0x1000
 

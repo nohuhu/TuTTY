@@ -205,7 +205,7 @@ static void sha1_free_context(void *handle)
 
 static void sha1_key_internal(void *handle, unsigned char *key, int len)
 {
-    SHA_State *keys = (SHA_State *)handle;
+    SHA_State *keys = (SHA_State *) handle;
     unsigned char foo[64];
     int i;
 
@@ -221,7 +221,7 @@ static void sha1_key_internal(void *handle, unsigned char *key, int len)
     SHA_Init(&keys[1]);
     SHA_Bytes(&keys[1], foo, 64);
 
-    memset(foo, 0, 64);		       /* burn the evidence */
+    memset(foo, 0, 64);		/* burn the evidence */
 }
 
 static void sha1_key(void *handle, unsigned char *key)
@@ -237,7 +237,7 @@ static void sha1_key_buggy(void *handle, unsigned char *key)
 static void sha1_do_hmac(void *handle, unsigned char *blk, int len,
 			 unsigned long seq, unsigned char *hmac)
 {
-    SHA_State *keys = (SHA_State *)handle;
+    SHA_State *keys = (SHA_State *) handle;
     SHA_State s;
     unsigned char intermediate[20];
 
@@ -246,11 +246,11 @@ static void sha1_do_hmac(void *handle, unsigned char *blk, int len,
     intermediate[2] = (unsigned char) ((seq >> 8) & 0xFF);
     intermediate[3] = (unsigned char) ((seq) & 0xFF);
 
-    s = keys[0];		       /* structure copy */
+    s = keys[0];		/* structure copy */
     SHA_Bytes(&s, intermediate, 4);
     SHA_Bytes(&s, blk, len);
     SHA_Final(&s, intermediate);
-    s = keys[1];		       /* structure copy */
+    s = keys[1];		/* structure copy */
     SHA_Bytes(&s, intermediate, 20);
     SHA_Final(&s, hmac);
 }
@@ -270,7 +270,8 @@ static int sha1_verify(void *handle, unsigned char *blk, int len,
 }
 
 void hmac_sha1_simple(void *key, int keylen, void *data, int datalen,
-		      unsigned char *output) {
+		      unsigned char *output)
+{
     SHA_State states[2];
     unsigned char intermediate[20];
 

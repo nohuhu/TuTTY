@@ -32,9 +32,9 @@
 
 #include "ssh.h"
 
-#define MAX_NR 14		       /* max no of rounds */
-#define MAX_NK 8		       /* max no of words in input key */
-#define MAX_NB 8		       /* max no of words in cipher blk */
+#define MAX_NR 14		/* max no of rounds */
+#define MAX_NK 8		/* max no of words in input key */
+#define MAX_NB 8		/* max no of words in cipher blk */
 
 #define mulby2(x) ( ((x&0x7F) << 1) ^ (x & 0x80 ? 0x1B : 0) )
 
@@ -939,7 +939,7 @@ static void aes_decrypt_nb_8(AESContext * ctx, word32 * block)
  * (256-bit).
  */
 static void aes_setup(AESContext * ctx, int blocklen,
-	       unsigned char *key, int keylen)
+		      unsigned char *key, int keylen)
 {
     int i, j, Nk, rconst;
 
@@ -1095,25 +1095,25 @@ static void aes_free_context(void *handle)
 
 static void aes128_key(void *handle, unsigned char *key)
 {
-    AESContext *ctx = (AESContext *)handle;
+    AESContext *ctx = (AESContext *) handle;
     aes_setup(ctx, 16, key, 16);
 }
 
 static void aes192_key(void *handle, unsigned char *key)
 {
-    AESContext *ctx = (AESContext *)handle;
+    AESContext *ctx = (AESContext *) handle;
     aes_setup(ctx, 16, key, 24);
 }
 
 static void aes256_key(void *handle, unsigned char *key)
 {
-    AESContext *ctx = (AESContext *)handle;
+    AESContext *ctx = (AESContext *) handle;
     aes_setup(ctx, 16, key, 32);
 }
 
 static void aes_iv(void *handle, unsigned char *iv)
 {
-    AESContext *ctx = (AESContext *)handle;
+    AESContext *ctx = (AESContext *) handle;
     int i;
     for (i = 0; i < 4; i++)
 	ctx->iv[i] = GET_32BIT_MSB_FIRST(iv + 4 * i);
@@ -1121,13 +1121,13 @@ static void aes_iv(void *handle, unsigned char *iv)
 
 static void aes_ssh2_encrypt_blk(void *handle, unsigned char *blk, int len)
 {
-    AESContext *ctx = (AESContext *)handle;
+    AESContext *ctx = (AESContext *) handle;
     aes_encrypt_cbc(blk, len, ctx);
 }
 
 static void aes_ssh2_decrypt_blk(void *handle, unsigned char *blk, int len)
 {
-    AESContext *ctx = (AESContext *)handle;
+    AESContext *ctx = (AESContext *) handle;
     aes_decrypt_cbc(blk, len, ctx);
 }
 

@@ -10,7 +10,7 @@
 
 typedef struct {
     word32 S0[256], S1[256], S2[256], S3[256], P[18];
-    word32 iv0, iv1;		       /* for CBC mode */
+    word32 iv0, iv1;		/* for CBC mode */
 } BlowfishContext;
 
 #define GET_32BIT_LSB_FIRST(cp) \
@@ -494,51 +494,51 @@ static void blowfish_free_context(void *handle)
 
 static void blowfish_key(void *handle, unsigned char *key)
 {
-    BlowfishContext *ctx = (BlowfishContext *)handle;
+    BlowfishContext *ctx = (BlowfishContext *) handle;
     blowfish_setkey(ctx, key, 16);
 }
 
 static void blowfish_iv(void *handle, unsigned char *key)
 {
-    BlowfishContext *ctx = (BlowfishContext *)handle;
+    BlowfishContext *ctx = (BlowfishContext *) handle;
     ctx->iv0 = GET_32BIT_MSB_FIRST(key);
     ctx->iv1 = GET_32BIT_MSB_FIRST(key + 4);
 }
 
 static void blowfish_sesskey(void *handle, unsigned char *key)
 {
-    BlowfishContext *ctx = (BlowfishContext *)handle;
+    BlowfishContext *ctx = (BlowfishContext *) handle;
     blowfish_setkey(ctx, key, SSH_SESSION_KEY_LENGTH);
     ctx->iv0 = 0;
     ctx->iv1 = 0;
-    ctx[1] = ctx[0];		       /* structure copy */
+    ctx[1] = ctx[0];		/* structure copy */
 }
 
 static void blowfish_ssh1_encrypt_blk(void *handle, unsigned char *blk,
 				      int len)
 {
-    BlowfishContext *ctx = (BlowfishContext *)handle;
+    BlowfishContext *ctx = (BlowfishContext *) handle;
     blowfish_lsb_encrypt_cbc(blk, len, ctx);
 }
 
 static void blowfish_ssh1_decrypt_blk(void *handle, unsigned char *blk,
 				      int len)
 {
-    BlowfishContext *ctx = (BlowfishContext *)handle;
-    blowfish_lsb_decrypt_cbc(blk, len, ctx+1);
+    BlowfishContext *ctx = (BlowfishContext *) handle;
+    blowfish_lsb_decrypt_cbc(blk, len, ctx + 1);
 }
 
 static void blowfish_ssh2_encrypt_blk(void *handle, unsigned char *blk,
 				      int len)
 {
-    BlowfishContext *ctx = (BlowfishContext *)handle;
+    BlowfishContext *ctx = (BlowfishContext *) handle;
     blowfish_msb_encrypt_cbc(blk, len, ctx);
 }
 
 static void blowfish_ssh2_decrypt_blk(void *handle, unsigned char *blk,
 				      int len)
 {
-    BlowfishContext *ctx = (BlowfishContext *)handle;
+    BlowfishContext *ctx = (BlowfishContext *) handle;
     blowfish_msb_decrypt_cbc(blk, len, ctx);
 }
 
@@ -549,7 +549,8 @@ const struct ssh_cipher ssh_blowfish_ssh1 = {
 };
 
 static const struct ssh2_cipher ssh_blowfish_ssh2 = {
-    blowfish_make_context, blowfish_free_context, blowfish_iv, blowfish_key,
+    blowfish_make_context, blowfish_free_context, blowfish_iv,
+	blowfish_key,
     blowfish_ssh2_encrypt_blk, blowfish_ssh2_decrypt_blk,
     "blowfish-cbc",
     8, 128, "Blowfish"

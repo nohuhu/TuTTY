@@ -76,7 +76,7 @@ struct X11Auth {
 struct X11Private {
     const struct plug_function_table *fn;
     /* the above variable absolutely *must* be the first in this structure */
-    unsigned char firstpkt[12];	       /* first X data packet */
+    unsigned char firstpkt[12];	/* first X data packet */
     struct X11Auth *auth;
     char *auth_protocol;
     unsigned char *auth_data;
@@ -85,7 +85,7 @@ struct X11Private {
     int throttled, throttle_override;
     unsigned long peer_ip;
     int peer_port;
-    void *c;			       /* data used by ssh.c */
+    void *c;			/* data used by ssh.c */
     Socket s;
 };
 
@@ -93,8 +93,8 @@ static int xdmseen_cmp(void *a, void *b)
 {
     struct XDMSeen *sa = a, *sb = b;
     return sa->time > sb->time ? 1 :
-	   sa->time < sb->time ? -1 :
-           memcmp(sa->clientid, sb->clientid, sizeof(sa->clientid));
+	sa->time < sb->time ? -1 :
+	memcmp(sa->clientid, sb->clientid, sizeof(sa->clientid));
 }
 
 void *x11_invent_auth(char *proto, int protomaxlen,
@@ -135,7 +135,7 @@ void *x11_invent_auth(char *proto, int protomaxlen,
 
 void x11_free_auth(void *authv)
 {
-    struct X11Auth *auth = (struct X11Auth *)authv;
+    struct X11Auth *auth = (struct X11Auth *) authv;
     struct XDMSeen *seen;
 
     if (auth->xdmseen != NULL) {
@@ -153,16 +153,16 @@ void x11_free_auth(void *authv)
  */
 void x11_get_real_auth(void *authv, char *display)
 {
-    struct X11Auth *auth = (struct X11Auth *)authv;
+    struct X11Auth *auth = (struct X11Auth *) authv;
 
-    auth->realproto = X11_NO_AUTH;     /* in case next call does nothing */
+    auth->realproto = X11_NO_AUTH;	/* in case next call does nothing */
 
     auth->reallen = sizeof(auth->realdata);
     platform_get_x11_auth(display, &auth->realproto,
-                          auth->realdata, &auth->reallen);
+			  auth->realdata, &auth->reallen);
 }
 
-#define XDM_MAXSKEW 20*60      /* 20 minute clock skew should be OK */
+#define XDM_MAXSKEW 20*60	/* 20 minute clock skew should be OK */
 
 static char *x11_verify(unsigned long peer_ip, int peer_port,
 			struct X11Auth *auth, char *proto,
@@ -171,10 +171,10 @@ static char *x11_verify(unsigned long peer_ip, int peer_port,
     if (strcmp(proto, x11_authnames[auth->fakeproto]) != 0)
 	return "wrong authentication protocol attempted";
     if (auth->fakeproto == X11_MIT) {
-        if (dlen != auth->fakelen)
-            return "MIT-MAGIC-COOKIE-1 data was wrong length";
-        if (memcmp(auth->fakedata, data, dlen) != 0)
-            return "MIT-MAGIC-COOKIE-1 data did not match";
+	if (dlen != auth->fakelen)
+	    return "MIT-MAGIC-COOKIE-1 data was wrong length";
+	if (memcmp(auth->fakedata, data, dlen) != 0)
+	    return "MIT-MAGIC-COOKIE-1 data did not match";
     }
     if (auth->fakeproto == X11_XDM) {
 	unsigned long t;
@@ -182,27 +182,28 @@ static char *x11_verify(unsigned long peer_ip, int peer_port,
 	int i;
 	struct XDMSeen *seen, *ret;
 
-        if (dlen != 24)
-            return "XDM-AUTHORIZATION-1 data was wrong length";
+	if (dlen != 24)
+	    return "XDM-AUTHORIZATION-1 data was wrong length";
 	if (peer_port == -1)
-            return "cannot do XDM-AUTHORIZATION-1 without remote address data";
-	des_decrypt_xdmauth(auth->fakedata+9, data, 24);
-        if (memcmp(auth->fakedata, data, 8) != 0)
-            return "XDM-AUTHORIZATION-1 data failed check"; /* cookie wrong */
-	if (GET_32BIT_MSB_FIRST(data+8) != peer_ip)
-            return "XDM-AUTHORIZATION-1 data failed check";   /* IP wrong */
-	if ((int)GET_16BIT_MSB_FIRST(data+12) != peer_port)
-            return "XDM-AUTHORIZATION-1 data failed check";   /* port wrong */
-	t = GET_32BIT_MSB_FIRST(data+14);
+	    return
+		"cannot do XDM-AUTHORIZATION-1 without remote address data";
+	des_decrypt_xdmauth(auth->fakedata + 9, data, 24);
+	if (memcmp(auth->fakedata, data, 8) != 0)
+	    return "XDM-AUTHORIZATION-1 data failed check";	/* cookie wrong */
+	if (GET_32BIT_MSB_FIRST(data + 8) != peer_ip)
+	    return "XDM-AUTHORIZATION-1 data failed check";	/* IP wrong */
+	if ((int) GET_16BIT_MSB_FIRST(data + 12) != peer_port)
+	    return "XDM-AUTHORIZATION-1 data failed check";	/* port wrong */
+	t = GET_32BIT_MSB_FIRST(data + 14);
 	for (i = 18; i < 24; i++)
-	    if (data[i] != 0)	       /* zero padding wrong */
+	    if (data[i] != 0)	/* zero padding wrong */
 		return "XDM-AUTHORIZATION-1 data failed check";
 	tim = time(NULL);
 	if (abs(t - tim) > XDM_MAXSKEW)
 	    return "XDM-AUTHORIZATION-1 time stamp was too far out";
 	seen = snew(struct XDMSeen);
 	seen->time = t;
-	memcpy(seen->clientid, data+8, 6);
+	memcpy(seen->clientid, data + 8, 6);
 	assert(auth->xdmseen != NULL);
 	ret = add234(auth->xdmseen, seen);
 	if (ret != seen) {
@@ -281,18 +282,19 @@ int x11_get_screen_number(char *display)
 }
 
 /* Find the right display, returns an allocated string */
-char *x11_display(const char *display) {
+char *x11_display(const char *display)
+{
     char *ret;
-    if(!display || !*display) {
+    if (!display || !*display) {
 	/* try to find platform-specific local display */
-	if((ret = platform_get_x_display())==0)
+	if ((ret = platform_get_x_display()) == 0)
 	    /* plausible default for all platforms */
 	    ret = dupstr(":0");
     } else
 	ret = dupstr(display);
-    if(ret[0] == ':') {
+    if (ret[0] == ':') {
 	/* no transport specified, use whatever we think is best */
-	char *s = dupcat(platform_x11_best_transport, ret, (char *)0);
+	char *s = dupcat(platform_x11_best_transport, ret, (char *) 0);
 	sfree(ret);
 	return s;
     } else
@@ -306,7 +308,8 @@ char *x11_display(const char *display) {
  * also, fills the SocketsStructure
  */
 const char *x11_init(Socket * s, char *display, void *c, void *auth,
-		     const char *peeraddr, int peerport, const Config *cfg)
+		     const char *peeraddr, int peerport,
+		     const Config * cfg)
 {
     static const struct plug_function_table fn_table = {
 	x11_log,
@@ -334,25 +337,25 @@ const char *x11_init(Socket * s, char *display, void *c, void *auth,
     if (display[n])
 	displaynum = atoi(display + n + 1);
     else
-	displaynum = 0;		       /* sensible default */
+	displaynum = 0;		/* sensible default */
     if (n > sizeof(host) - 1)
 	n = sizeof(host) - 1;
     strncpy(host, display, n);
     host[n] = '\0';
     sfree(display);
-    
-    if(!strcmp(host, "unix")) {
+
+    if (!strcmp(host, "unix")) {
 	/* use AF_UNIX sockets (doesn't make sense on all platforms) */
-	addr = platform_get_x11_unix_address(displaynum,
-					     &dummy_realhost);
+	addr = platform_get_x11_unix_address(displaynum, &dummy_realhost);
 	port = 0;		/* to show we are not confused */
     } else {
 	port = 6000 + displaynum;
-	
+
 	/*
 	 * Try to find host.
 	 */
-	addr = name_lookup(host, port, &dummy_realhost, cfg, ADDRTYPE_UNSPEC);
+	addr =
+	    name_lookup(host, port, &dummy_realhost, cfg, ADDRTYPE_UNSPEC);
 	if ((err = sk_addr_error(addr)) != NULL) {
 	    sk_addr_free(addr);
 	    return err;
@@ -365,7 +368,7 @@ const char *x11_init(Socket * s, char *display, void *c, void *auth,
     pr = snew(struct X11Private);
     pr->fn = &fn_table;
     pr->auth_protocol = NULL;
-    pr->auth = (struct X11Auth *)auth;
+    pr->auth = (struct X11Auth *) auth;
     pr->verified = 0;
     pr->data_read = 0;
     pr->throttled = pr->throttle_override = 0;
@@ -384,7 +387,8 @@ const char *x11_init(Socket * s, char *display, void *c, void *auth,
     {
 	int i[4];
 	if (peeraddr &&
-	    4 == sscanf(peeraddr, "%d.%d.%d.%d", i+0, i+1, i+2, i+3)) {
+	    4 == sscanf(peeraddr, "%d.%d.%d.%d", i + 0, i + 1, i + 2,
+			i + 3)) {
 	    pr->peer_ip = (i[0] << 24) | (i[1] << 16) | (i[2] << 8) | i[3];
 	    pr->peer_port = peerport;
 	} else {
@@ -500,15 +504,15 @@ int x11_send(Socket s, char *data, int len)
 
 	    message = dupprintf("PuTTY X11 proxy: %s", err);
 	    msglen = strlen(message);
-	    reply = snewn(8 + msglen+1 + 4, unsigned char); /* include zero */
+	    reply = snewn(8 + msglen + 1 + 4, unsigned char);	/* include zero */
 	    msgsize = (msglen + 3) & ~3;
-	    reply[0] = 0;	       /* failure */
-	    reply[1] = msglen;	       /* length of reason string */
+	    reply[0] = 0;	/* failure */
+	    reply[1] = msglen;	/* length of reason string */
 	    memcpy(reply + 2, pr->firstpkt + 2, 4);	/* major/minor proto vsn */
-	    PUT_16BIT(pr->firstpkt[0], reply + 6, msgsize >> 2);/* data len */
+	    PUT_16BIT(pr->firstpkt[0], reply + 6, msgsize >> 2);	/* data len */
 	    memset(reply + 8, 0, msgsize);
 	    memcpy(reply + 8, message, msglen);
-	    sshfwd_write(pr->c, (char *)reply, 8 + msgsize);
+	    sshfwd_write(pr->c, (char *) reply, 8 + msgsize);
 	    sshfwd_close(pr->c);
 	    x11_close(s);
 	    sfree(reply);
@@ -521,50 +525,51 @@ int x11_send(Socket s, char *data, int len)
 	 * the fake auth data, and optionally put real auth data in
 	 * instead.
 	 */
-        {
-            char realauthdata[64];
-            int realauthlen = 0;
-            int authstrlen = strlen(x11_authnames[pr->auth->realproto]);
+	{
+	    char realauthdata[64];
+	    int realauthlen = 0;
+	    int authstrlen = strlen(x11_authnames[pr->auth->realproto]);
 	    int buflen;
-            static const char zeroes[4] = { 0,0,0,0 };
+	    static const char zeroes[4] = { 0, 0, 0, 0 };
 	    void *buf;
 
-            if (pr->auth->realproto == X11_MIT) {
-                assert(pr->auth->reallen <= lenof(realauthdata));
-                realauthlen = pr->auth->reallen;
-                memcpy(realauthdata, pr->auth->realdata, realauthlen);
-            } else if (pr->auth->realproto == X11_XDM &&
+	    if (pr->auth->realproto == X11_MIT) {
+		assert(pr->auth->reallen <= lenof(realauthdata));
+		realauthlen = pr->auth->reallen;
+		memcpy(realauthdata, pr->auth->realdata, realauthlen);
+	    } else if (pr->auth->realproto == X11_XDM &&
 		       pr->auth->reallen == 16 &&
-		       ((buf = sk_getxdmdata(s, &buflen))!=0)) {
+		       ((buf = sk_getxdmdata(s, &buflen)) != 0)) {
 		time_t t;
-                realauthlen = (buflen+12+7) & ~7;
+		realauthlen = (buflen + 12 + 7) & ~7;
 		assert(realauthlen <= lenof(realauthdata));
 		memset(realauthdata, 0, realauthlen);
 		memcpy(realauthdata, pr->auth->realdata, 8);
-		memcpy(realauthdata+8, buf, buflen);
+		memcpy(realauthdata + 8, buf, buflen);
 		t = time(NULL);
-		PUT_32BIT_MSB_FIRST(realauthdata+8+buflen, t);
-		des_encrypt_xdmauth(pr->auth->realdata+9,
-				    (unsigned char *)realauthdata,
+		PUT_32BIT_MSB_FIRST(realauthdata + 8 + buflen, t);
+		des_encrypt_xdmauth(pr->auth->realdata + 9,
+				    (unsigned char *) realauthdata,
 				    realauthlen);
 		sfree(buf);
 	    }
-            /* implement other auth methods here if required */
+	    /* implement other auth methods here if required */
 
-            PUT_16BIT(pr->firstpkt[0], pr->firstpkt + 6, authstrlen);
-            PUT_16BIT(pr->firstpkt[0], pr->firstpkt + 8, realauthlen);
-        
-            sk_write(s, (char *)pr->firstpkt, 12);
+	    PUT_16BIT(pr->firstpkt[0], pr->firstpkt + 6, authstrlen);
+	    PUT_16BIT(pr->firstpkt[0], pr->firstpkt + 8, realauthlen);
 
-            if (authstrlen) {
-                sk_write(s, x11_authnames[pr->auth->realproto], authstrlen);
-                sk_write(s, zeroes, 3 & (-authstrlen));
-            }
-            if (realauthlen) {
-                sk_write(s, realauthdata, realauthlen);
-                sk_write(s, zeroes, 3 & (-realauthlen));
-            }
-        }
+	    sk_write(s, (char *) pr->firstpkt, 12);
+
+	    if (authstrlen) {
+		sk_write(s, x11_authnames[pr->auth->realproto],
+			 authstrlen);
+		sk_write(s, zeroes, 3 & (-authstrlen));
+	    }
+	    if (realauthlen) {
+		sk_write(s, realauthdata, realauthlen);
+		sk_write(s, zeroes, 3 & (-realauthlen));
+	    }
+	}
 	pr->verified = 1;
     }
 

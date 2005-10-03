@@ -91,7 +91,7 @@
 #define POLY (0xEDB88320L)
 
 #ifdef GENPROGRAM
-#define INITFUNC		       /* the gen program needs the init func :-) */
+#define INITFUNC		/* the gen program needs the init func :-) */
 #endif
 
 #ifdef INITFUNC
@@ -213,7 +213,8 @@ int main(void)
 }
 #endif
 
-unsigned long crc32_update(unsigned long crcword, const void *buf, size_t len)
+unsigned long crc32_update(unsigned long crcword, const void *buf,
+			   size_t len)
 {
     const unsigned char *p = (const unsigned char *) buf;
     while (len--) {

@@ -7,7 +7,7 @@
 
 #include "putty.h"
 
-#define AGENT_COPYDATA_ID 0x804e50ba   /* random goop */
+#define AGENT_COPYDATA_ID 0x804e50ba	/* random goop */
 #define AGENT_MAX_MSGLEN  8192
 
 #define GET_32BIT(cp) \
@@ -39,18 +39,18 @@ struct agent_query_data {
     HANDLE handle;
     char *mapname;
     HWND hwnd;
-    void (*callback)(void *, void *, int);
+    void (*callback) (void *, void *, int);
     void *callback_ctx;
 };
 
 DWORD WINAPI agent_query_thread(LPVOID param)
 {
-    struct agent_query_data *data = (struct agent_query_data *)param;
+    struct agent_query_data *data = (struct agent_query_data *) param;
     unsigned char *ret;
     int id, retlen;
 
     id = SendMessage(data->hwnd, WM_COPYDATA, (WPARAM) NULL,
-		     (LPARAM) &data->cds);
+		     (LPARAM) & data->cds);
     ret = NULL;
     if (id > 0) {
 	retlen = 4 + GET_32BIT(data->mapping);
@@ -65,7 +65,8 @@ DWORD WINAPI agent_query_thread(LPVOID param)
     CloseHandle(data->handle);
     sfree(data->mapname);
 
-    agent_schedule_callback(data->callback, data->callback_ctx, ret, retlen);
+    agent_schedule_callback(data->callback, data->callback_ctx, ret,
+			    retlen);
 
     return 0;
 }
@@ -73,7 +74,7 @@ DWORD WINAPI agent_query_thread(LPVOID param)
 #endif
 
 int agent_query(void *in, int inlen, void **out, int *outlen,
-		void (*callback)(void *, void *, int), void *callback_ctx)
+		void (*callback) (void *, void *, int), void *callback_ctx)
 {
     HWND hwnd;
     char *mapname;
@@ -87,12 +88,14 @@ int agent_query(void *in, int inlen, void **out, int *outlen,
 
     hwnd = FindWindow("Pageant", "Pageant");
     if (!hwnd)
-	return 1;		       /* *out == NULL, so failure */
-    mapname = dupprintf("PageantRequest%08x", (unsigned)GetCurrentThreadId());
-    filemap = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE,
-				0, AGENT_MAX_MSGLEN, mapname);
+	return 1;		/* *out == NULL, so failure */
+    mapname =
+	dupprintf("PageantRequest%08x", (unsigned) GetCurrentThreadId());
+    filemap =
+	CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0,
+			  AGENT_MAX_MSGLEN, mapname);
     if (!filemap)
-	return 1;		       /* *out == NULL, so failure */
+	return 1;		/* *out == NULL, so failure */
     p = MapViewOfFile(filemap, FILE_MAP_WRITE, 0, 0, 0);
     memcpy(p, in, inlen);
     cds.dwData = AGENT_COPYDATA_ID;
@@ -115,7 +118,7 @@ int agent_query(void *in, int inlen, void **out, int *outlen,
 	data->mapname = mapname;
 	data->callback = callback;
 	data->callback_ctx = callback_ctx;
-	data->cds = cds;	       /* structure copy */
+	data->cds = cds;	/* structure copy */
 	data->hwnd = hwnd;
 	if (CreateThread(NULL, 0, agent_query_thread, data, 0, &threadid))
 	    return 0;
@@ -128,7 +131,7 @@ int agent_query(void *in, int inlen, void **out, int *outlen,
      * query is required to be synchronous) or CreateThread failed.
      * Either way, we need a synchronous request.
      */
-    id = SendMessage(hwnd, WM_COPYDATA, (WPARAM) NULL, (LPARAM) &cds);
+    id = SendMessage(hwnd, WM_COPYDATA, (WPARAM) NULL, (LPARAM) & cds);
     if (id > 0) {
 	retlen = 4 + GET_32BIT(p);
 	ret = snewn(retlen, unsigned char);

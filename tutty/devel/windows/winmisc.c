@@ -5,21 +5,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "putty.h"
-#ifdef SESSION_ICON
 #include "win_res.h"
-#endif /* SESSION_ICON */
 
 OSVERSIONINFO osVersion;
 
 void platform_get_x11_auth(char *display, int *proto,
-                           unsigned char *data, int *datalen)
+			   unsigned char *data, int *datalen)
 {
     /* We don't support this at all under Windows. */
 }
 
 const char platform_x11_best_transport[] = "localhost";
 
-char *platform_get_x_display(void) {
+char *platform_get_x_display(void)
+{
     /* We may as well check for DISPLAY in case it's useful. */
     return dupstr(getenv("DISPLAY"));
 }
@@ -28,11 +27,11 @@ Filename filename_from_str(const char *str)
 {
     Filename ret;
     strncpy(ret.path, str, sizeof(ret.path));
-    ret.path[sizeof(ret.path)-1] = '\0';
+    ret.path[sizeof(ret.path) - 1] = '\0';
     return ret;
 }
 
-const char *filename_to_str(const Filename *fn)
+const char *filename_to_str(const Filename * fn)
 {
     return fn->path;
 }
@@ -71,8 +70,8 @@ char *get_username(void)
 BOOL init_winver(void)
 {
     ZeroMemory(&osVersion, sizeof(osVersion));
-    osVersion.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
-    return GetVersionEx ( (OSVERSIONINFO *) &osVersion);
+    osVersion.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    return GetVersionEx((OSVERSIONINFO *) & osVersion);
 }
 
 #ifdef DEBUG
@@ -242,7 +241,7 @@ static void *minefield_alloc(int size)
      * Update the admin region.
      */
     for (i = start + 2; i < start + npages + 1; i++)
-	minefield_admin[i] = 0xFFFE;   /* used but no region starts here */
+	minefield_admin[i] = 0xFFFE;	/* used but no region starts here */
     minefield_admin[start + 1] = region_start % PAGESIZE;
 
     minefield_admin_hide(1);
@@ -323,29 +322,28 @@ void *minefield_c_realloc(void *p, size_t size)
 
 #endif				/* MINEFIELD */
 
-#ifdef SESSION_ICON
-HICON extract_icon(char *iconpath) {
-	char *iname, *comma;
-	int iindex;
-	HICON hicon;
+HICON extract_icon(char *iconpath)
+{
+    char *iname, *comma;
+    int iindex;
+    HICON hicon;
 
-	hicon = NULL;
+    hicon = NULL;
 
-	if (iconpath && iconpath[0]) {
-		iname = dupstr(iconpath);
-		comma = strrchr(iname, ',');
-		if (comma) {
-			*comma = '\0';
-			*comma++;
-			iindex = atoi(comma);
-			hicon = ExtractIcon(hinst, iname, iindex);
-		};
-		sfree(iname);
+    if (iconpath && iconpath[0]) {
+	iname = dupstr(iconpath);
+	comma = strrchr(iname, ',');
+	if (comma) {
+	    *comma = '\0';
+	    *comma++;
+	    iindex = atoi(comma);
+	    hicon = ExtractIcon(hinst, iname, iindex);
 	};
+	sfree(iname);
+    };
 
-	if (!hicon)
-		hicon = LoadIcon(hinst, MAKEINTRESOURCE(IDI_MAINICON));
+    if (!hicon)
+	hicon = LoadIcon(hinst, MAKEINTRESOURCE(IDI_MAINICON));
 
-	return hicon;
+    return hicon;
 };
-#endif /* SESSION_ICON */

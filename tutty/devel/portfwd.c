@@ -54,8 +54,8 @@
 struct PFwdPrivate {
     const struct plug_function_table *fn;
     /* the above variable absolutely *must* be the first in this structure */
-    void *c;			       /* (channel) data used by ssh.c */
-    void *backhandle;		       /* instance of SSH backend itself */
+    void *c;			/* (channel) data used by ssh.c */
+    void *backhandle;		/* instance of SSH backend itself */
     /* Note that backhandle need not be filled in if c is non-NULL */
     Socket s;
     int throttled, throttle_override;
@@ -74,7 +74,7 @@ struct PFwdPrivate {
      * we can also use them as a buffer and pointer for reading
      * data from the SOCKS client.
      */
-    char hostname[256+8];
+    char hostname[256 + 8];
     int port;
     /*
      * When doing dynamic port forwarding, we can receive
@@ -116,14 +116,14 @@ static int pfd_receive(Plug plug, int urgent, char *data, int len)
 	    /*
 	     * Throughout SOCKS negotiation, "hostname" is re-used as a
 	     * random protocol buffer with "port" storing the length.
-	     */ 
+	     */
 	    if (pr->port >= lenof(pr->hostname)) {
 		/* Request too long. */
 		if ((pr->dynamic >> 12) == 4) {
 		    /* Send back a SOCKS 4 error before closing. */
 		    char data[8];
 		    memset(data, 0, sizeof(data));
-		    data[1] = 91;      /* generic `request rejected' */
+		    data[1] = 91;	/* generic `request rejected' */
 		    sk_write(pr->s, data, 8);
 		}
 		pfd_close(pr->s);
@@ -142,20 +142,22 @@ static int pfd_receive(Plug plug, int urgent, char *data, int len)
 		 */
 		if (pr->dynamic == 1)
 		    pr->dynamic = 0x4000;
-		if (pr->port < 2) continue;/* don't have command code yet */
+		if (pr->port < 2)
+		    continue;	/* don't have command code yet */
 		if (pr->hostname[1] != 1) {
 		    /* Not CONNECT. */
 		    /* Send back a SOCKS 4 error before closing. */
 		    char data[8];
 		    memset(data, 0, sizeof(data));
-		    data[1] = 91;      /* generic `request rejected' */
+		    data[1] = 91;	/* generic `request rejected' */
 		    sk_write(pr->s, data, 8);
 		    pfd_close(pr->s);
 		    return 1;
 		}
-		if (pr->port <= 8) continue; /* haven't started user/hostname */
-		if (pr->hostname[pr->port-1] != 0)
-		    continue;	       /* haven't _finished_ user/hostname */
+		if (pr->port <= 8)
+		    continue;	/* haven't started user/hostname */
+		if (pr->hostname[pr->port - 1] != 0)
+		    continue;	/* haven't _finished_ user/hostname */
 		/*
 		 * Now we have a full SOCKS 4 request. Check it to
 		 * see if it's a SOCKS 4A request.
@@ -171,14 +173,14 @@ static int pfd_receive(Plug plug, int urgent, char *data, int len)
 		    int len;
 		    if (pr->dynamic == 0x4000) {
 			pr->dynamic = 0x4001;
-			pr->port = 8;      /* reset buffer to overwrite name */
+			pr->port = 8;	/* reset buffer to overwrite name */
 			continue;
 		    }
-		    pr->hostname[0] = 0;   /* reply version code */
-		    pr->hostname[1] = 90;   /* request granted */
+		    pr->hostname[0] = 0;	/* reply version code */
+		    pr->hostname[1] = 90;	/* request granted */
 		    sk_write(pr->s, pr->hostname, 8);
-		    len= pr->port - 8;
-		    pr->port = GET_16BIT_MSB_FIRST(pr->hostname+2);
+		    len = pr->port - 8;
+		    pr->port = GET_16BIT_MSB_FIRST(pr->hostname + 2);
 		    memmove(pr->hostname, pr->hostname + 8, len);
 		    goto connect;
 		} else {
@@ -187,15 +189,15 @@ static int pfd_receive(Plug plug, int urgent, char *data, int len)
 		     * the IP address into the hostname string and
 		     * then just go.
 		     */
-		    pr->hostname[0] = 0;   /* reply version code */
-		    pr->hostname[1] = 90;   /* request granted */
+		    pr->hostname[0] = 0;	/* reply version code */
+		    pr->hostname[1] = 90;	/* request granted */
 		    sk_write(pr->s, pr->hostname, 8);
-		    pr->port = GET_16BIT_MSB_FIRST(pr->hostname+2);
+		    pr->port = GET_16BIT_MSB_FIRST(pr->hostname + 2);
 		    sprintf(pr->hostname, "%d.%d.%d.%d",
-			    (unsigned char)pr->hostname[4],
-			    (unsigned char)pr->hostname[5],
-			    (unsigned char)pr->hostname[6],
-			    (unsigned char)pr->hostname[7]);
+			    (unsigned char) pr->hostname[4],
+			    (unsigned char) pr->hostname[5],
+			    (unsigned char) pr->hostname[6],
+			    (unsigned char) pr->hostname[7]);
 		    goto connect;
 		}
 	    }
@@ -214,20 +216,21 @@ static int pfd_receive(Plug plug, int urgent, char *data, int len)
 		    /*
 		     * We're receiving a set of method identifiers.
 		     */
-		    if (pr->port < 2) continue;/* no method count yet */
-		    if (pr->port < 2 + (unsigned char)pr->hostname[1])
-			continue;      /* no methods yet */
-		    method = 0xFF;     /* invalid */
-		    for (i = 0; i < (unsigned char)pr->hostname[1]; i++)
-			if (pr->hostname[2+i] == 0) {
-			    method = 0;/* no auth */
+		    if (pr->port < 2)
+			continue;	/* no method count yet */
+		    if (pr->port < 2 + (unsigned char) pr->hostname[1])
+			continue;	/* no methods yet */
+		    method = 0xFF;	/* invalid */
+		    for (i = 0; i < (unsigned char) pr->hostname[1]; i++)
+			if (pr->hostname[2 + i] == 0) {
+			    method = 0;	/* no auth */
 			    break;
 			}
 		    data[0] = 5;
 		    data[1] = method;
 		    sk_write(pr->s, data, 2);
 		    pr->dynamic = 0x5001;
-		    pr->port = 0;      /* re-empty the buffer */
+		    pr->port = 0;	/* re-empty the buffer */
 		    continue;
 		}
 
@@ -235,7 +238,7 @@ static int pfd_receive(Plug plug, int urgent, char *data, int len)
 		    /*
 		     * We're receiving a SOCKS request.
 		     */
-		    unsigned char reply[10]; /* SOCKS5 atyp=1 reply */
+		    unsigned char reply[10];	/* SOCKS5 atyp=1 reply */
 		    int atype, alen = 0;
 
 		    /*
@@ -246,18 +249,20 @@ static int pfd_receive(Plug plug, int urgent, char *data, int len)
 		     * ignored.
 		     */
 		    memset(reply, 0, lenof(reply));
-		    reply[0] = 5; /* VER */
-		    reply[3] = 1; /* ATYP = 1 (IPv4, 0.0.0.0:0) */
+		    reply[0] = 5;	/* VER */
+		    reply[3] = 1;	/* ATYP = 1 (IPv4, 0.0.0.0:0) */
 
-		    if (pr->port < 6) continue;
-		    atype = (unsigned char)pr->hostname[3];
-		    if (atype == 1)    /* IPv4 address */
+		    if (pr->port < 6)
+			continue;
+		    atype = (unsigned char) pr->hostname[3];
+		    if (atype == 1)	/* IPv4 address */
 			alen = 4;
-		    if (atype == 4)    /* IPv6 address */
+		    if (atype == 4)	/* IPv6 address */
 			alen = 16;
-		    if (atype == 3)    /* domain name has leading length */
-			alen = 1 + (unsigned char)pr->hostname[4];
-		    if (pr->port < 6 + alen) continue;
+		    if (atype == 3)	/* domain name has leading length */
+			alen = 1 + (unsigned char) pr->hostname[4];
+		    if (pr->port < 6 + alen)
+			continue;
 		    if (pr->hostname[1] != 1 || pr->hostname[2] != 0) {
 			/* Not CONNECT or reserved field nonzero - error */
 			reply[1] = 1;	/* generic failure */
@@ -269,21 +274,22 @@ static int pfd_receive(Plug plug, int urgent, char *data, int len)
 		     * Now we have a viable connect request. Switch
 		     * on atype.
 		     */
-		    pr->port = GET_16BIT_MSB_FIRST(pr->hostname+4+alen);
+		    pr->port =
+			GET_16BIT_MSB_FIRST(pr->hostname + 4 + alen);
 		    if (atype == 1) {
 			/* REP=0 (success) already */
 			sk_write(pr->s, (char *) reply, lenof(reply));
 			sprintf(pr->hostname, "%d.%d.%d.%d",
-				(unsigned char)pr->hostname[4],
-				(unsigned char)pr->hostname[5],
-				(unsigned char)pr->hostname[6],
-				(unsigned char)pr->hostname[7]);
+				(unsigned char) pr->hostname[4],
+				(unsigned char) pr->hostname[5],
+				(unsigned char) pr->hostname[6],
+				(unsigned char) pr->hostname[7]);
 			goto connect;
 		    } else if (atype == 3) {
 			/* REP=0 (success) already */
 			sk_write(pr->s, (char *) reply, lenof(reply));
-			memmove(pr->hostname, pr->hostname + 5, alen-1);
-			pr->hostname[alen-1] = '\0';
+			memmove(pr->hostname, pr->hostname + 5, alen - 1);
+			pr->hostname[alen - 1] = '\0';
 			goto connect;
 		    } else {
 			/*
@@ -312,7 +318,7 @@ static int pfd_receive(Plug plug, int urgent, char *data, int len)
 	 * We come here when we're ready to make an actual
 	 * connection.
 	 */
-	connect:
+      connect:
 
 	pr->c = new_sock_channel(pr->backhandle, pr->s);
 	if (pr->c == NULL) {
@@ -320,7 +326,8 @@ static int pfd_receive(Plug plug, int urgent, char *data, int len)
 	    return 1;
 	} else {
 	    /* asks to forward to the specified host/port for this */
-	    ssh_send_port_open(pr->c, pr->hostname, pr->port, "forwarding");
+	    ssh_send_port_open(pr->c, pr->hostname, pr->port,
+			       "forwarding");
 	}
 	pr->dynamic = 0;
 
@@ -359,8 +366,8 @@ static void pfd_sent(Plug plug, int bufsize)
 /*
  * Called when receiving a PORT OPEN from the server
  */
-const char *pfd_newconnect(Socket *s, char *hostname, int port,
-			   void *c, const Config *cfg, int addressfamily)
+const char *pfd_newconnect(Socket * s, char *hostname, int port,
+			   void *c, const Config * cfg, int addressfamily)
 {
     static const struct plug_function_table fn_table = {
 	pfd_log,
@@ -378,7 +385,8 @@ const char *pfd_newconnect(Socket *s, char *hostname, int port,
     /*
      * Try to find host.
      */
-    addr = name_lookup(hostname, port, &dummy_realhost, cfg, addressfamily);
+    addr =
+	name_lookup(hostname, port, &dummy_realhost, cfg, addressfamily);
     if ((err = sk_addr_error(addr)) != NULL) {
 	sk_addr_free(addr);
 	return err;
@@ -393,7 +401,7 @@ const char *pfd_newconnect(Socket *s, char *hostname, int port,
     pr->throttled = pr->throttle_override = 0;
     pr->ready = 1;
     pr->c = c;
-    pr->backhandle = NULL;	       /* we shouldn't need this */
+    pr->backhandle = NULL;	/* we shouldn't need this */
     pr->dynamic = 0;
 
     pr->s = *s = new_connection(addr, dummy_realhost, port,
@@ -424,7 +432,7 @@ static int pfd_accepting(Plug p, OSSocket sock)
     Socket s;
     const char *err;
 
-    org = (struct PFwdPrivate *)p;
+    org = (struct PFwdPrivate *) p;
     pr = snew(struct PFwdPrivate);
     pr->buffer = NULL;
     pr->fn = &fn_table;
@@ -445,12 +453,12 @@ static int pfd_accepting(Plug p, OSSocket sock)
 
     if (org->dynamic) {
 	pr->dynamic = 1;
-	pr->port = 0;		       /* "hostname" buffer is so far empty */
-	sk_set_frozen(s, 0);	       /* we want to receive SOCKS _now_! */
+	pr->port = 0;		/* "hostname" buffer is so far empty */
+	sk_set_frozen(s, 0);	/* we want to receive SOCKS _now_! */
     } else {
 	pr->dynamic = 0;
 	strcpy(pr->hostname, org->hostname);
-	pr->port = org->port;	
+	pr->port = org->port;
 	pr->c = new_sock_channel(org->backhandle, s);
 
 	if (pr->c == NULL) {
@@ -458,7 +466,8 @@ static int pfd_accepting(Plug p, OSSocket sock)
 	    return 1;
 	} else {
 	    /* asks to forward to the specified host/port for this */
-	    ssh_send_port_open(pr->c, pr->hostname, pr->port, "forwarding");
+	    ssh_send_port_open(pr->c, pr->hostname, pr->port,
+			       "forwarding");
 	}
     }
 
@@ -470,14 +479,14 @@ static int pfd_accepting(Plug p, OSSocket sock)
  sets up a listener on the local machine on (srcaddr:)port
  */
 const char *pfd_addforward(char *desthost, int destport, char *srcaddr,
-			   int port, void *backhandle, const Config *cfg,
+			   int port, void *backhandle, const Config * cfg,
 			   void **sockdata, int address_family)
 {
     static const struct plug_function_table fn_table = {
 	pfd_log,
 	pfd_closing,
-	pfd_receive,		       /* should not happen... */
-	pfd_sent,		       /* also should not happen */
+	pfd_receive,		/* should not happen... */
+	pfd_sent,		/* also should not happen */
 	pfd_accepting
     };
 
@@ -511,7 +520,7 @@ const char *pfd_addforward(char *desthost, int destport, char *srcaddr,
 
     sk_set_private_ptr(s, pr);
 
-    *sockdata = (void *)s;
+    *sockdata = (void *) s;
 
     return NULL;
 }
@@ -536,7 +545,7 @@ void pfd_close(Socket s)
  */
 void pfd_terminate(void *sv)
 {
-    pfd_close((Socket)sv);
+    pfd_close((Socket) sv);
 }
 
 void pfd_unthrottle(Socket s)

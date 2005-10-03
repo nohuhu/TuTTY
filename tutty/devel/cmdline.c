@@ -66,7 +66,7 @@ void cmdline_cleanup(void)
 char *cmdline_password = NULL;
 
 static int cmdline_get_line(const char *prompt, char *str,
-                            int maxlen, int is_pw)
+			    int maxlen, int is_pw)
 {
     static int tried_once = 0;
 
@@ -128,7 +128,8 @@ static int cmdline_check_unavailable(int flag, char *p)
     if (need_save < 0) return x; \
 } while (0)
 
-int cmdline_process_param(char *p, char *value, int need_save, Config *cfg)
+int cmdline_process_param(char *p, char *value, int need_save,
+			  Config * cfg)
 {
     int ret = 0;
 
@@ -140,15 +141,13 @@ int cmdline_process_param(char *p, char *value, int need_save, Config *cfg)
 	loaded_session = TRUE;
 	return 2;
     }
-#ifdef SESSION_FOLDERS
     if (!strcmp(p, "-edit")) {
-        RETURN(2);
-        do_defaults(value, cfg);
-        loaded_session_edit = TRUE;
-        strcpy(loaded_session_name, value);
-        return 2;
+	RETURN(2);
+	do_defaults(value, cfg);
+	loaded_session_edit = TRUE;
+	strcpy(loaded_session_name, value);
+	return 2;
     };
-#endif SESSION_FOLDERS
     if (!strcmp(p, "-ssh")) {
 	RETURN(1);
 	UNAVAILABLE_IN(TOOLTYPE_FILETRANSFER | TOOLTYPE_NONNETWORK);
@@ -192,7 +191,7 @@ int cmdline_process_param(char *p, char *value, int need_save, Config *cfg)
     }
     if ((!strcmp(p, "-L") || !strcmp(p, "-R") || !strcmp(p, "-D"))) {
 	char *fwd, *ptr, *q, *qq;
-	int dynamic, i=0;
+	int dynamic, i = 0;
 	RETURN(2);
 	UNAVAILABLE_IN(TOOLTYPE_FILETRANSFER | TOOLTYPE_NONNETWORK);
 	SAVEABLE(0);
@@ -206,7 +205,7 @@ int cmdline_process_param(char *p, char *value, int need_save, Config *cfg)
 	    ptr++;
 	}
 	i = ptr - cfg->portfwd;
-	ptr[0] = p[1];  /* insert a 'L', 'R' or 'D' at the start */
+	ptr[0] = p[1];		/* insert a 'L', 'R' or 'D' at the start */
 	ptr++;
 	if (1 + strlen(fwd) + 2 > sizeof(cfg->portfwd) - i) {
 	    cmdline_error("out of space for port forwardings");
@@ -225,16 +224,17 @@ int cmdline_process_param(char *p, char *value, int need_save, Config *cfg)
 	     */
 	    q = qq = strchr(ptr, ':');
 	    while (qq) {
-		char *qqq = strchr(qq+1, ':');
+		char *qqq = strchr(qq + 1, ':');
 		if (qqq)
 		    q = qq;
 		qq = qqq;
 	    }
-	    if (q) *q = '\t';	       /* replace second-last colon with \t */
+	    if (q)
+		*q = '\t';	/* replace second-last colon with \t */
 	}
 	cfg->portfwd[sizeof(cfg->portfwd) - 1] = '\0';
 	cfg->portfwd[sizeof(cfg->portfwd) - 2] = '\0';
-	ptr[strlen(ptr)+1] = '\000';    /* append 2nd '\000' */
+	ptr[strlen(ptr) + 1] = '\000';	/* append 2nd '\000' */
     }
     if (!strcmp(p, "-m")) {
 	char *filename, *command;
@@ -269,12 +269,12 @@ int cmdline_process_param(char *p, char *value, int need_save, Config *cfg)
 	} while (c != EOF);
 	cfg->remote_cmd_ptr = command;
 	cfg->remote_cmd_ptr2 = NULL;
-	cfg->nopty = TRUE;      /* command => no terminal */
+	cfg->nopty = TRUE;	/* command => no terminal */
     }
     if (!strcmp(p, "-P")) {
 	RETURN(2);
 	UNAVAILABLE_IN(TOOLTYPE_NONNETWORK);
-	SAVEABLE(1);		       /* lower priority than -ssh,-telnet */
+	SAVEABLE(1);		/* lower priority than -ssh,-telnet */
 	cfg->port = atoi(value);
     }
     if (!strcmp(p, "-pw")) {
@@ -342,13 +342,13 @@ int cmdline_process_param(char *p, char *value, int need_save, Config *cfg)
 	RETURN(1);
 	UNAVAILABLE_IN(TOOLTYPE_NONNETWORK);
 	SAVEABLE(0);
-	cfg->sshprot = 0;	       /* ssh protocol 1 only */
+	cfg->sshprot = 0;	/* ssh protocol 1 only */
     }
     if (!strcmp(p, "-2")) {
 	RETURN(1);
 	UNAVAILABLE_IN(TOOLTYPE_NONNETWORK);
 	SAVEABLE(0);
-	cfg->sshprot = 3;	       /* ssh protocol 2 only */
+	cfg->sshprot = 3;	/* ssh protocol 2 only */
     }
 
     if (!strcmp(p, "-i")) {
@@ -369,10 +369,10 @@ int cmdline_process_param(char *p, char *value, int need_save, Config *cfg)
 	cfg->addressfamily = ADDRTYPE_IPV6;
     }
 
-    return ret;			       /* unrecognised */
+    return ret;			/* unrecognised */
 }
 
-void cmdline_run_saved(Config *cfg)
+void cmdline_run_saved(Config * cfg)
 {
     int pri, i;
     for (pri = 0; pri < NPRIORITIES; pri++)

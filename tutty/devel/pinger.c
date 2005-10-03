@@ -17,7 +17,7 @@ static void pinger_schedule(Pinger pinger);
 
 static void pinger_timer(void *ctx, long now)
 {
-    Pinger pinger = (Pinger)ctx;
+    Pinger pinger = (Pinger) ctx;
 
     if (pinger->pending && now - pinger->next >= 0) {
 	pinger->back->special(pinger->backhandle, TS_PING);
@@ -31,7 +31,7 @@ static void pinger_schedule(Pinger pinger)
     int next;
 
     if (!pinger->interval) {
-	pinger->pending = FALSE;       /* cancel any pending ping */
+	pinger->pending = FALSE;	/* cancel any pending ping */
 	return;
     }
 
@@ -43,7 +43,7 @@ static void pinger_schedule(Pinger pinger)
     }
 }
 
-Pinger pinger_new(Config *cfg, Backend *back, void *backhandle)
+Pinger pinger_new(Config * cfg, Backend * back, void *backhandle)
 {
     Pinger pinger = snew(struct pinger_tag);
 
@@ -56,7 +56,7 @@ Pinger pinger_new(Config *cfg, Backend *back, void *backhandle)
     return pinger;
 }
 
-void pinger_reconfig(Pinger pinger, Config *oldcfg, Config *newcfg)
+void pinger_reconfig(Pinger pinger, Config * oldcfg, Config * newcfg)
 {
     if (oldcfg->ping_interval != newcfg->ping_interval) {
 	pinger->interval = newcfg->ping_interval;

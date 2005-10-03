@@ -45,7 +45,8 @@
 #define smallsigma1(r,t,x) ( rorL(r,x,19), rorB(t,x,61), xor(r,r,t), \
 			     shrL(t,x,6), xor(r,r,t) )
 
-static void SHA512_Core_Init(SHA512_State *s) {
+static void SHA512_Core_Init(SHA512_State * s)
+{
     static const uint64 iv[] = {
 	INIT(0x6a09e667, 0xf3bcc908),
 	INIT(0xbb67ae85, 0x84caa73b),
@@ -61,9 +62,10 @@ static void SHA512_Core_Init(SHA512_State *s) {
 	s->h[i] = iv[i];
 }
 
-static void SHA512_Block(SHA512_State *s, uint64 *block) {
+static void SHA512_Block(SHA512_State * s, uint64 * block)
+{
     uint64 w[80];
-    uint64 a,b,c,d,e,f,g,h;
+    uint64 a, b, c, d, e, f, g, h;
     static const uint64 k[] = {
 	INIT(0x428a2f98, 0xd728ae22), INIT(0x71374491, 0x23ef65cd),
 	INIT(0xb5c0fbcf, 0xec4d3b2f), INIT(0xe9b5dba5, 0x8189dbbc),
@@ -110,22 +112,28 @@ static void SHA512_Block(SHA512_State *s, uint64 *block) {
     int t;
 
     for (t = 0; t < 16; t++)
-        w[t] = block[t];
+	w[t] = block[t];
 
     for (t = 16; t < 80; t++) {
 	uint64 p, q, r, tmp;
-	smallsigma1(p, tmp, w[t-2]);
-	smallsigma0(q, tmp, w[t-15]);
+	smallsigma1(p, tmp, w[t - 2]);
+	smallsigma0(q, tmp, w[t - 15]);
 	add(r, p, q);
-	add(p, r, w[t-7]);
-	add(w[t], p, w[t-16]);
+	add(p, r, w[t - 7]);
+	add(w[t], p, w[t - 16]);
     }
 
-    a = s->h[0]; b = s->h[1]; c = s->h[2]; d = s->h[3];
-    e = s->h[4]; f = s->h[5]; g = s->h[6]; h = s->h[7];
+    a = s->h[0];
+    b = s->h[1];
+    c = s->h[2];
+    d = s->h[3];
+    e = s->h[4];
+    f = s->h[5];
+    g = s->h[6];
+    h = s->h[7];
 
-    for (t = 0; t < 80; t+=8) {
-        uint64 tmp, p, q, r;
+    for (t = 0; t < 80; t += 8) {
+	uint64 tmp, p, q, r;
 
 #define ROUND(j,a,b,c,d,e,f,g,h) \
 	bigsigma1(p, tmp, e); \
@@ -141,23 +149,27 @@ static void SHA512_Block(SHA512_State *s, uint64 *block) {
 	d = p; \
 	add(h, q, r);
 
-	ROUND(t+0, a,b,c,d,e,f,g,h);
-	ROUND(t+1, h,a,b,c,d,e,f,g);
-	ROUND(t+2, g,h,a,b,c,d,e,f);
-	ROUND(t+3, f,g,h,a,b,c,d,e);
-	ROUND(t+4, e,f,g,h,a,b,c,d);
-	ROUND(t+5, d,e,f,g,h,a,b,c);
-	ROUND(t+6, c,d,e,f,g,h,a,b);
-	ROUND(t+7, b,c,d,e,f,g,h,a);
+	ROUND(t + 0, a, b, c, d, e, f, g, h);
+	ROUND(t + 1, h, a, b, c, d, e, f, g);
+	ROUND(t + 2, g, h, a, b, c, d, e, f);
+	ROUND(t + 3, f, g, h, a, b, c, d, e);
+	ROUND(t + 4, e, f, g, h, a, b, c, d);
+	ROUND(t + 5, d, e, f, g, h, a, b, c);
+	ROUND(t + 6, c, d, e, f, g, h, a, b);
+	ROUND(t + 7, b, c, d, e, f, g, h, a);
     }
 
     {
 	uint64 tmp;
 #define UPDATE(state, local) ( tmp = state, add(state, tmp, local) )
-	UPDATE(s->h[0], a); UPDATE(s->h[1], b);
-	UPDATE(s->h[2], c); UPDATE(s->h[3], d);
-	UPDATE(s->h[4], e); UPDATE(s->h[5], f);
-	UPDATE(s->h[6], g); UPDATE(s->h[7], h);
+	UPDATE(s->h[0], a);
+	UPDATE(s->h[1], b);
+	UPDATE(s->h[2], c);
+	UPDATE(s->h[3], d);
+	UPDATE(s->h[4], e);
+	UPDATE(s->h[5], f);
+	UPDATE(s->h[6], g);
+	UPDATE(s->h[7], h);
     }
 }
 
@@ -167,7 +179,8 @@ static void SHA512_Block(SHA512_State *s, uint64 *block) {
  * at the end, and pass those blocks to the core SHA512 algorithm.
  */
 
-void SHA512_Init(SHA512_State *s) {
+void SHA512_Init(SHA512_State * s)
+{
     int i;
     SHA512_Core_Init(s);
     s->blkused = 0;
@@ -175,8 +188,9 @@ void SHA512_Init(SHA512_State *s) {
 	s->len[i] = 0;
 }
 
-void SHA512_Bytes(SHA512_State *s, const void *p, int len) {
-    unsigned char *q = (unsigned char *)p;
+void SHA512_Bytes(SHA512_State * s, const void *p, int len)
+{
+    unsigned char *q = (unsigned char *) p;
     uint64 wordblock[16];
     uint32 lenw = len;
     int i;
@@ -189,56 +203,57 @@ void SHA512_Bytes(SHA512_State *s, const void *p, int len) {
 	lenw = (s->len[i] < lenw);
     }
 
-    if (s->blkused && s->blkused+len < BLKSIZE) {
-        /*
-         * Trivial case: just add to the block.
-         */
-        memcpy(s->block + s->blkused, q, len);
-        s->blkused += len;
+    if (s->blkused && s->blkused + len < BLKSIZE) {
+	/*
+	 * Trivial case: just add to the block.
+	 */
+	memcpy(s->block + s->blkused, q, len);
+	s->blkused += len;
     } else {
-        /*
-         * We must complete and process at least one block.
-         */
-        while (s->blkused + len >= BLKSIZE) {
-            memcpy(s->block + s->blkused, q, BLKSIZE - s->blkused);
-            q += BLKSIZE - s->blkused;
-            len -= BLKSIZE - s->blkused;
-            /* Now process the block. Gather bytes big-endian into words */
-            for (i = 0; i < 16; i++) {
+	/*
+	 * We must complete and process at least one block.
+	 */
+	while (s->blkused + len >= BLKSIZE) {
+	    memcpy(s->block + s->blkused, q, BLKSIZE - s->blkused);
+	    q += BLKSIZE - s->blkused;
+	    len -= BLKSIZE - s->blkused;
+	    /* Now process the block. Gather bytes big-endian into words */
+	    for (i = 0; i < 16; i++) {
 		uint32 h, l;
-                h = ( ((uint32)s->block[i*8+0]) << 24 ) |
-                    ( ((uint32)s->block[i*8+1]) << 16 ) |
-                    ( ((uint32)s->block[i*8+2]) <<  8 ) |
-                    ( ((uint32)s->block[i*8+3]) <<  0 );
-                l = ( ((uint32)s->block[i*8+4]) << 24 ) |
-                    ( ((uint32)s->block[i*8+5]) << 16 ) |
-                    ( ((uint32)s->block[i*8+6]) <<  8 ) |
-                    ( ((uint32)s->block[i*8+7]) <<  0 );
+		h = (((uint32) s->block[i * 8 + 0]) << 24) |
+		    (((uint32) s->block[i * 8 + 1]) << 16) |
+		    (((uint32) s->block[i * 8 + 2]) << 8) |
+		    (((uint32) s->block[i * 8 + 3]) << 0);
+		l = (((uint32) s->block[i * 8 + 4]) << 24) |
+		    (((uint32) s->block[i * 8 + 5]) << 16) |
+		    (((uint32) s->block[i * 8 + 6]) << 8) |
+		    (((uint32) s->block[i * 8 + 7]) << 0);
 		BUILD(wordblock[i], h, l);
-            }
-            SHA512_Block(s, wordblock);
-            s->blkused = 0;
-        }
-        memcpy(s->block, q, len);
-        s->blkused = len;
+	    }
+	    SHA512_Block(s, wordblock);
+	    s->blkused = 0;
+	}
+	memcpy(s->block, q, len);
+	s->blkused = len;
     }
 }
 
-void SHA512_Final(SHA512_State *s, unsigned char *digest) {
+void SHA512_Final(SHA512_State * s, unsigned char *digest)
+{
     int i;
     int pad;
     unsigned char c[BLKSIZE];
     uint32 len[4];
 
-    if (s->blkused >= BLKSIZE-16)
-        pad = (BLKSIZE-16) + BLKSIZE - s->blkused;
+    if (s->blkused >= BLKSIZE - 16)
+	pad = (BLKSIZE - 16) + BLKSIZE - s->blkused;
     else
-        pad = (BLKSIZE-16) - s->blkused;
+	pad = (BLKSIZE - 16) - s->blkused;
 
-    for (i = 4; i-- ;) {
+    for (i = 4; i--;) {
 	uint32 lenhi = s->len[i];
-	uint32 lenlo = i > 0 ? s->len[i-1] : 0;
-	len[i] = (lenhi << 3) | (lenlo >> (32-3));
+	uint32 lenlo = i > 0 ? s->len[i - 1] : 0;
+	len[i] = (lenhi << 3) | (lenlo >> (32 - 3));
     }
 
     memset(c, 0, pad);
@@ -246,10 +261,10 @@ void SHA512_Final(SHA512_State *s, unsigned char *digest) {
     SHA512_Bytes(s, &c, pad);
 
     for (i = 0; i < 4; i++) {
-	c[i*4+0] = (len[3-i] >> 24) & 0xFF;
-	c[i*4+1] = (len[3-i] >> 16) & 0xFF;
-	c[i*4+2] = (len[3-i] >>  8) & 0xFF;
-	c[i*4+3] = (len[3-i] >>  0) & 0xFF;
+	c[i * 4 + 0] = (len[3 - i] >> 24) & 0xFF;
+	c[i * 4 + 1] = (len[3 - i] >> 16) & 0xFF;
+	c[i * 4 + 2] = (len[3 - i] >> 8) & 0xFF;
+	c[i * 4 + 3] = (len[3 - i] >> 0) & 0xFF;
     }
 
     SHA512_Bytes(s, &c, 16);
@@ -257,18 +272,19 @@ void SHA512_Final(SHA512_State *s, unsigned char *digest) {
     for (i = 0; i < 8; i++) {
 	uint32 h, l;
 	EXTRACT(h, l, s->h[i]);
-	digest[i*8+0] = (h >> 24) & 0xFF;
-	digest[i*8+1] = (h >> 16) & 0xFF;
-	digest[i*8+2] = (h >>  8) & 0xFF;
-	digest[i*8+3] = (h >>  0) & 0xFF;
-	digest[i*8+4] = (l >> 24) & 0xFF;
-	digest[i*8+5] = (l >> 16) & 0xFF;
-	digest[i*8+6] = (l >>  8) & 0xFF;
-	digest[i*8+7] = (l >>  0) & 0xFF;
+	digest[i * 8 + 0] = (h >> 24) & 0xFF;
+	digest[i * 8 + 1] = (h >> 16) & 0xFF;
+	digest[i * 8 + 2] = (h >> 8) & 0xFF;
+	digest[i * 8 + 3] = (h >> 0) & 0xFF;
+	digest[i * 8 + 4] = (l >> 24) & 0xFF;
+	digest[i * 8 + 5] = (l >> 16) & 0xFF;
+	digest[i * 8 + 6] = (l >> 8) & 0xFF;
+	digest[i * 8 + 7] = (l >> 0) & 0xFF;
     }
 }
 
-void SHA512_Simple(const void *p, int len, unsigned char *output) {
+void SHA512_Simple(const void *p, int len, unsigned char *output)
+{
     SHA512_State s;
 
     SHA512_Init(&s);
@@ -282,7 +298,8 @@ void SHA512_Simple(const void *p, int len, unsigned char *output) {
 #include <stdlib.h>
 #include <assert.h>
 
-int main(void) {
+int main(void)
+{
     unsigned char digest[64];
     int i, j, errors;
 
@@ -290,38 +307,37 @@ int main(void) {
 	const char *teststring;
 	unsigned char digest512[64];
     } tests[] = {
-	{ "abc", {
-	    0xdd, 0xaf, 0x35, 0xa1, 0x93, 0x61, 0x7a, 0xba,
-            0xcc, 0x41, 0x73, 0x49, 0xae, 0x20, 0x41, 0x31,
-            0x12, 0xe6, 0xfa, 0x4e, 0x89, 0xa9, 0x7e, 0xa2,
-            0x0a, 0x9e, 0xee, 0xe6, 0x4b, 0x55, 0xd3, 0x9a,
-            0x21, 0x92, 0x99, 0x2a, 0x27, 0x4f, 0xc1, 0xa8,
-            0x36, 0xba, 0x3c, 0x23, 0xa3, 0xfe, 0xeb, 0xbd,
-            0x45, 0x4d, 0x44, 0x23, 0x64, 0x3c, 0xe8, 0x0e,
-            0x2a, 0x9a, 0xc9, 0x4f, 0xa5, 0x4c, 0xa4, 0x9f,
-	} },
-	{ "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmn"
-	"hijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu", {
-	    0x8e, 0x95, 0x9b, 0x75, 0xda, 0xe3, 0x13, 0xda,
-            0x8c, 0xf4, 0xf7, 0x28, 0x14, 0xfc, 0x14, 0x3f,
-            0x8f, 0x77, 0x79, 0xc6, 0xeb, 0x9f, 0x7f, 0xa1,
-            0x72, 0x99, 0xae, 0xad, 0xb6, 0x88, 0x90, 0x18,
-            0x50, 0x1d, 0x28, 0x9e, 0x49, 0x00, 0xf7, 0xe4,
-            0x33, 0x1b, 0x99, 0xde, 0xc4, 0xb5, 0x43, 0x3a,
-            0xc7, 0xd3, 0x29, 0xee, 0xb6, 0xdd, 0x26, 0x54,
-            0x5e, 0x96, 0xe5, 0x5b, 0x87, 0x4b, 0xe9, 0x09,
-	} },
-	{ NULL, {
-	    0xe7, 0x18, 0x48, 0x3d, 0x0c, 0xe7, 0x69, 0x64,
-	    0x4e, 0x2e, 0x42, 0xc7, 0xbc, 0x15, 0xb4, 0x63,
-	    0x8e, 0x1f, 0x98, 0xb1, 0x3b, 0x20, 0x44, 0x28,
-	    0x56, 0x32, 0xa8, 0x03, 0xaf, 0xa9, 0x73, 0xeb,
-	    0xde, 0x0f, 0xf2, 0x44, 0x87, 0x7e, 0xa6, 0x0a,
-	    0x4c, 0xb0, 0x43, 0x2c, 0xe5, 0x77, 0xc3, 0x1b,
-	    0xeb, 0x00, 0x9c, 0x5c, 0x2c, 0x49, 0xaa, 0x2e,
-	    0x4e, 0xad, 0xb2, 0x17, 0xad, 0x8c, 0xc0, 0x9b, 
-	} },
-    };
+	{
+	    "abc", {
+	0xdd, 0xaf, 0x35, 0xa1, 0x93, 0x61, 0x7a, 0xba,
+		    0xcc, 0x41, 0x73, 0x49, 0xae, 0x20, 0x41, 0x31,
+		    0x12, 0xe6, 0xfa, 0x4e, 0x89, 0xa9, 0x7e, 0xa2,
+		    0x0a, 0x9e, 0xee, 0xe6, 0x4b, 0x55, 0xd3, 0x9a,
+		    0x21, 0x92, 0x99, 0x2a, 0x27, 0x4f, 0xc1, 0xa8,
+		    0x36, 0xba, 0x3c, 0x23, 0xa3, 0xfe, 0xeb, 0xbd,
+		    0x45, 0x4d, 0x44, 0x23, 0x64, 0x3c, 0xe8, 0x0e,
+		    0x2a, 0x9a, 0xc9, 0x4f, 0xa5, 0x4c, 0xa4, 0x9f,}}, {
+	    "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmn"
+		"hijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu",
+	    {
+	0x8e, 0x95, 0x9b, 0x75, 0xda, 0xe3, 0x13, 0xda, 0x8c, 0xf4,
+		    0xf7, 0x28, 0x14, 0xfc, 0x14, 0x3f, 0x8f, 0x77,
+		    0x79, 0xc6, 0xeb, 0x9f, 0x7f, 0xa1, 0x72, 0x99,
+		    0xae, 0xad, 0xb6, 0x88, 0x90, 0x18, 0x50, 0x1d,
+		    0x28, 0x9e, 0x49, 0x00, 0xf7, 0xe4, 0x33, 0x1b,
+		    0x99, 0xde, 0xc4, 0xb5, 0x43, 0x3a, 0xc7, 0xd3,
+		    0x29, 0xee, 0xb6, 0xdd, 0x26, 0x54, 0x5e, 0x96,
+		    0xe5, 0x5b, 0x87, 0x4b, 0xe9, 0x09,}}, {
+	    NULL, {
+    0xe7, 0x18, 0x48, 0x3d, 0x0c, 0xe7, 0x69, 0x64,
+		    0x4e, 0x2e, 0x42, 0xc7, 0xbc, 0x15, 0xb4,
+		    0x63, 0x8e, 0x1f, 0x98, 0xb1, 0x3b, 0x20,
+		    0x44, 0x28, 0x56, 0x32, 0xa8, 0x03, 0xaf,
+		    0xa9, 0x73, 0xeb, 0xde, 0x0f, 0xf2, 0x44,
+		    0x87, 0x7e, 0xa6, 0x0a, 0x4c, 0xb0, 0x43,
+		    0x2c, 0xe5, 0x77, 0xc3, 0x1b, 0xeb, 0x00,
+		    0x9c, 0x5c, 0x2c, 0x49, 0xaa, 0x2e, 0x4e,
+		    0xad, 0xb2, 0x17, 0xad, 0x8c, 0xc0, 0x9b,}},};
 
     errors = 0;
 
@@ -334,7 +350,8 @@ int main(void) {
 	    int n;
 	    SHA512_Init(&s);
 	    for (n = 0; n < 1000000 / 40; n++)
-		SHA512_Bytes(&s, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		SHA512_Bytes(&s,
+			     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 			     40);
 	    SHA512_Final(&s, digest);
 	}

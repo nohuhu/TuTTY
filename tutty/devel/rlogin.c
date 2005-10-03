@@ -53,15 +53,15 @@ static int rlogin_closing(Plug plug, const char *error_msg, int error_code,
 {
     Rlogin rlogin = (Rlogin) plug;
     if (rlogin->s) {
-        sk_close(rlogin->s);
-        rlogin->s = NULL;
+	sk_close(rlogin->s);
+	rlogin->s = NULL;
 	notify_remote_exit(rlogin->frontend);
     }
     if (error_msg) {
 	/* A socket error has occurred. */
 	logevent(rlogin->frontend, error_msg);
 	connection_fatal(rlogin->frontend, "%s", error_msg);
-    }				       /* Otherwise, the remote side closed the connection normally. */
+    }				/* Otherwise, the remote side closed the connection normally. */
     return 0;
 }
 
@@ -95,7 +95,7 @@ static int rlogin_receive(Plug plug, int urgent, char *data, int len)
 	    rlogin->firstbyte = 0;
 	}
 	if (len > 0)
-            c_write(rlogin, data, len);
+	    c_write(rlogin, data, len);
     }
     return 1;
 }
@@ -114,8 +114,8 @@ static void rlogin_sent(Plug plug, int bufsize)
  * Also places the canonical host name into `realhost'. It must be
  * freed by the caller.
  */
-static const char *rlogin_init(void *frontend_handle, void **backend_handle,
-			       Config *cfg,
+static const char *rlogin_init(void *frontend_handle,
+			       void **backend_handle, Config * cfg,
 			       char *host, int port, char **realhost,
 			       int nodelay, int keepalive)
 {
@@ -157,7 +157,7 @@ static const char *rlogin_init(void *frontend_handle, void **backend_handle,
     }
 
     if (port < 0)
-	port = 513;		       /* default rlogin port */
+	port = 513;		/* default rlogin port */
 
     /*
      * Open socket.
@@ -178,13 +178,12 @@ static const char *rlogin_init(void *frontend_handle, void **backend_handle,
 	sk_write(rlogin->s, cfg->localusername,
 		 strlen(cfg->localusername));
 	sk_write(rlogin->s, &z, 1);
-	sk_write(rlogin->s, cfg->username,
-		 strlen(cfg->username));
+	sk_write(rlogin->s, cfg->username, strlen(cfg->username));
 	sk_write(rlogin->s, &z, 1);
-	sk_write(rlogin->s, cfg->termtype,
-		 strlen(cfg->termtype));
+	sk_write(rlogin->s, cfg->termtype, strlen(cfg->termtype));
 	sk_write(rlogin->s, "/", 1);
-	for (p = cfg->termspeed; isdigit((unsigned char)*p); p++) continue;
+	for (p = cfg->termspeed; isdigit((unsigned char) *p); p++)
+	    continue;
 	sk_write(rlogin->s, cfg->termspeed, p - cfg->termspeed);
 	rlogin->bufsize = sk_write(rlogin->s, &z, 1);
     }
@@ -204,7 +203,7 @@ static void rlogin_free(void *handle)
 /*
  * Stub routine (we don't have any need to reconfigure this backend).
  */
-static void rlogin_reconfig(void *handle, Config *cfg)
+static void rlogin_reconfig(void *handle, Config * cfg)
 {
 }
 
@@ -310,10 +309,10 @@ static int rlogin_exitcode(void *handle)
 {
     Rlogin rlogin = (Rlogin) handle;
     if (rlogin->s != NULL)
-        return -1;                     /* still connected */
+	return -1;		/* still connected */
     else
-        /* If we ever implement RSH, we'll probably need to do this properly */
-        return 0;
+	/* If we ever implement RSH, we'll probably need to do this properly */
+	return 0;
 }
 
 /*

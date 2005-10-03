@@ -53,10 +53,11 @@ void close_settings_w(void *handle);
  * the provided buffer, and return zero if they failed to.
  */
 void *open_settings_r(const char *sessionname);
-char *read_setting_s(void *handle, const char *key, char *buffer, int buflen);
+char *read_setting_s(void *handle, const char *key, char *buffer,
+		     int buflen);
 int read_setting_i(void *handle, const char *key, int defvalue);
-int read_setting_filename(void *handle, const char *key, Filename *value);
-int read_setting_fontspec(void *handle, const char *key, FontSpec *font);
+int read_setting_filename(void *handle, const char *key, Filename * value);
+int read_setting_fontspec(void *handle, const char *key, FontSpec * font);
 void close_settings_r(void *handle);
 
 /*
@@ -67,7 +68,7 @@ void del_settings(const char *sessionname);
 /*
  * Enumerate all saved sessions.
  */
-void *enum_settings_start(void);
+void *enum_settings_start(char *path);
 char *enum_settings_next(void *handle, char *buffer, int buflen);
 void enum_settings_finish(void *handle);
 

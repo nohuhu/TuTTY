@@ -208,7 +208,7 @@ void MD5Simple(void const *p, unsigned len, unsigned char output[16])
     struct MD5Context s;
 
     MD5Init(&s);
-    MD5Update(&s, (unsigned char const *)p, len);
+    MD5Update(&s, (unsigned char const *) p, len);
     MD5Final(output, &s);
 }
 
@@ -232,9 +232,9 @@ void hmacmd5_free_context(void *handle)
 
 void hmacmd5_key(void *handle, void const *keyv, int len)
 {
-    struct MD5Context *keys = (struct MD5Context *)handle;
+    struct MD5Context *keys = (struct MD5Context *) handle;
     unsigned char foo[64];
-    unsigned char const *key = (unsigned char const *)keyv;
+    unsigned char const *key = (unsigned char const *) keyv;
     int i;
 
     memset(foo, 0x36, 64);
@@ -249,7 +249,7 @@ void hmacmd5_key(void *handle, void const *keyv, int len)
     MD5Init(&keys[1]);
     MD5Update(&keys[1], foo, 64);
 
-    memset(foo, 0, 64);		       /* burn the evidence */
+    memset(foo, 0, 64);		/* burn the evidence */
 }
 
 static void hmacmd5_key_16(void *handle, unsigned char *key)
@@ -262,15 +262,16 @@ static void hmacmd5_do_hmac_internal(void *handle,
 				     unsigned char const *blk2, int len2,
 				     unsigned char *hmac)
 {
-    struct MD5Context *keys = (struct MD5Context *)handle;
+    struct MD5Context *keys = (struct MD5Context *) handle;
     struct MD5Context s;
     unsigned char intermediate[16];
 
-    s = keys[0];		       /* structure copy */
+    s = keys[0];		/* structure copy */
     MD5Update(&s, blk, len);
-    if (blk2) MD5Update(&s, blk2, len2);
+    if (blk2)
+	MD5Update(&s, blk2, len2);
     MD5Final(intermediate, &s);
-    s = keys[1];		       /* structure copy */
+    s = keys[1];		/* structure copy */
     MD5Update(&s, intermediate, 16);
     MD5Final(hmac, &s);
 }
@@ -281,8 +282,9 @@ void hmacmd5_do_hmac(void *handle, unsigned char const *blk, int len,
     hmacmd5_do_hmac_internal(handle, blk, len, NULL, 0, hmac);
 }
 
-static void hmacmd5_do_hmac_ssh(void *handle, unsigned char const *blk, int len,
-				unsigned long seq, unsigned char *hmac)
+static void hmacmd5_do_hmac_ssh(void *handle, unsigned char const *blk,
+				int len, unsigned long seq,
+				unsigned char *hmac)
 {
     unsigned char seqbuf[16];
 

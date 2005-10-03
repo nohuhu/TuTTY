@@ -27,8 +27,8 @@ static long now = 0L;
 
 static int compare_timers(void *av, void *bv)
 {
-    struct timer *a = (struct timer *)av;
-    struct timer *b = (struct timer *)bv;
+    struct timer *a = (struct timer *) av;
+    struct timer *b = (struct timer *) bv;
     long at = a->now - now;
     long bt = b->now - now;
 
@@ -50,7 +50,7 @@ static int compare_timers(void *av, void *bv)
 	else if (c > 0)
 	    return +1;
     }
-#else    
+#else
     if (a->fn < b->fn)
 	return -1;
     else if (a->fn > b->fn)
@@ -71,8 +71,8 @@ static int compare_timers(void *av, void *bv)
 
 static int compare_timer_contexts(void *av, void *bv)
 {
-    char *a = (char *)av;
-    char *b = (char *)bv;
+    char *a = (char *) av;
+    char *b = (char *) bv;
     if (a < b)
 	return -1;
     else if (a > b)
@@ -112,12 +112,12 @@ long schedule_timer(int ticks, timer_fn_t fn, void *ctx)
     t->now = when;
 
     if (t != add234(timers, t)) {
-	sfree(t);		       /* identical timer already exists */
+	sfree(t);		/* identical timer already exists */
     } else {
-	add234(timer_contexts, t->ctx);/* don't care if this fails */
+	add234(timer_contexts, t->ctx);	/* don't care if this fails */
     }
 
-    first = (struct timer *)index234(timers, 0);
+    first = (struct timer *) index234(timers, 0);
     if (first == t) {
 	/*
 	 * This timer is the very first on the list, so we must
@@ -152,9 +152,8 @@ int run_timers(long anow, long *next)
     {
 	long tnow = GETTICKCOUNT();
 
-	if (tnow + TICKSPERSEC/50 - anow < 0 ||
-	    anow + TICKSPERSEC/50 - tnow < 0
-	    ) {
+	if (tnow + TICKSPERSEC / 50 - anow < 0 ||
+	    anow + TICKSPERSEC / 50 - tnow < 0) {
 #if defined TIMING_SYNC_ANOW
 	    /*
 	     * If anow is accurate and the tick count is wrong,
@@ -195,10 +194,10 @@ int run_timers(long anow, long *next)
     now = anow;
 
     while (1) {
-	first = (struct timer *)index234(timers, 0);
+	first = (struct timer *) index234(timers, 0);
 
 	if (!first)
-	    return FALSE;	       /* no timers remaining */
+	    return FALSE;	/* no timers remaining */
 
 	if (find234(timer_contexts, first->ctx, NULL) == NULL) {
 	    /*

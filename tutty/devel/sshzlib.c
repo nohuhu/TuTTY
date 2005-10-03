@@ -97,10 +97,10 @@ static void lz77_compress(struct LZ77Context *ctx,
 /*
  * Modifiable parameters.
  */
-#define WINSIZE 32768		       /* window size. Must be power of 2! */
-#define HASHMAX 2039		       /* one more than max hash value */
-#define MAXMATCH 32		       /* how many matches we track */
-#define HASHCHARS 3		       /* how many chars make a hash */
+#define WINSIZE 32768		/* window size. Must be power of 2! */
+#define HASHMAX 2039		/* one more than max hash value */
+#define MAXMATCH 32		/* how many matches we track */
+#define HASHCHARS 3		/* how many chars make a hash */
 
 /*
  * This compressor takes a less slapdash approach than the
@@ -111,14 +111,14 @@ static void lz77_compress(struct LZ77Context *ctx,
  * byte), we can carefully remove the hash chain entry.
  */
 
-#define INVALID -1		       /* invalid hash _and_ invalid offset */
+#define INVALID -1		/* invalid hash _and_ invalid offset */
 struct WindowEntry {
-    short next, prev;		       /* array indices within the window */
+    short next, prev;		/* array indices within the window */
     short hashval;
 };
 
 struct HashEntry {
-    short first;		       /* window index of first in chain */
+    short first;		/* window index of first in chain */
 };
 
 struct Match {
@@ -372,7 +372,8 @@ static void outbits(struct Outbuf *out, unsigned long bits, int nbits)
     while (out->noutbits >= 8) {
 	if (out->outlen >= out->outsize) {
 	    out->outsize = out->outlen + 64;
-	    out->outbuf = sresize(out->outbuf, out->outsize, unsigned char);
+	    out->outbuf =
+		sresize(out->outbuf, out->outsize, unsigned char);
 	}
 	out->outbuf[out->outlen++] = (unsigned char) (out->outbits & 0xFF);
 	out->outbits >>= 8;
@@ -545,7 +546,7 @@ static void zlib_match(struct LZ77Context *ectx, int distance, int len)
 		i = k;
 	    else {
 		l = &lencodes[k];
-		break;		       /* found it! */
+		break;		/* found it! */
 	    }
 	}
 
@@ -581,7 +582,7 @@ static void zlib_match(struct LZ77Context *ectx, int distance, int len)
 		i = k;
 	    else {
 		d = &distcodes[k];
-		break;		       /* found it! */
+		break;		/* found it! */
 	    }
 	}
 
@@ -618,7 +619,7 @@ void *zlib_compress_init(void)
 
 void zlib_compress_cleanup(void *handle)
 {
-    struct LZ77Context *ectx = (struct LZ77Context *)handle;
+    struct LZ77Context *ectx = (struct LZ77Context *) handle;
     sfree(ectx->userdata);
     sfree(ectx->ictx);
     sfree(ectx);
@@ -632,7 +633,7 @@ void zlib_compress_cleanup(void *handle)
  */
 static int zlib_disable_compression(void *handle)
 {
-    struct LZ77Context *ectx = (struct LZ77Context *)handle;
+    struct LZ77Context *ectx = (struct LZ77Context *) handle;
     struct Outbuf *out = (struct Outbuf *) ectx->userdata;
     int n;
 
@@ -669,7 +670,7 @@ static int zlib_disable_compression(void *handle)
 int zlib_compress_block(void *handle, unsigned char *block, int len,
 			unsigned char **outblock, int *outlen)
 {
-    struct LZ77Context *ectx = (struct LZ77Context *)handle;
+    struct LZ77Context *ectx = (struct LZ77Context *) handle;
     struct Outbuf *out = (struct Outbuf *) ectx->userdata;
     int in_block;
 
@@ -691,7 +692,7 @@ int zlib_compress_block(void *handle, unsigned char *block, int len,
 
     if (out->comp_disabled) {
 	if (in_block)
-	    outbits(out, 0, 7);	       /* close static block */
+	    outbits(out, 0, 7);	/* close static block */
 
 	while (len > 0) {
 	    int blen = (len < 65535 ? len : 65535);
@@ -734,7 +735,7 @@ int zlib_compress_block(void *handle, unsigned char *block, int len,
 	    len -= blen;
 	    block += blen;
 	}
-	outbits(out, 2, 3);	       /* open new block */
+	outbits(out, 2, 3);	/* open new block */
     } else {
 	if (!in_block) {
 	    /*
@@ -774,9 +775,9 @@ int zlib_compress_block(void *handle, unsigned char *block, int len,
 	 *
 	 * For the moment, we will use Zlib partial flush.
 	 */
-	outbits(out, 0, 7);	       /* close block */
-	outbits(out, 2, 3 + 7);	       /* empty static block */
-	outbits(out, 2, 3);	       /* open new block */
+	outbits(out, 0, 7);	/* close block */
+	outbits(out, 2, 3 + 7);	/* empty static block */
+	outbits(out, 2, 3);	/* open new block */
     }
 
     out->comp_disabled = FALSE;
@@ -810,7 +811,7 @@ struct zlib_tableentry {
 };
 
 struct zlib_table {
-    int mask;			       /* mask applied to input bit stream */
+    int mask;			/* mask applied to input bit stream */
     struct zlib_tableentry *table;
 };
 
@@ -971,7 +972,7 @@ void *zlib_decompress_init(void)
     dctx->staticlentable = zlib_mktable(lengths, 288);
     memset(lengths, 5, 32);
     dctx->staticdisttable = zlib_mktable(lengths, 32);
-    dctx->state = START;		       /* even before header */
+    dctx->state = START;	/* even before header */
     dctx->currlentable = dctx->currdisttable = dctx->lenlentable = NULL;
     dctx->bits = 0;
     dctx->nbits = 0;
@@ -982,11 +983,13 @@ void *zlib_decompress_init(void)
 
 void zlib_decompress_cleanup(void *handle)
 {
-    struct zlib_decompress_ctx *dctx = (struct zlib_decompress_ctx *)handle;
+    struct zlib_decompress_ctx *dctx =
+	(struct zlib_decompress_ctx *) handle;
 
     if (dctx->currlentable && dctx->currlentable != dctx->staticlentable)
 	zlib_freetable(&dctx->currlentable);
-    if (dctx->currdisttable && dctx->currdisttable != dctx->staticdisttable)
+    if (dctx->currdisttable
+	&& dctx->currdisttable != dctx->staticdisttable)
 	zlib_freetable(&dctx->currdisttable);
     if (dctx->lenlentable)
 	zlib_freetable(&dctx->lenlentable);
@@ -996,7 +999,7 @@ void zlib_decompress_cleanup(void *handle)
 }
 
 static int zlib_huflookup(unsigned long *bitsp, int *nbitsp,
-		   struct zlib_table *tab)
+			  struct zlib_table *tab)
 {
     unsigned long bits = *bitsp;
     int nbits = *nbitsp;
@@ -1004,7 +1007,7 @@ static int zlib_huflookup(unsigned long *bitsp, int *nbitsp,
 	struct zlib_tableentry *ent;
 	ent = &tab->table[bits & tab->mask];
 	if (ent->nbits > nbits)
-	    return -1;		       /* not enough data */
+	    return -1;		/* not enough data */
 	bits >>= ent->nbits;
 	nbits -= ent->nbits;
 	if (ent->code == -1)
@@ -1043,7 +1046,8 @@ static void zlib_emit_char(struct zlib_decompress_ctx *dctx, int c)
 int zlib_decompress_block(void *handle, unsigned char *block, int len,
 			  unsigned char **outblock, int *outlen)
 {
-    struct zlib_decompress_ctx *dctx = (struct zlib_decompress_ctx *)handle;
+    struct zlib_decompress_ctx *dctx =
+	(struct zlib_decompress_ctx *) handle;
     const coderecord *rec;
     int code, blktype, rep, dist, nlen, header;
     static const unsigned char lenlenmap[] = {
@@ -1061,49 +1065,48 @@ int zlib_decompress_block(void *handle, unsigned char *block, int len,
 	    len--;
 	}
 	switch (dctx->state) {
-	  case START:
+	case START:
 	    /* Expect 16-bit zlib header. */
 	    if (dctx->nbits < 16)
-		goto finished;	       /* done all we can */
+		goto finished;	/* done all we can */
 
-            /*
-             * The header is stored as a big-endian 16-bit integer,
-             * in contrast to the general little-endian policy in
-             * the rest of the format :-(
-             */
-            header = (((dctx->bits & 0xFF00) >> 8) |
-                      ((dctx->bits & 0x00FF) << 8));
-            EATBITS(16);
+	    /*
+	     * The header is stored as a big-endian 16-bit integer,
+	     * in contrast to the general little-endian policy in
+	     * the rest of the format :-(
+	     */
+	    header = (((dctx->bits & 0xFF00) >> 8) |
+		      ((dctx->bits & 0x00FF) << 8));
+	    EATBITS(16);
 
-            /*
-             * Check the header:
-             *
-             *  - bits 8-11 should be 1000 (Deflate/RFC1951)
-             *  - bits 12-15 should be at most 0111 (window size)
-             *  - bit 5 should be zero (no dictionary present)
-             *  - we don't care about bits 6-7 (compression rate)
-             *  - bits 0-4 should be set up to make the whole thing
-             *    a multiple of 31 (checksum).
-             */
-            if ((header & 0x0F00) != 0x0800 ||
-                (header & 0xF000) >  0x7000 ||
-                (header & 0x0020) != 0x0000 ||
-                (header % 31) != 0)
-                goto decode_error;
+	    /*
+	     * Check the header:
+	     *
+	     *  - bits 8-11 should be 1000 (Deflate/RFC1951)
+	     *  - bits 12-15 should be at most 0111 (window size)
+	     *  - bit 5 should be zero (no dictionary present)
+	     *  - we don't care about bits 6-7 (compression rate)
+	     *  - bits 0-4 should be set up to make the whole thing
+	     *    a multiple of 31 (checksum).
+	     */
+	    if ((header & 0x0F00) != 0x0800 ||
+		(header & 0xF000) > 0x7000 ||
+		(header & 0x0020) != 0x0000 || (header % 31) != 0)
+		goto decode_error;
 
 	    dctx->state = OUTSIDEBLK;
 	    break;
-	  case OUTSIDEBLK:
+	case OUTSIDEBLK:
 	    /* Expect 3-bit block header. */
 	    if (dctx->nbits < 3)
-		goto finished;	       /* done all we can */
+		goto finished;	/* done all we can */
 	    EATBITS(1);
 	    blktype = dctx->bits & 3;
 	    EATBITS(2);
 	    if (blktype == 0) {
 		int to_eat = dctx->nbits & 7;
 		dctx->state = UNCOMP_LEN;
-		EATBITS(to_eat);       /* align to byte boundary */
+		EATBITS(to_eat);	/* align to byte boundary */
 	    } else if (blktype == 1) {
 		dctx->currlentable = dctx->staticlentable;
 		dctx->currdisttable = dctx->staticdisttable;
@@ -1112,13 +1115,13 @@ int zlib_decompress_block(void *handle, unsigned char *block, int len,
 		dctx->state = TREES_HDR;
 	    }
 	    break;
-	  case TREES_HDR:
+	case TREES_HDR:
 	    /*
 	     * Dynamic block header. Five bits of HLIT, five of
 	     * HDIST, four of HCLEN.
 	     */
 	    if (dctx->nbits < 5 + 5 + 4)
-		goto finished;	       /* done all we can */
+		goto finished;	/* done all we can */
 	    dctx->hlit = 257 + (dctx->bits & 31);
 	    EATBITS(5);
 	    dctx->hdist = 1 + (dctx->bits & 31);
@@ -1129,7 +1132,7 @@ int zlib_decompress_block(void *handle, unsigned char *block, int len,
 	    dctx->state = TREES_LENLEN;
 	    memset(dctx->lenlen, 0, sizeof(dctx->lenlen));
 	    break;
-	  case TREES_LENLEN:
+	case TREES_LENLEN:
 	    if (dctx->nbits < 3)
 		goto finished;
 	    while (dctx->lenptr < dctx->hclen && dctx->nbits >= 3) {
@@ -1143,18 +1146,20 @@ int zlib_decompress_block(void *handle, unsigned char *block, int len,
 		dctx->lenptr = 0;
 	    }
 	    break;
-	  case TREES_LEN:
+	case TREES_LEN:
 	    if (dctx->lenptr >= dctx->hlit + dctx->hdist) {
-		dctx->currlentable = zlib_mktable(dctx->lengths, dctx->hlit);
-		dctx->currdisttable = zlib_mktable(dctx->lengths + dctx->hlit,
-						  dctx->hdist);
+		dctx->currlentable =
+		    zlib_mktable(dctx->lengths, dctx->hlit);
+		dctx->currdisttable =
+		    zlib_mktable(dctx->lengths + dctx->hlit, dctx->hdist);
 		zlib_freetable(&dctx->lenlentable);
 		dctx->lenlentable = NULL;
 		dctx->state = INBLK;
 		break;
 	    }
 	    code =
-		zlib_huflookup(&dctx->bits, &dctx->nbits, dctx->lenlentable);
+		zlib_huflookup(&dctx->bits, &dctx->nbits,
+			       dctx->lenlentable);
 	    if (code == -1)
 		goto finished;
 	    if (code == -2)
@@ -1165,11 +1170,11 @@ int zlib_decompress_block(void *handle, unsigned char *block, int len,
 		dctx->lenextrabits = (code == 16 ? 2 : code == 17 ? 3 : 7);
 		dctx->lenaddon = (code == 18 ? 11 : 3);
 		dctx->lenrep = (code == 16 && dctx->lenptr > 0 ?
-			       dctx->lengths[dctx->lenptr - 1] : 0);
+				dctx->lengths[dctx->lenptr - 1] : 0);
 		dctx->state = TREES_LENREP;
 	    }
 	    break;
-	  case TREES_LENREP:
+	case TREES_LENREP:
 	    if (dctx->nbits < dctx->lenextrabits)
 		goto finished;
 	    rep =
@@ -1183,9 +1188,10 @@ int zlib_decompress_block(void *handle, unsigned char *block, int len,
 	    }
 	    dctx->state = TREES_LEN;
 	    break;
-	  case INBLK:
+	case INBLK:
 	    code =
-		zlib_huflookup(&dctx->bits, &dctx->nbits, dctx->currlentable);
+		zlib_huflookup(&dctx->bits, &dctx->nbits,
+			       dctx->currlentable);
 	    if (code == -1)
 		goto finished;
 	    if (code == -2)
@@ -1202,12 +1208,12 @@ int zlib_decompress_block(void *handle, unsigned char *block, int len,
 		    zlib_freetable(&dctx->currdisttable);
 		    dctx->currdisttable = NULL;
 		}
-	    } else if (code < 286) {   /* static tree can give >285; ignore */
+	    } else if (code < 286) {	/* static tree can give >285; ignore */
 		dctx->state = GOTLENSYM;
 		dctx->sym = code;
 	    }
 	    break;
-	  case GOTLENSYM:
+	case GOTLENSYM:
 	    rec = &lencodes[dctx->sym - 257];
 	    if (dctx->nbits < rec->extrabits)
 		goto finished;
@@ -1216,7 +1222,7 @@ int zlib_decompress_block(void *handle, unsigned char *block, int len,
 	    EATBITS(rec->extrabits);
 	    dctx->state = GOTLEN;
 	    break;
-	  case GOTLEN:
+	case GOTLEN:
 	    code =
 		zlib_huflookup(&dctx->bits, &dctx->nbits,
 			       dctx->currdisttable);
@@ -1227,7 +1233,7 @@ int zlib_decompress_block(void *handle, unsigned char *block, int len,
 	    dctx->state = GOTDISTSYM;
 	    dctx->sym = code;
 	    break;
-	  case GOTDISTSYM:
+	case GOTDISTSYM:
 	    rec = &distcodes[dctx->sym];
 	    if (dctx->nbits < rec->extrabits)
 		goto finished;
@@ -1238,7 +1244,7 @@ int zlib_decompress_block(void *handle, unsigned char *block, int len,
 		zlib_emit_char(dctx, dctx->window[(dctx->winpos - dist) &
 						  (WINSIZE - 1)]);
 	    break;
-	  case UNCOMP_LEN:
+	case UNCOMP_LEN:
 	    /*
 	     * Uncompressed block. We expect to see a 16-bit LEN.
 	     */
@@ -1248,7 +1254,7 @@ int zlib_decompress_block(void *handle, unsigned char *block, int len,
 	    EATBITS(16);
 	    dctx->state = UNCOMP_NLEN;
 	    break;
-	  case UNCOMP_NLEN:
+	case UNCOMP_NLEN:
 	    /*
 	     * Uncompressed block. We expect to see a 16-bit NLEN,
 	     * which should be the one's complement of the previous
@@ -1263,7 +1269,7 @@ int zlib_decompress_block(void *handle, unsigned char *block, int len,
 	    else
 		dctx->state = UNCOMP_DATA;
 	    break;
-	  case UNCOMP_DATA:
+	case UNCOMP_DATA:
 	    if (dctx->nbits < 8)
 		goto finished;
 	    zlib_emit_char(dctx, dctx->bits & 0xFF);
@@ -1301,44 +1307,44 @@ int main(int argc, char **argv)
     FILE *fp;
 
     while (--argc) {
-        char *p = *++argv;
+	char *p = *++argv;
 
-        if (p[0] == '-' && opts) {
-            if (!strcmp(p, "-d"))
-                noheader = TRUE;
-            else if (!strcmp(p, "--"))
-                opts = FALSE;          /* next thing is filename */
-            else {
-                fprintf(stderr, "unknown command line option '%s'\n", p);
-                return 1;
-            }
-        } else if (!filename) {
-            filename = p;
-        } else {
-            fprintf(stderr, "can only handle one filename\n");
-            return 1;
-        }
+	if (p[0] == '-' && opts) {
+	    if (!strcmp(p, "-d"))
+		noheader = TRUE;
+	    else if (!strcmp(p, "--"))
+		opts = FALSE;	/* next thing is filename */
+	    else {
+		fprintf(stderr, "unknown command line option '%s'\n", p);
+		return 1;
+	    }
+	} else if (!filename) {
+	    filename = p;
+	} else {
+	    fprintf(stderr, "can only handle one filename\n");
+	    return 1;
+	}
     }
 
     handle = zlib_decompress_init();
 
     if (noheader) {
-        /*
-         * Provide missing zlib header if -d was specified.
-         */
-        zlib_decompress_block(handle, "\x78\x9C", 2, &outbuf, &outlen);
-        assert(outlen == 0);
+	/*
+	 * Provide missing zlib header if -d was specified.
+	 */
+	zlib_decompress_block(handle, "\x78\x9C", 2, &outbuf, &outlen);
+	assert(outlen == 0);
     }
 
     if (filename)
-        fp = fopen(filename, "rb");
+	fp = fopen(filename, "rb");
     else
-        fp = stdin;
+	fp = stdin;
 
     if (!fp) {
-        assert(filename);
-        fprintf(stderr, "unable to open '%s'\n", filename);
-        return 1;
+	assert(filename);
+	fprintf(stderr, "unable to open '%s'\n", filename);
+	return 1;
     }
 
     while (1) {
@@ -1346,20 +1352,20 @@ int main(int argc, char **argv)
 	if (ret <= 0)
 	    break;
 	zlib_decompress_block(handle, buf, ret, &outbuf, &outlen);
-        if (outbuf) {
-            if (outlen)
-                fwrite(outbuf, 1, outlen, stdout);
-            sfree(outbuf);
-        } else {
-            fprintf(stderr, "decoding error\n");
-            return 1;
-        }
+	if (outbuf) {
+	    if (outlen)
+		fwrite(outbuf, 1, outlen, stdout);
+	    sfree(outbuf);
+	} else {
+	    fprintf(stderr, "decoding error\n");
+	    return 1;
+	}
     }
 
     zlib_decompress_cleanup(handle);
 
     if (filename)
-        fclose(fp);
+	fclose(fp);
 
     return 0;
 }

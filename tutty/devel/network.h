@@ -46,19 +46,19 @@ struct socket_function_table {
 };
 
 struct plug_function_table {
-    void (*log)(Plug p, int type, SockAddr addr, int port,
-		const char *error_msg, int error_code);
+    void (*log) (Plug p, int type, SockAddr addr, int port,
+		 const char *error_msg, int error_code);
     /*
      * Passes the client progress reports on the process of setting
      * up the connection.
      * 
-     * 	- type==0 means we are about to try to connect to address
-     * 	  `addr' (error_msg and error_code are ignored)
-     * 	- type==1 means we have failed to connect to address `addr'
-     * 	  (error_msg and error_code are supplied). This is not a
-     * 	  fatal error - we may well have other candidate addresses
-     * 	  to fall back to. When it _is_ fatal, the closing()
-     * 	  function will be called.
+     *  - type==0 means we are about to try to connect to address
+     *    `addr' (error_msg and error_code are ignored)
+     *  - type==1 means we have failed to connect to address `addr'
+     *    (error_msg and error_code are supplied). This is not a
+     *    fatal error - we may well have other candidate addresses
+     *    to fall back to. When it _is_ fatal, the closing()
+     *    function will be called.
      */
     int (*closing)
      (Plug p, const char *error_msg, int error_code, int calling_back);
@@ -82,7 +82,7 @@ struct plug_function_table {
      * on a socket is cleared or partially cleared. The new backlog
      * size is passed in the `bufsize' parameter.
      */
-    int (*accepting)(Plug p, OSSocket sock);
+    int (*accepting) (Plug p, OSSocket sock);
     /*
      * returns 0 if the host at address addr is a valid host for connecting or error
      */
@@ -94,25 +94,27 @@ struct plug_function_table {
 Socket new_connection(SockAddr addr, char *hostname,
 		      int port, int privport,
 		      int oobinline, int nodelay, int keepalive,
-		      Plug plug, const Config *cfg);
-Socket new_listener(char *srcaddr, int port, Plug plug, int local_host_only,
-		    const Config *cfg, int addressfamily);
+		      Plug plug, const Config * cfg);
+Socket new_listener(char *srcaddr, int port, Plug plug,
+		    int local_host_only, const Config * cfg,
+		    int addressfamily);
 SockAddr name_lookup(char *host, int port, char **canonicalname,
-		     const Config *cfg, int addressfamily);
+		     const Config * cfg, int addressfamily);
 
 /* platform-dependent callback from new_connection() */
 /* (same caveat about addr as new_connection()) */
 Socket platform_new_connection(SockAddr addr, char *hostname,
 			       int port, int privport,
 			       int oobinline, int nodelay, int keepalive,
-			       Plug plug, const Config *cfg);
+			       Plug plug, const Config * cfg);
 
 /* socket functions */
 
-void sk_init(void);		       /* called once at program startup */
-void sk_cleanup(void);		       /* called just before program exit */
+void sk_init(void);		/* called once at program startup */
+void sk_cleanup(void);		/* called just before program exit */
 
-SockAddr sk_namelookup(const char *host, char **canonicalname, int address_family);
+SockAddr sk_namelookup(const char *host, char **canonicalname,
+		       int address_family);
 SockAddr sk_nonamelookup(const char *host);
 void sk_getaddr(SockAddr addr, char *buf, int buflen);
 int sk_hostname_is_local(char *name);
@@ -126,7 +128,8 @@ void sk_addr_free(SockAddr addr);
 Socket sk_new(SockAddr addr, int port, int privport, int oobinline,
 	      int nodelay, int keepalive, Plug p);
 
-Socket sk_newlistener(char *srcaddr, int port, Plug plug, int local_host_only, int address_family);
+Socket sk_newlistener(char *srcaddr, int port, Plug plug,
+		      int local_host_only, int address_family);
 
 Socket sk_register(OSSocket sock, Plug plug);
 
@@ -232,11 +235,8 @@ SSL_Client_Socket sk_ssl_client_over(Socket s,	/* pre-existing (tcp) connection 
 
 #define sk_renegotiate(s) (((*s)->renegotiate) (s))
 
-#ifdef SERIAL_BACKEND
 /********** Serial stuff **********/
 
 void serial_getportnames(char *portnames);
-
-#endif /* SERIAL_BACKEND */
 
 #endif

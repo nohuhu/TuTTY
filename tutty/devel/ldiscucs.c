@@ -15,7 +15,7 @@
 void lpage_send(void *handle,
 		int codepage, char *buf, int len, int interactive)
 {
-    Ldisc ldisc = (Ldisc)handle;
+    Ldisc ldisc = (Ldisc) handle;
     wchar_t *widebuffer = 0;
     int widesize = 0;
     int wclen;
@@ -36,8 +36,8 @@ void lpage_send(void *handle,
 
 void luni_send(void *handle, wchar_t * widebuf, int len, int interactive)
 {
-    Ldisc ldisc = (Ldisc)handle;
-    int ratio = (in_utf(ldisc->term))?3:1;
+    Ldisc ldisc = (Ldisc) handle;
+    int ratio = (in_utf(ldisc->term)) ? 3 : 1;
     char *linebuffer;
     int linesize;
     int i;
@@ -51,7 +51,8 @@ void luni_send(void *handle, wchar_t * widebuf, int len, int interactive)
 	for (p = linebuffer, i = 0; i < len; i++) {
 	    wchar_t ch = widebuf[i];
 	    /* We only deal with 16-bit wide chars */
-	    if ((ch&0xF800) == 0xD800) ch = '.';
+	    if ((ch & 0xF800) == 0xD800)
+		ch = '.';
 
 	    if (ch < 0x80) {
 		*p++ = (char) (ch);
@@ -67,7 +68,8 @@ void luni_send(void *handle, wchar_t * widebuf, int len, int interactive)
     } else {
 	int rv;
 	rv = wc_to_mb(ldisc->term->ucsdata->line_codepage, 0, widebuf, len,
-		      linebuffer, linesize, NULL, NULL, ldisc->term->ucsdata);
+		      linebuffer, linesize, NULL, NULL,
+		      ldisc->term->ucsdata);
 	if (rv >= 0)
 	    p = linebuffer + rv;
 	else

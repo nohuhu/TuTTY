@@ -33,10 +33,10 @@
 
 #include "putty.h"
 
-static const char *null_init(void *, void **, Config *, char *, int, char **,
-			     int, int);
-static const char *loop_init(void *, void **, Config *, char *, int, char **,
-			     int, int);
+static const char *null_init(void *, void **, Config *, char *, int,
+			     char **, int, int);
+static const char *loop_init(void *, void **, Config *, char *, int,
+			     char **, int, int);
 static void null_free(void *);
 static void loop_free(void *);
 static void null_reconfig(void *, Config *);
@@ -56,15 +56,19 @@ static void null_unthrottle(void *, int);
 static int null_cfg_info(void *);
 
 Backend null_backend = {
-    null_init, null_free, null_reconfig, null_send, null_sendbuffer, null_size,
-    null_special, null_get_specials, null_socket, null_exitcode, null_sendok,
+    null_init, null_free, null_reconfig, null_send, null_sendbuffer,
+	null_size,
+    null_special, null_get_specials, null_socket, null_exitcode,
+	null_sendok,
     null_ldisc, null_provide_ldisc, null_provide_logctx, null_unthrottle,
     null_cfg_info, 0
 };
 
 Backend loop_backend = {
-    loop_init, loop_free, null_reconfig, loop_send, null_sendbuffer, null_size,
-    null_special, null_get_specials, null_socket, null_exitcode, null_sendok,
+    loop_init, loop_free, null_reconfig, loop_send, null_sendbuffer,
+	null_size,
+    null_special, null_get_specials, null_socket, null_exitcode,
+	null_sendok,
     null_ldisc, null_provide_ldisc, null_provide_logctx, null_unthrottle,
     null_cfg_info, 0
 };
@@ -74,15 +78,17 @@ struct loop_state {
 };
 
 static const char *null_init(void *frontend_handle, void **backend_handle,
-			     Config *cfg, char *host, int port,
-			     char **realhost, int nodelay, int keepalive) {
+			     Config * cfg, char *host, int port,
+			     char **realhost, int nodelay, int keepalive)
+{
 
     return NULL;
 }
 
 static const char *loop_init(void *frontend_handle, void **backend_handle,
-			     Config *cfg, char *host, int port,
-			     char **realhost, int nodelay, int keepalive) {
+			     Config * cfg, char *host, int port,
+			     char **realhost, int nodelay, int keepalive)
+{
     struct loop_state *st = snew(struct loop_state);
 
     st->term = frontend_handle;
@@ -101,68 +107,82 @@ static void loop_free(void *handle)
     sfree(handle);
 }
 
-static void null_reconfig(void *handle, Config *cfg) {
+static void null_reconfig(void *handle, Config * cfg)
+{
 
 }
 
-static int null_send(void *handle, char *buf, int len) {
+static int null_send(void *handle, char *buf, int len)
+{
 
     return 0;
 }
 
-static int loop_send(void *handle, char *buf, int len) {
+static int loop_send(void *handle, char *buf, int len)
+{
     struct loop_state *st = handle;
 
     return from_backend(st->term, 0, buf, len);
 }
 
-static int null_sendbuffer(void *handle) {
+static int null_sendbuffer(void *handle)
+{
 
     return 0;
 }
 
-static void null_size(void *handle, int width, int height) {
+static void null_size(void *handle, int width, int height)
+{
 
 }
 
-static void null_special(void *handle, Telnet_Special code) {
+static void null_special(void *handle, Telnet_Special code)
+{
 
 }
 
-static const struct telnet_special *null_get_specials (void *handle) {
+static const struct telnet_special *null_get_specials(void *handle)
+{
 
     return NULL;
 }
 
-static Socket null_socket(void *handle) {
+static Socket null_socket(void *handle)
+{
 
     return NULL;
 }
 
-static int null_exitcode(void *handle) {
+static int null_exitcode(void *handle)
+{
 
     return 0;
 }
 
-static int null_sendok(void *handle) {
+static int null_sendok(void *handle)
+{
 
     return 1;
 }
 
-static void null_unthrottle(void *handle, int backlog) {
+static void null_unthrottle(void *handle, int backlog)
+{
 
 }
 
-static int null_ldisc(void *handle, int option) {
+static int null_ldisc(void *handle, int option)
+{
 
     return 0;
 }
 
-static void null_provide_ldisc (void *handle, void *ldisc) {
+static void null_provide_ldisc(void *handle, void *ldisc)
+{
 
 }
 
-static void null_provide_logctx(void *handle, void *logctx) {
+static void null_provide_logctx(void *handle, void *logctx)
+{
 
 }
 

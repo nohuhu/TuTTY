@@ -15,10 +15,10 @@ static LRESULT CALLBACK SizeTipWndProc(HWND hWnd, UINT nMsg,
 {
 
     switch (nMsg) {
-      case WM_ERASEBKGND:
+    case WM_ERASEBKGND:
 	return TRUE;
 
-      case WM_PAINT:
+    case WM_PAINT:
 	{
 	    HBRUSH hbr;
 	    HGDIOBJ holdbr;
@@ -57,15 +57,15 @@ static LRESULT CALLBACK SizeTipWndProc(HWND hWnd, UINT nMsg,
 	}
 	return 0;
 
-      case WM_NCHITTEST:
+    case WM_NCHITTEST:
 	return HTTRANSPARENT;
 
-      case WM_DESTROY:
+    case WM_DESTROY:
 	DeleteObject(tip_font);
 	tip_font = NULL;
 	break;
 
-      case WM_SETTEXT:
+    case WM_SETTEXT:
 	{
 	    LPCTSTR str = (LPCTSTR) lParam;
 	    SIZE sz;

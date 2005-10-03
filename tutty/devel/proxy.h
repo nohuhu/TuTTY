@@ -13,13 +13,13 @@
 #define PROXY_ERROR_GENERAL 8000
 #define PROXY_ERROR_UNEXPECTED 8001
 
-typedef struct Socket_proxy_tag * Proxy_Socket;
+typedef struct Socket_proxy_tag *Proxy_Socket;
 
 struct Socket_proxy_tag {
     const struct socket_function_table *fn;
     /* the above variable absolutely *must* be the first in this structure */
 
-    char * error;
+    char *error;
 
     Socket sub_socket;
     Plug plug;
@@ -34,15 +34,15 @@ struct Socket_proxy_tag {
 #define PROXY_STATE_NEW    -1
 #define PROXY_STATE_ACTIVE  0
 
-    int state; /* proxy states greater than 0 are implementation
-		* dependent, but represent various stages/states
-		* of the initialization/setup/negotiation with the
-		* proxy server.
-		*/
-    int freeze; /* should we freeze the underlying socket when
-		 * we are done with the proxy negotiation? this
-		 * simply caches the value of sk_set_frozen calls.
-		 */
+    int state;			/* proxy states greater than 0 are implementation
+				 * dependent, but represent various stages/states
+				 * of the initialization/setup/negotiation with the
+				 * proxy server.
+				 */
+    int freeze;			/* should we freeze the underlying socket when
+				 * we are done with the proxy negotiation? this
+				 * simply caches the value of sk_set_frozen calls.
+				 */
 
 #define PROXY_CHANGE_NEW      -1
 #define PROXY_CHANGE_CLOSING   0
@@ -57,7 +57,7 @@ struct Socket_proxy_tag {
      * and further the proxy negotiation process.
      */
 
-    int (*negotiate) (Proxy_Socket /* this */, int /* change type */);
+    int (*negotiate) (Proxy_Socket /* this */ , int /* change type */ );
 
     /* current arguments of plug handlers
      * (for use by proxy's negotiate function)
@@ -89,7 +89,7 @@ struct Socket_proxy_tag {
     int chap_current_datalen;
 };
 
-typedef struct Plug_proxy_tag * Proxy_Plug;
+typedef struct Plug_proxy_tag *Proxy_Plug;
 
 struct Plug_proxy_tag {
     const struct plug_function_table *fn;
@@ -99,25 +99,25 @@ struct Plug_proxy_tag {
 
 };
 
-extern void proxy_activate (Proxy_Socket);
+extern void proxy_activate(Proxy_Socket);
 
-extern int proxy_http_negotiate (Proxy_Socket, int);
-extern int proxy_telnet_negotiate (Proxy_Socket, int);
-extern int proxy_socks4_negotiate (Proxy_Socket, int);
-extern int proxy_socks5_negotiate (Proxy_Socket, int);
+extern int proxy_http_negotiate(Proxy_Socket, int);
+extern int proxy_telnet_negotiate(Proxy_Socket, int);
+extern int proxy_socks4_negotiate(Proxy_Socket, int);
+extern int proxy_socks5_negotiate(Proxy_Socket, int);
 
 /*
  * This may be reused by local-command proxies on individual
  * platforms.
  */
-char *format_telnet_command(SockAddr addr, int port, const Config *cfg);
+char *format_telnet_command(SockAddr addr, int port, const Config * cfg);
 
 /*
  * These are implemented in cproxy.c or nocproxy.c, depending on
  * whether encrypted proxy authentication is available.
  */
 extern void proxy_socks5_offerencryptedauth(char *command, int *len);
-extern int proxy_socks5_handlechap (Proxy_Socket p);
+extern int proxy_socks5_handlechap(Proxy_Socket p);
 extern int proxy_socks5_selectchap(Proxy_Socket p);
 
 #endif

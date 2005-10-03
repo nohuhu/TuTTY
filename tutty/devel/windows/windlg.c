@@ -10,6 +10,7 @@
 #include "win_res.h"
 #include "storage.h"
 #include "dialog.h"
+#include "winmenu.h"
 
 #include <commctrl.h>
 #include <commdlg.h>
@@ -28,15 +29,11 @@
  * to need more than one config box per process we could always
  * shift them to a per-config-box structure stored in GWL_USERDATA.
  */
-#ifdef SERIAL_BACKEND
 /*
  * dwalin's update: I needed this variable to be exportable, so
  * it is no longer static.
  */
 struct controlbox *ctrlbox;
-#else
-static struct controlbox *ctrlbox;
-#endif /* SERIAL_BACKEND */
 /*
  * ctrls_base holds the OK and Cancel buttons: the controls which
  * are present in all dialog panels. ctrls_panel holds the ones
@@ -48,9 +45,9 @@ static struct dlgparam dp;
 static char **events = NULL;
 static int nevents = 0, negsize = 0;
 
-extern Config cfg;		       /* defined in window.c */
+extern Config cfg;		/* defined in window.c */
 
-struct sesslist sesslist;	       /* exported to window.c */
+struct sesslist sesslist;	/* exported to window.c */
 
 #define PRINTER_DISABLED_STRING "None (printing disabled)"
 
@@ -78,7 +75,7 @@ static int CALLBACK LogProc(HWND hwnd, UINT msg,
     int i;
 
     switch (msg) {
-      case WM_INITDIALOG:
+    case WM_INITDIALOG:
 	{
 	    char *str = dupprintf("%s Event Log", appname);
 	    SetWindowText(hwnd, str);
@@ -93,22 +90,22 @@ static int CALLBACK LogProc(HWND hwnd, UINT msg,
 	    SendDlgItemMessage(hwnd, IDN_LIST, LB_ADDSTRING,
 			       0, (LPARAM) events[i]);
 	return 1;
-      case WM_COMMAND:
+    case WM_COMMAND:
 	switch (LOWORD(wParam)) {
-	  case IDOK:
-	  case IDCANCEL:
+	case IDOK:
+	case IDCANCEL:
 	    logbox = NULL;
 	    SetActiveWindow(GetParent(hwnd));
 	    DestroyWindow(hwnd);
 	    return 0;
-	  case IDN_COPY:
+	case IDN_COPY:
 	    if (HIWORD(wParam) == BN_CLICKED ||
 		HIWORD(wParam) == BN_DOUBLECLICKED) {
 		int selcount;
 		int *selitems;
 		selcount = SendDlgItemMessage(hwnd, IDN_LIST,
 					      LB_GETSELCOUNT, 0, 0);
-		if (selcount == 0) {   /* don't even try to copy zero items */
+		if (selcount == 0) {	/* don't even try to copy zero items */
 		    MessageBeep(0);
 		    break;
 		}
@@ -124,7 +121,7 @@ static int CALLBACK LogProc(HWND hwnd, UINT msg,
 		    char *clipdata;
 		    static unsigned char sel_nl[] = SEL_NL;
 
-		    if (count == 0) {  /* can't copy zero stuff */
+		    if (count == 0) {	/* can't copy zero stuff */
 			MessageBeep(0);
 			break;
 		    }
@@ -158,7 +155,7 @@ static int CALLBACK LogProc(HWND hwnd, UINT msg,
 	    return 0;
 	}
 	return 0;
-      case WM_CLOSE:
+    case WM_CLOSE:
 	logbox = NULL;
 	SetActiveWindow(GetParent(hwnd));
 	DestroyWindow(hwnd);
@@ -171,22 +168,22 @@ static int CALLBACK LicenceProc(HWND hwnd, UINT msg,
 				WPARAM wParam, LPARAM lParam)
 {
     switch (msg) {
-      case WM_INITDIALOG:
+    case WM_INITDIALOG:
 	{
 	    char *str = dupprintf("%s Licence", appname);
 	    SetWindowText(hwnd, str);
 	    sfree(str);
 	}
 	return 1;
-      case WM_COMMAND:
+    case WM_COMMAND:
 	switch (LOWORD(wParam)) {
-	  case IDOK:
-	  case IDCANCEL:
+	case IDOK:
+	case IDCANCEL:
 	    EndDialog(hwnd, 1);
 	    return 0;
 	}
 	return 0;
-      case WM_CLOSE:
+    case WM_CLOSE:
 	EndDialog(hwnd, 1);
 	return 0;
     }
@@ -199,20 +196,20 @@ static int CALLBACK AboutProc(HWND hwnd, UINT msg,
     char *str;
 
     switch (msg) {
-      case WM_INITDIALOG:
+    case WM_INITDIALOG:
 	str = dupprintf("About %s", appname);
 	SetWindowText(hwnd, str);
 	sfree(str);
 	SetDlgItemText(hwnd, IDA_TEXT1, appname);
 	SetDlgItemText(hwnd, IDA_VERSION, ver);
 	return 1;
-      case WM_COMMAND:
+    case WM_COMMAND:
 	switch (LOWORD(wParam)) {
-	  case IDOK:
-	  case IDCANCEL:
+	case IDOK:
+	case IDCANCEL:
 	    EndDialog(hwnd, TRUE);
 	    return 0;
-	  case IDA_LICENCE:
+	case IDA_LICENCE:
 	    EnableWindow(hwnd, 0);
 	    DialogBox(hinst, MAKEINTRESOURCE(IDD_LICENCEBOX),
 		      hwnd, LicenceProc);
@@ -220,15 +217,15 @@ static int CALLBACK AboutProc(HWND hwnd, UINT msg,
 	    SetActiveWindow(hwnd);
 	    return 0;
 
-	  case IDA_WEB:
+	case IDA_WEB:
 	    /* Load web browser */
 	    ShellExecute(hwnd, "open",
-			 "http://www.chiark.greenend.org.uk/~sgtatham/putty/",
+			 "http://putty.dwalin.ru/",
 			 0, 0, SW_SHOWDEFAULT);
 	    return 0;
 	}
 	return 0;
-      case WM_CLOSE:
+    case WM_CLOSE:
 	EndDialog(hwnd, TRUE);
 	return 0;
     }
@@ -237,8 +234,7 @@ static int CALLBACK AboutProc(HWND hwnd, UINT msg,
 
 static int SaneDialogBox(HINSTANCE hinst,
 			 LPCTSTR tmpl,
-			 HWND hwndparent,
-			 DLGPROC lpDialogFunc)
+			 HWND hwndparent, DLGPROC lpDialogFunc)
 {
     WNDCLASS wc;
     HWND hwnd;
@@ -254,18 +250,18 @@ static int SaneDialogBox(HINSTANCE hinst,
     wc.hInstance = hinst;
     wc.hIcon = NULL;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH) (COLOR_BACKGROUND +1);
+    wc.hbrBackground = (HBRUSH) (COLOR_BACKGROUND + 1);
     wc.lpszMenuName = NULL;
     wc.lpszClassName = "PuTTYConfigBox";
     RegisterClass(&wc);
 
     hwnd = CreateDialog(hinst, tmpl, hwndparent, lpDialogFunc);
 
-    SetWindowLong(hwnd, BOXFLAGS, 0); /* flags */
-    SetWindowLong(hwnd, BOXRESULT, 0); /* result from SaneEndDialog */
+    SetWindowLong(hwnd, BOXFLAGS, 0);	/* flags */
+    SetWindowLong(hwnd, BOXRESULT, 0);	/* result from SaneEndDialog */
 
-    while ((gm=GetMessage(&msg, NULL, 0, 0)) > 0) {
-	flags=GetWindowLong(hwnd, BOXFLAGS);
+    while ((gm = GetMessage(&msg, NULL, 0, 0)) > 0) {
+	flags = GetWindowLong(hwnd, BOXFLAGS);
 	if (!(flags & DF_END) && !IsDialogMessage(hwnd, &msg))
 	    DispatchMessage(&msg);
 	if (flags & DF_END)
@@ -273,9 +269,9 @@ static int SaneDialogBox(HINSTANCE hinst,
     }
 
     if (gm == 0)
-        PostQuitMessage(msg.wParam); /* We got a WM_QUIT, pass it on */
+	PostQuitMessage(msg.wParam);	/* We got a WM_QUIT, pass it on */
 
-    ret=GetWindowLong(hwnd, BOXRESULT);
+    ret = GetWindowLong(hwnd, BOXRESULT);
     DestroyWindow(hwnd);
     return ret;
 }
@@ -323,8 +319,8 @@ static HTREEITEM treeview_insert(struct treeview_faff *faff,
 #endif
     ins.INSITEM.mask = TVIF_TEXT | TVIF_PARAM;
     ins.INSITEM.pszText = text;
-    ins.INSITEM.cchTextMax = strlen(text)+1;
-    ins.INSITEM.lParam = (LPARAM)path;
+    ins.INSITEM.cchTextMax = strlen(text) + 1;
+    ins.INSITEM.lParam = (LPARAM) path;
     newitem = TreeView_InsertItem(faff->treeview, &ins);
     if (level > 0)
 	TreeView_Expand(faff->treeview, faff->lastat[level - 1],
@@ -362,7 +358,7 @@ static void create_controls(HWND hwnd, char *path)
 	base_id = IDCX_PANELBASE;
     }
 
-    for (index=-1; (index = ctrl_find_path(ctrlbox, path, index)) >= 0 ;) {
+    for (index = -1; (index = ctrl_find_path(ctrlbox, path, index)) >= 0;) {
 	struct controlset *s = ctrlbox->ctrlsets[index];
 	winctrl_layout(&dp, wc, &cp, s, &base_id);
     }
@@ -379,28 +375,31 @@ static int CALLBACK GenericMainDlgProc(HWND hwnd, UINT msg,
     HWND hw, treeview;
     struct treeview_faff tvfaff;
     int ret;
+    static UINT iconx = 0, icony = 0, cxmenucheck = 0, cymenucheck = 0;
 
     switch (msg) {
-      case WM_INITDIALOG:
+    case WM_INITDIALOG:
 	dp.hwnd = hwnd;
-	create_controls(hwnd, "");     /* Open and Cancel buttons etc */
+	create_controls(hwnd, "");	/* Open and Cancel buttons etc */
 	SetWindowText(hwnd, dp.wintitle);
 	SetWindowLong(hwnd, GWL_USERDATA, 0);
-        if (help_path)
-            SetWindowLong(hwnd, GWL_EXSTYLE,
-                          GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_CONTEXTHELP);
-        else {
-            HWND item = GetDlgItem(hwnd, IDC_HELPBTN);
-            if (item)
-                DestroyWindow(item);
-        }
-        requested_help = FALSE;
+	if (help_path)
+	    SetWindowLong(hwnd, GWL_EXSTYLE,
+			  GetWindowLong(hwnd,
+					GWL_EXSTYLE) | WS_EX_CONTEXTHELP);
+	else {
+	    HWND item = GetDlgItem(hwnd, IDC_HELPBTN);
+	    if (item)
+		DestroyWindow(item);
+	}
+	requested_help = FALSE;
 	SendMessage(hwnd, WM_SETICON, (WPARAM) ICON_BIG,
-		    (LPARAM) LoadIcon(hinst, MAKEINTRESOURCE(IDI_CFGICON)));
+		    (LPARAM) LoadIcon(hinst,
+				      MAKEINTRESOURCE(IDI_CFGICON)));
 	/*
 	 * Centre the window.
 	 */
-	{			       /* centre the window */
+	{			/* centre the window */
 	    RECT rs, rd;
 
 	    hw = GetDesktopWindow();
@@ -471,7 +470,7 @@ static int CALLBACK GenericMainDlgProc(HWND hwnd, UINT msg,
 		    continue;
 		j = path ? ctrl_path_compare(s->pathname, path) : 0;
 		if (j == INT_MAX)
-		    continue;	       /* same path, nothing to add to tree */
+		    continue;	/* same path, nothing to add to tree */
 
 		/*
 		 * We expect never to find an implicit path
@@ -487,9 +486,9 @@ static int CALLBACK GenericMainDlgProc(HWND hwnd, UINT msg,
 
 		c = strrchr(s->pathname, '/');
 		if (!c)
-			c = s->pathname;
+		    c = s->pathname;
 		else
-			c++;
+		    c++;
 
 		item = treeview_insert(&tvfaff, j, c, s->pathname);
 		if (!hfirst)
@@ -524,7 +523,7 @@ static int CALLBACK GenericMainDlgProc(HWND hwnd, UINT msg,
 
 	SetWindowLong(hwnd, GWL_USERDATA, 1);
 	return 0;
-      case WM_LBUTTONUP:
+    case WM_LBUTTONUP:
 	/*
 	 * Button release should trigger WM_OK if there was a
 	 * previous double click on the session list.
@@ -533,16 +532,16 @@ static int CALLBACK GenericMainDlgProc(HWND hwnd, UINT msg,
 	if (dp.ended)
 	    SaneEndDialog(hwnd, dp.endresult ? 1 : 0);
 	break;
-      case WM_NOTIFY:
+    case WM_NOTIFY:
 	if (LOWORD(wParam) == IDCX_TREEVIEW &&
 	    ((LPNMHDR) lParam)->code == TVN_SELCHANGED) {
 	    HTREEITEM i =
 		TreeView_GetSelection(((LPNMHDR) lParam)->hwndFrom);
 	    TVITEM item;
 	    char buffer[64];
- 
- 	    SendMessage (hwnd, WM_SETREDRAW, FALSE, 0);
- 
+
+	    SendMessage(hwnd, WM_SETREDRAW, FALSE, 0);
+
 	    item.hItem = i;
 	    item.pszText = buffer;
 	    item.cchTextMax = sizeof(buffer);
@@ -566,49 +565,56 @@ static int CALLBACK GenericMainDlgProc(HWND hwnd, UINT msg,
 		    sfree(c);
 		}
 	    }
-	    create_controls(hwnd, (char *)item.lParam);
+	    create_controls(hwnd, (char *) item.lParam);
 
-	    dlg_refresh(NULL, &dp);    /* set up control values */
- 
-	    SendMessage (hwnd, WM_SETREDRAW, TRUE, 0);
- 	    InvalidateRect (hwnd, NULL, TRUE);
+	    dlg_refresh(NULL, &dp);	/* set up control values */
+
+	    SendMessage(hwnd, WM_SETREDRAW, TRUE, 0);
+	    InvalidateRect(hwnd, NULL, TRUE);
 
 	    SetFocus(((LPNMHDR) lParam)->hwndFrom);	/* ensure focus stays */
 	    return 0;
 	}
 	break;
-      case WM_COMMAND:
-      case WM_DRAWITEM:
-      default:			       /* also handle drag list msg here */
+    case WM_MEASUREITEM:
+    case WM_COMMAND:
+    case WM_DRAWITEM:
+    default:			/* also handle drag list msg here */
 	/*
 	 * Only process WM_COMMAND once the dialog is fully formed.
 	 */
-	if (GetWindowLong(hwnd, GWL_USERDATA) == 1) {
+	/*
+	 * We need to process WM_MEASUREITEM for CTRL_SESSIONLISTBOX as soon as
+	 * it is created, so it is needed to bypass this condition just for this
+	 * message.
+	 */
+	if (msg == WM_MEASUREITEM ||
+	    GetWindowLong(hwnd, GWL_USERDATA) == 1) {
 	    ret = winctrl_handle_command(&dp, msg, wParam, lParam);
 	    if (dp.ended && GetCapture() != hwnd)
 		SaneEndDialog(hwnd, dp.endresult ? 1 : 0);
 	} else
 	    ret = 0;
 	return ret;
-      case WM_HELP:
-        if (help_path) {
+    case WM_HELP:
+	if (help_path) {
 	    if (winctrl_context_help(&dp, hwnd,
-				     ((LPHELPINFO)lParam)->iCtrlId))
-                requested_help = TRUE;
+				     ((LPHELPINFO) lParam)->iCtrlId))
+		requested_help = TRUE;
 	    else
-                MessageBeep(0);
-        }
-        break;
-      case WM_CLOSE:
-        if (requested_help) {
-            WinHelp(hwnd, help_path, HELP_QUIT, 0);
-            requested_help = FALSE;
-        }
+		MessageBeep(0);
+	}
+	break;
+    case WM_CLOSE:
+	if (requested_help) {
+	    WinHelp(hwnd, help_path, HELP_QUIT, 0);
+	    requested_help = FALSE;
+	}
 	SaneEndDialog(hwnd, 0);
 	return 0;
 
 	/* Grrr Explorer will maximize Dialogs! */
-      case WM_SIZE:
+    case WM_SIZE:
 	if (wParam == SIZE_MAXIMIZED)
 	    force_normal(hwnd);
 	return 0;
@@ -629,8 +635,7 @@ void show_help(HWND hwnd)
 {
     if (help_path) {
 	WinHelp(hwnd, help_path,
-		help_has_contents ? HELP_FINDER : HELP_CONTENTS,
-		0);
+		help_has_contents ? HELP_FINDER : HELP_CONTENTS, 0);
 	requested_help = TRUE;
     }
 }
@@ -667,13 +672,13 @@ int do_config(void)
     dp.wintitle = dupprintf("%s Configuration", appname);
     dp.errtitle = dupprintf("%s Error", appname);
     dp.data = &cfg;
-    dp.shortcuts['g'] = TRUE;	       /* the treeview: `Cate&gory' */
+    dp.shortcuts['g'] = TRUE;	/* the treeview: `Cate&gory' */
 
-    get_sesslist(&sesslist, TRUE);
+    get_sesslist(&sesslist, "", TRUE);
     ret =
 	SaneDialogBox(hinst, MAKEINTRESOURCE(IDD_MAINBOX), NULL,
-		  GenericMainDlgProc);
-    get_sesslist(&sesslist, FALSE);
+		      GenericMainDlgProc);
+    get_sesslist(&sesslist, "", FALSE);
 
     ctrl_free_box(ctrlbox);
     winctrl_cleanup(&ctrls_panel);
@@ -688,7 +693,7 @@ int do_reconfig(HWND hwnd, int protcfginfo)
     Config backup_cfg;
     int ret;
 
-    backup_cfg = cfg;		       /* structure copy */
+    backup_cfg = cfg;		/* structure copy */
 
     ctrlbox = ctrl_new_box();
     setup_config_box(ctrlbox, &sesslist, TRUE, cfg.protocol, protcfginfo);
@@ -701,10 +706,10 @@ int do_reconfig(HWND hwnd, int protcfginfo)
     dp.wintitle = dupprintf("%s Reconfiguration", appname);
     dp.errtitle = dupprintf("%s Error", appname);
     dp.data = &cfg;
-    dp.shortcuts['g'] = TRUE;	       /* the treeview: `Cate&gory' */
+    dp.shortcuts['g'] = TRUE;	/* the treeview: `Cate&gory' */
 
     ret = SaneDialogBox(hinst, MAKEINTRESOURCE(IDD_MAINBOX), NULL,
-		  GenericMainDlgProc);
+			GenericMainDlgProc);
 
     ctrl_free_box(ctrlbox);
     winctrl_cleanup(&ctrls_base);
@@ -712,7 +717,7 @@ int do_reconfig(HWND hwnd, int protcfginfo)
     dp_cleanup(&dp);
 
     if (!ret)
-	cfg = backup_cfg;	       /* structure copy */
+	cfg = backup_cfg;	/* structure copy */
 
     return ret;
 }
@@ -729,7 +734,7 @@ void logevent(void *frontend, const char *string)
 	events = sresize(events, negsize, char *);
     }
 
-    tm=ltime();
+    tm = ltime();
     strftime(timebuf, sizeof(timebuf), "%Y-%m-%d %H:%M:%S\t", &tm);
 
     events[nevents] = snewn(strlen(timebuf) + strlen(string) + 1, char);
@@ -760,9 +765,10 @@ void showabout(HWND hwnd)
     DialogBox(hinst, MAKEINTRESOURCE(IDD_ABOUTBOX), hwnd, AboutProc);
 }
 
-int verify_ssh_host_key(void *frontend, char *host, int port, char *keytype,
-                        char *keystr, char *fingerprint,
-                        void (*callback)(void *ctx, int result), void *ctx)
+int verify_ssh_host_key(void *frontend, char *host, int port,
+			char *keytype, char *keystr, char *fingerprint,
+			void (*callback) (void *ctx, int result),
+			void *ctx)
 {
     int ret;
 
@@ -803,17 +809,18 @@ int verify_ssh_host_key(void *frontend, char *host, int port, char *keytype,
      */
     ret = verify_host_key(host, port, keytype, keystr);
 
-    if (ret == 0)		       /* success - key matched OK */
+    if (ret == 0)		/* success - key matched OK */
 	return 1;
-    if (ret == 2) {		       /* key was different */
+    if (ret == 2) {		/* key was different */
 	int mbret;
 	char *text = dupprintf(wrongmsg, appname, keytype, fingerprint,
 			       appname);
 	char *caption = dupprintf(mbtitle, appname);
 	mbret = message_box(text, caption,
-			    MB_ICONWARNING | MB_YESNOCANCEL | MB_DEFBUTTON3,
+			    MB_ICONWARNING | MB_YESNOCANCEL |
+			    MB_DEFBUTTON3,
 			    HELPCTXID(errors_hostkey_changed));
-	assert(mbret==IDYES || mbret==IDNO || mbret==IDCANCEL);
+	assert(mbret == IDYES || mbret == IDNO || mbret == IDCANCEL);
 	sfree(text);
 	sfree(caption);
 	if (mbret == IDYES) {
@@ -821,16 +828,17 @@ int verify_ssh_host_key(void *frontend, char *host, int port, char *keytype,
 	    return 1;
 	} else if (mbret == IDNO)
 	    return 1;
-        return 0;
+	return 0;
     }
-    if (ret == 1) {		       /* key was absent */
+    if (ret == 1) {		/* key was absent */
 	int mbret;
 	char *text = dupprintf(absentmsg, keytype, fingerprint, appname);
 	char *caption = dupprintf(mbtitle, appname);
 	mbret = message_box(text, caption,
-			    MB_ICONWARNING | MB_YESNOCANCEL | MB_DEFBUTTON3,
+			    MB_ICONWARNING | MB_YESNOCANCEL |
+			    MB_DEFBUTTON3,
 			    HELPCTXID(errors_hostkey_absent));
-	assert(mbret==IDYES || mbret==IDNO || mbret==IDCANCEL);
+	assert(mbret == IDYES || mbret == IDNO || mbret == IDCANCEL);
 	sfree(text);
 	sfree(caption);
 	if (mbret == IDYES) {
@@ -838,7 +846,7 @@ int verify_ssh_host_key(void *frontend, char *host, int port, char *keytype,
 	    return 1;
 	} else if (mbret == IDNO)
 	    return 1;
-        return 0;
+	return 0;
     }
 }
 
@@ -847,7 +855,7 @@ int verify_ssh_host_key(void *frontend, char *host, int port, char *keytype,
  * below the configured 'warn' threshold).
  */
 int askalg(void *frontend, const char *algtype, const char *algname,
-	   void (*callback)(void *ctx, int result), void *ctx)
+	   void (*callback) (void *ctx, int result), void *ctx)
 {
     static const char mbtitle[] = "%s Security Alert";
     static const char msg[] =
@@ -875,7 +883,7 @@ int askalg(void *frontend, const char *algtype, const char *algname,
  * Returns 2 for wipe, 1 for append, 0 for cancel (don't log).
  */
 int askappend(void *frontend, Filename filename,
-	      void (*callback)(void *ctx, int result), void *ctx)
+	      void (*callback) (void *ctx, int result), void *ctx)
 {
     static const char msgtemplate[] =
 	"The session log file \"%.*s\" already exists.\n"

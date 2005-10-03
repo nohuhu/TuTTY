@@ -19,4 +19,4 @@ typedef struct ldisc_tag {
     int buflen, bufsiz, quotenext;
 } *Ldisc;
 
-#endif /* PUTTY_LDISC_H */
+#endif				/* PUTTY_LDISC_H */

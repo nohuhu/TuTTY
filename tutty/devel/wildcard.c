@@ -79,11 +79,12 @@ const char *wc_error(int value)
 {
     value = abs(value);
     switch (value) {
-      case WC_TRAILINGBACKSLASH:
-	return "'\' occurred at end of string (expected another character)";
-      case WC_UNCLOSEDCLASS:
+    case WC_TRAILINGBACKSLASH:
+	return
+	    "'\' occurred at end of string (expected another character)";
+    case WC_UNCLOSEDCLASS:
 	return "expected ']' to close character class";
-      case WC_INVALIDRANGE:
+    case WC_INVALIDRANGE:
 	return "character range was not terminated (']' just after '-')";
     }
     return "INTERNAL ERROR: unrecognised wildcard error number";
@@ -120,9 +121,9 @@ static int wc_match_fragment(const char **fragment, const char **target)
 	     * be the end of the string.
 	     */
 	    if (!f[1])
-		return -WC_TRAILINGBACKSLASH;   /* error */
+		return -WC_TRAILINGBACKSLASH;	/* error */
 	    if (f[1] != *t)
-		return 0;	       /* failed to match */
+		return 0;	/* failed to match */
 	    f += 2;
 	} else if (*f == '?') {
 	    /*
@@ -142,23 +143,25 @@ static int wc_match_fragment(const char **fragment, const char **target)
 	    }
 	    while (*f != ']') {
 		if (*f == '\\')
-		    f++;	       /* backslashes still work */
+		    f++;	/* backslashes still work */
 		if (!*f)
-		    return -WC_UNCLOSEDCLASS;   /* error again */
+		    return -WC_UNCLOSEDCLASS;	/* error again */
 		if (f[1] == '-') {
 		    int lower, upper, ourchr;
 		    lower = (unsigned char) *f++;
-		    f++;	       /* eat the minus */
+		    f++;	/* eat the minus */
 		    if (*f == ']')
-			return -WC_INVALIDRANGE;   /* different error! */
+			return -WC_INVALIDRANGE;	/* different error! */
 		    if (*f == '\\')
-			f++;	       /* backslashes _still_ work */
+			f++;	/* backslashes _still_ work */
 		    if (!*f)
-			return -WC_UNCLOSEDCLASS;   /* error again */
+			return -WC_UNCLOSEDCLASS;	/* error again */
 		    upper = (unsigned char) *f++;
 		    ourchr = (unsigned char) *t;
 		    if (lower > upper) {
-			int t = lower; lower = upper; upper = t;
+			int t = lower;
+			lower = upper;
+			upper = t;
 		    }
 		    if (ourchr >= lower && ourchr <= upper)
 			matched = 1;
@@ -167,8 +170,8 @@ static int wc_match_fragment(const char **fragment, const char **target)
 		}
 	    }
 	    if (invert == matched)
-		return 0;	       /* failed to match character class */
-	    f++;		       /* eat the ] */
+		return 0;	/* failed to match character class */
+	    f++;		/* eat the ] */
 	} else {
 	    /*
 	     * Non-special character matches itself.
@@ -218,7 +221,7 @@ int wc_match(const char *wildcard, const char *target)
     if (*wildcard != '*') {
 	ret = wc_match_fragment(&wildcard, &target);
 	if (ret <= 0)
-	    return ret;		       /* pass back failure or error alike */
+	    return ret;		/* pass back failure or error alike */
     }
 
     while (*wildcard) {
@@ -248,7 +251,7 @@ int wc_match(const char *wildcard, const char *target)
 	    ret = wc_match_fragment(&wildcard, &target);
 
 	    if (ret < 0)
-		return ret;	       /* syntax error */
+		return ret;	/* syntax error */
 
 	    if (ret > 0 && !*wildcard && *target) {
 		/*
@@ -319,7 +322,7 @@ int wc_unescape(char *output, const char *wildcard)
 	    }
 	} else if (*wildcard == '*' || *wildcard == '?' ||
 		   *wildcard == '[' || *wildcard == ']') {
-	    return 0;		       /* it's a wildcard! */
+	    return 0;		/* it's a wildcard! */
 	} else {
 	    if (output)
 		*output++ = *wildcard;
@@ -327,7 +330,7 @@ int wc_unescape(char *output, const char *wildcard)
 	}
     }
     *output = '\0';
-    return 1;			       /* it's clean */
+    return 1;			/* it's clean */
 }
 
 #ifdef TESTMODE
@@ -432,7 +435,7 @@ int main(void)
 
     fails = passes = 0;
 
-    for (i = 0; i < sizeof(fragment_tests)/sizeof(*fragment_tests); i++) {
+    for (i = 0; i < sizeof(fragment_tests) / sizeof(*fragment_tests); i++) {
 	const char *f, *t;
 	int eret, aret;
 	f = fragment_tests[i].wildcard;
@@ -448,7 +451,7 @@ int main(void)
 	    passes++;
     }
 
-    for (i = 0; i < sizeof(full_tests)/sizeof(*full_tests); i++) {
+    for (i = 0; i < sizeof(full_tests) / sizeof(*full_tests); i++) {
 	const char *f, *t;
 	int eret, aret;
 	f = full_tests[i].wildcard;

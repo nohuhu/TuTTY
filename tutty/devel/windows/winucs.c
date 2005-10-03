@@ -436,7 +436,7 @@ static const struct cp_list_item cp_list[] = {
 
 static void link_font(WCHAR * line_tbl, WCHAR * font_tbl, WCHAR attr);
 
-void init_ucs(Config *cfg, struct unicode_data *ucsdata)
+void init_ucs(Config * cfg, struct unicode_data *ucsdata)
 {
     int i, j;
     int used_dtf = 0;
@@ -448,9 +448,9 @@ void init_ucs(Config *cfg, struct unicode_data *ucsdata)
     /* Decide on the Line and Font codepages */
     ucsdata->line_codepage = decode_codepage(cfg->line_codepage);
 
-    if (ucsdata->font_codepage <= 0) { 
-	ucsdata->font_codepage=0; 
-	ucsdata->dbcs_screenfont=0; 
+    if (ucsdata->font_codepage <= 0) {
+	ucsdata->font_codepage = 0;
+	ucsdata->dbcs_screenfont = 0;
     }
 
     if (cfg->vtmode == VT_OEMONLY) {
@@ -490,7 +490,7 @@ void init_ucs(Config *cfg, struct unicode_data *ucsdata)
     /* Collect line set ucs table */
     if (ucsdata->line_codepage == ucsdata->font_codepage &&
 	(ucsdata->dbcs_screenfont ||
-	 cfg->vtmode == VT_POORMAN || ucsdata->font_codepage==0)) {
+	 cfg->vtmode == VT_POORMAN || ucsdata->font_codepage == 0)) {
 
 	/* For DBCS and POOR fonts force direct to font */
 	used_dtf = 1;
@@ -504,13 +504,14 @@ void init_ucs(Config *cfg, struct unicode_data *ucsdata)
     }
 
 #if 0
-    debug(
-	  ("Line cp%d, Font cp%d%s\n", ucsdata->line_codepage,
-	   ucsdata->font_codepage, ucsdata->dbcs_screenfont ? " DBCS" : ""));
+    debug(("Line cp%d, Font cp%d%s\n", ucsdata->line_codepage,
+	   ucsdata->font_codepage,
+	   ucsdata->dbcs_screenfont ? " DBCS" : ""));
 
     for (i = 0; i < 256; i += 16) {
 	for (j = 0; j < 16; j++) {
-	    debug(("%04x%s", ucsdata->unitab_line[i + j], j == 15 ? "" : ","));
+	    debug(("%04x%s", ucsdata->unitab_line[i + j],
+		   j == 15 ? "" : ","));
 	}
 	debug(("\n"));
     }
@@ -553,7 +554,7 @@ void init_ucs(Config *cfg, struct unicode_data *ucsdata)
     /* Find the line control characters. */
     for (i = 0; i < 256; i++)
 	if (ucsdata->unitab_line[i] < ' '
-	    || (ucsdata->unitab_line[i] >= 0x7F && 
+	    || (ucsdata->unitab_line[i] >= 0x7F &&
 		ucsdata->unitab_line[i] < 0xA0))
 	    ucsdata->unitab_ctrl[i] = i;
 	else
@@ -561,7 +562,8 @@ void init_ucs(Config *cfg, struct unicode_data *ucsdata)
 
     /* Generate line->screen direct conversion links. */
     if (cfg->vtmode == VT_OEMANSI || cfg->vtmode == VT_XWINDOWS)
-	link_font(ucsdata->unitab_scoacs, ucsdata->unitab_oemcp, CSET_OEMCP);
+	link_font(ucsdata->unitab_scoacs, ucsdata->unitab_oemcp,
+		  CSET_OEMCP);
 
     link_font(ucsdata->unitab_line, ucsdata->unitab_font, CSET_ACP);
     link_font(ucsdata->unitab_scoacs, ucsdata->unitab_font, CSET_ACP);
@@ -569,7 +571,8 @@ void init_ucs(Config *cfg, struct unicode_data *ucsdata)
 
     if (cfg->vtmode == VT_OEMANSI || cfg->vtmode == VT_XWINDOWS) {
 	link_font(ucsdata->unitab_line, ucsdata->unitab_oemcp, CSET_OEMCP);
-	link_font(ucsdata->unitab_xterm, ucsdata->unitab_oemcp, CSET_OEMCP);
+	link_font(ucsdata->unitab_xterm, ucsdata->unitab_oemcp,
+		  CSET_OEMCP);
     }
 
     if (ucsdata->dbcs_screenfont &&
@@ -582,11 +585,12 @@ void init_ucs(Config *cfg, struct unicode_data *ucsdata)
 
     /* Last chance, if !unicode then try poorman links. */
     if (cfg->vtmode != VT_UNICODE) {
-	static const char poorman_scoacs[] = 
+	static const char poorman_scoacs[] =
 	    "CueaaaaceeeiiiAAE**ooouuyOUc$YPsaiounNao?++**!<>###||||++||++++++--|-+||++--|-+----++++++++##||#aBTPEsyt******EN=+><++-=... n2* ";
 	static const char poorman_latin1[] =
 	    " !cL.Y|S\"Ca<--R~o+23'u|.,1o>///?AAAAAAACEEEEIIIIDNOOOOOxOUUUUYPBaaaaaaaceeeeiiiionooooo/ouuuuypy";
-	static const char poorman_vt100[] = "*#****o~**+++++-----++++|****L.";
+	static const char poorman_vt100[] =
+	    "*#****o~**+++++-----++++|****L.";
 
 	for (i = 160; i < 256; i++)
 	    if (!DIRECT_FONT(ucsdata->unitab_line[i]) &&
@@ -594,15 +598,16 @@ void init_ucs(Config *cfg, struct unicode_data *ucsdata)
 		ucsdata->unitab_line[i] < 256) {
 		ucsdata->unitab_line[i] =
 		    (WCHAR) (CSET_ACP +
-			     poorman_latin1[ucsdata->unitab_line[i] - 160]);
+			     poorman_latin1[ucsdata->unitab_line[i] -
+					    160]);
 	    }
 	for (i = 96; i < 127; i++)
 	    if (!DIRECT_FONT(ucsdata->unitab_xterm[i]))
 		ucsdata->unitab_xterm[i] =
-	    (WCHAR) (CSET_ACP + poorman_vt100[i - 96]);
-	for(i=128;i<256;i++) 
+		    (WCHAR) (CSET_ACP + poorman_vt100[i - 96]);
+	for (i = 128; i < 256; i++)
 	    if (!DIRECT_FONT(ucsdata->unitab_scoacs[i]))
-		ucsdata->unitab_scoacs[i] = 
+		ucsdata->unitab_scoacs[i] =
 		    (WCHAR) (CSET_ACP + poorman_scoacs[i - 128]);
     }
 }
@@ -613,7 +618,7 @@ static void link_font(WCHAR * line_tbl, WCHAR * font_tbl, WCHAR attr)
     for (line_index = 0; line_index < 256; line_index++) {
 	if (DIRECT_FONT(line_tbl[line_index]))
 	    continue;
-	for(i = 0; i < 256; i++) {
+	for (i = 0; i < 256; i++) {
 	    font_index = ((32 + i) & 0xFF);
 	    if (line_tbl[line_index] == font_tbl[font_index]) {
 		line_tbl[line_index] = (WCHAR) (attr + font_index);
@@ -626,24 +631,24 @@ static void link_font(WCHAR * line_tbl, WCHAR * font_tbl, WCHAR attr)
 wchar_t xlat_uskbd2cyrllic(int ch)
 {
     static const wchar_t cyrtab[] = {
-            0,      1,       2,      3,      4,      5,      6,      7,
-            8,      9,      10,     11,     12,     13,     14,     15,
-            16,     17,     18,     19,     20,     21,     22,     23,
-            24,     25,     26,     27,     28,     29,     30,     31,
-            32,     33, 0x042d,     35,     36,     37,     38, 0x044d,
-            40,     41,     42, 0x0406, 0x0431, 0x0454, 0x044e, 0x002e,
-            48,     49,     50,     51,     52,     53,     54,     55,
-            56,     57, 0x0416, 0x0436, 0x0411, 0x0456, 0x042e, 0x002c,
-            64, 0x0424, 0x0418, 0x0421, 0x0412, 0x0423, 0x0410, 0x041f,
-        0x0420, 0x0428, 0x041e, 0x041b, 0x0414, 0x042c, 0x0422, 0x0429,
-        0x0417, 0x0419, 0x041a, 0x042b, 0x0415, 0x0413, 0x041c, 0x0426,
-        0x0427, 0x041d, 0x042f, 0x0445, 0x0457, 0x044a,     94, 0x0404,
-            96, 0x0444, 0x0438, 0x0441, 0x0432, 0x0443, 0x0430, 0x043f,
-        0x0440, 0x0448, 0x043e, 0x043b, 0x0434, 0x044c, 0x0442, 0x0449,
-        0x0437, 0x0439, 0x043a, 0x044b, 0x0435, 0x0433, 0x043c, 0x0446,
-        0x0447, 0x043d, 0x044f, 0x0425, 0x0407, 0x042a,    126,    127
-       };
-    return cyrtab[ch&0x7F];
+	0, 1, 2, 3, 4, 5, 6, 7,
+	8, 9, 10, 11, 12, 13, 14, 15,
+	16, 17, 18, 19, 20, 21, 22, 23,
+	24, 25, 26, 27, 28, 29, 30, 31,
+	32, 33, 0x042d, 35, 36, 37, 38, 0x044d,
+	40, 41, 42, 0x0406, 0x0431, 0x0454, 0x044e, 0x002e,
+	48, 49, 50, 51, 52, 53, 54, 55,
+	56, 57, 0x0416, 0x0436, 0x0411, 0x0456, 0x042e, 0x002c,
+	64, 0x0424, 0x0418, 0x0421, 0x0412, 0x0423, 0x0410, 0x041f,
+	0x0420, 0x0428, 0x041e, 0x041b, 0x0414, 0x042c, 0x0422, 0x0429,
+	0x0417, 0x0419, 0x041a, 0x042b, 0x0415, 0x0413, 0x041c, 0x0426,
+	0x0427, 0x041d, 0x042f, 0x0445, 0x0457, 0x044a, 94, 0x0404,
+	96, 0x0444, 0x0438, 0x0441, 0x0432, 0x0443, 0x0430, 0x043f,
+	0x0440, 0x0448, 0x043e, 0x043b, 0x0434, 0x044c, 0x0442, 0x0449,
+	0x0437, 0x0439, 0x043a, 0x044b, 0x0435, 0x0433, 0x043c, 0x0446,
+	0x0447, 0x043d, 0x044f, 0x0425, 0x0407, 0x042a, 126, 127
+    };
+    return cyrtab[ch & 0x7F];
 }
 
 int check_compose_internal(int first, int second, int recurse)
@@ -993,9 +998,11 @@ int check_compose_internal(int first, int second, int recurse)
     if (recurse == 0) {
 	nc = check_compose_internal(second, first, 1);
 	if (nc == -1)
-	    nc = check_compose_internal(toupper(first), toupper(second), 1);
+	    nc = check_compose_internal(toupper(first), toupper(second),
+					1);
 	if (nc == -1)
-	    nc = check_compose_internal(toupper(second), toupper(first), 1);
+	    nc = check_compose_internal(toupper(second), toupper(first),
+					1);
     }
     return nc;
 }
@@ -1043,14 +1050,30 @@ int decode_codepage(char *cp_name)
 	 */
 	int cp = GetACP();
 	switch (cp) {
-	  case 1250: cp_name = "ISO-8859-2"; break;
-	  case 1251: cp_name = "KOI8-U"; break;
-	  case 1252: cp_name = "ISO-8859-1"; break;
-	  case 1253: cp_name = "ISO-8859-7"; break;
-	  case 1254: cp_name = "ISO-8859-9"; break;
-	  case 1255: cp_name = "ISO-8859-8"; break;
-	  case 1256: cp_name = "ISO-8859-6"; break;
-	  case 1257: cp_name = "ISO-8859-13"; break;
+	case 1250:
+	    cp_name = "ISO-8859-2";
+	    break;
+	case 1251:
+	    cp_name = "KOI8-U";
+	    break;
+	case 1252:
+	    cp_name = "ISO-8859-1";
+	    break;
+	case 1253:
+	    cp_name = "ISO-8859-7";
+	    break;
+	case 1254:
+	    cp_name = "ISO-8859-9";
+	    break;
+	case 1255:
+	    cp_name = "ISO-8859-8";
+	    break;
+	case 1256:
+	    cp_name = "ISO-8859-6";
+	    break;
+	case 1257:
+	    cp_name = "ISO-8859-13";
+	    break;
 	    /* default: leave it blank, which will select -1, direct->font */
 	}
     }
@@ -1092,7 +1115,7 @@ int decode_codepage(char *cp_name)
 	    d += 3;
 	for (s = d; *s >= '0' && *s <= '9'; s++);
 	if (*s == 0 && s != d)
-	    codepage = atoi(d);	       /* CP999 or IBM999 */
+	    codepage = atoi(d);	/* CP999 or IBM999 */
 
 	if (codepage == CP_ACP)
 	    codepage = GetACP();
@@ -1201,7 +1224,7 @@ void get_unitab(int codepage, wchar_t * unitab, int ftype)
     }
 }
 
-int wc_to_mb(int codepage, int flags, wchar_t *wcstr, int wclen,
+int wc_to_mb(int codepage, int flags, wchar_t * wcstr, int wclen,
 	     char *mbstr, int mblen, char *defchr, int *defused,
 	     struct unicode_data *ucsdata)
 {
@@ -1210,13 +1233,14 @@ int wc_to_mb(int codepage, int flags, wchar_t *wcstr, int wclen,
     if (ucsdata && codepage == ucsdata->line_codepage && ucsdata->uni_tbl) {
 	/* Do this by array lookup if we can. */
 	if (wclen < 0) {
-	    for (wclen = 0; wcstr[wclen++] ;);   /* will include the NUL */
+	    for (wclen = 0; wcstr[wclen++];);	/* will include the NUL */
 	}
 	for (p = mbstr, i = 0; i < wclen; i++) {
 	    wchar_t ch = wcstr[i];
 	    int by;
 	    char *p1;
-	    if (ucsdata->uni_tbl && (p1 = ucsdata->uni_tbl[(ch >> 8) & 0xFF])
+	    if (ucsdata->uni_tbl
+		&& (p1 = ucsdata->uni_tbl[(ch >> 8) & 0xFF])
 		&& (by = p1[ch & 0xFF]))
 		*p++ = by;
 	    else if (ch < 0x80)
@@ -1225,7 +1249,8 @@ int wc_to_mb(int codepage, int flags, wchar_t *wcstr, int wclen,
 		int j;
 		for (j = 0; defchr[j]; j++)
 		    *p++ = defchr[j];
-		if (defused) *defused = 1;
+		if (defused)
+		    *defused = 1;
 	    }
 #if 1
 	    else
@@ -1240,9 +1265,10 @@ int wc_to_mb(int codepage, int flags, wchar_t *wcstr, int wclen,
 }
 
 int mb_to_wc(int codepage, int flags, char *mbstr, int mblen,
-	     wchar_t *wcstr, int wclen)
+	     wchar_t * wcstr, int wclen)
 {
-    return MultiByteToWideChar(codepage, flags, mbstr, mblen, wcstr, wclen);
+    return MultiByteToWideChar(codepage, flags, mbstr, mblen, wcstr,
+			       wclen);
 }
 
 int is_dbcs_leadbyte(int codepage, char byte)
