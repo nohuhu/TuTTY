@@ -2316,16 +2316,17 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 		    sprintf(c, "putty &%p", filemap);
 		    cl = c;
 		} else if (wParam == IDM_SAVEDSESS) {
-		    /* unsigned */ int sessno = ((lParam - IDM_SAVED_MIN)
-						 / MENU_SAVED_STEP) + 1;
-		    if (sessno < sesslist.nsessions) {
-			char *session = sesslist.sessions[sessno];
-			/* XXX spaces? quotes? "-load"? */
-			cl = dupprintf("putty @%s", session);
-			inherit_handles = FALSE;
-			freecl = TRUE;
-		    } else
-			break;
+		    MENUITEMINFO mii;
+
+		    memset(&mii, 0, sizeof(MENUITEMINFO));
+		    mii.cbSize = sizeof(MENUITEMINFO);
+		    mii.fMask = MIIM_DATA;
+		    if (GetMenuItemInfo(popup_menus[SYSMENU].menu, lParam, FALSE, &mii) &&
+			mii.dwItemData) {
+			    cl = dupprintf("putty -load \"%s\"", (char *)mii.dwItemData);
+			    inherit_handles = FALSE;
+			    freecl = TRUE;
+		    };
 		} else {	/* IDM_NEWSESS */
 
 		    cl = NULL;

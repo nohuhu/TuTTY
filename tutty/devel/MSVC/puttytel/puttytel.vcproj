@@ -651,9 +651,6 @@
 				RelativePath="..\..\..\plaunch\registry.h">
 			</File>
 			<File
-				RelativePath="..\..\..\plaunch\session.h">
-			</File>
-			<File
 				RelativePath="..\..\session.h">
 			</File>
 			<File
