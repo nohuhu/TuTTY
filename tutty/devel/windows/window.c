@@ -2196,7 +2196,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	    x = di->rcItem.left + 2;
 	    y = di->rcItem.top + 1;
 
-	    if (ses_is_folder(path, &cfg)) {
+	    if (ses_is_folder(&cfg.sessionroot, path)) {
 		icon = selected ? fldr_open : fldr_closed;
 		DrawIconEx(di->hDC, x, y, icon, iconx, icony, 0, NULL,
 			   DI_NORMAL);
@@ -2204,7 +2204,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 		char buf[2048], ipath[2048];
 
 		buf[0] = '\0';
-		reg_make_path("", path, buf);
+		reg_make_path("", path, buf, 2048);
 		reg_read_s(buf, SESSIONICON, "", ipath, 2048);
 		icon = extract_icon(ipath);
 		DrawIconEx(di->hDC, x, y, icon, iconx, icony, 0, NULL,

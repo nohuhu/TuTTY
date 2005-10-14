@@ -909,7 +909,9 @@ void do_serial_event(Serial_Socket s, int event)
  * than one serial port in one instance of PuTTY. I'm going to change this later. Somehow.
  */
 
+#ifndef BUFSIZE
 #define BUFSIZE 512
+#endif /* BUFSIZE */
 
 int do_receive(Serial_Socket s)
 {

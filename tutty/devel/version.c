@@ -10,7 +10,7 @@
 #if defined SNAPSHOT
 
 char ver[] = "Development build " STR(BUILDNUMBER) ", based on PuTTY 0.58"
-    "\n compiled at " __DATE__ " " __TIME__;
+    "\n compiled " __DATE__ " " __TIME__;
 char sshver[] = "PuTTY-Snapshot-" STR(SNAPSHOT);
 
 #elif defined RELEASE

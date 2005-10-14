@@ -388,6 +388,8 @@ extern const int be_default_protocol;
  */
 extern const char *const appname;
 
+#include "session.h"
+
 /*
  * IMPORTANT POLICY POINT: everything in this structure which wants
  * to be treated like an integer must be an actual, honest-to-
@@ -597,6 +599,7 @@ struct config_tag {
     FontSpec widefont;
     FontSpec wideboldfont;
     int shadowboldoffset;
+    session_root_t sessionroot;
 };
 
 /*

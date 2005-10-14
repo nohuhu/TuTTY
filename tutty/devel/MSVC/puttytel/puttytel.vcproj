@@ -26,8 +26,10 @@
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;SNAPSHOT"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
+				SmallerTypeCheck="FALSE"
 				RuntimeLibrary="5"
 				StructMemberAlignment="3"
+				BufferSecurityCheck="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile=".\Debug/puttytel.pch"
 				AssemblerListingLocation=".\Debug/"
@@ -49,6 +51,7 @@
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Debug/puttytel.pdb"
 				SubSystem="2"
+				HeapReserveSize="0"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -401,7 +404,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\plaunch\registry.c">
+				RelativePath="..\..\windows\registry.c">
 			</File>
 			<File
 				RelativePath="..\..\rlogin.c">
@@ -581,7 +584,7 @@
 				RelativePath="..\..\windows\window.c">
 			</File>
 			<File
-				RelativePath="..\..\..\plaunch\winmenu.c">
+				RelativePath="..\..\windows\winmenu.c">
 			</File>
 			<File
 				RelativePath="..\..\windows\winmisc.c">
@@ -648,7 +651,7 @@
 				RelativePath="..\..\puttyps.h">
 			</File>
 			<File
-				RelativePath="..\..\..\plaunch\registry.h">
+				RelativePath="..\..\windows\registry.h">
 			</File>
 			<File
 				RelativePath="..\..\session.h">
@@ -666,7 +669,7 @@
 				RelativePath="..\..\tree234.h">
 			</File>
 			<File
-				RelativePath="..\..\..\plaunch\winmenu.h">
+				RelativePath="..\..\windows\winmenu.h">
 			</File>
 			<File
 				RelativePath="..\..\windows\winstuff.h">

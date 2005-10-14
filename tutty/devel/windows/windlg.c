@@ -696,6 +696,7 @@ int do_reconfig(HWND hwnd, int protcfginfo)
     backup_cfg = cfg;		/* structure copy */
 
     ctrlbox = ctrl_new_box();
+    get_sesslist(&sesslist, "", TRUE);
     setup_config_box(ctrlbox, &sesslist, TRUE, cfg.protocol, protcfginfo);
     win_setup_config_box(ctrlbox, &dp.hwnd, (help_path != NULL), TRUE);
     dp_init(&dp);
@@ -712,6 +713,7 @@ int do_reconfig(HWND hwnd, int protcfginfo)
 			GenericMainDlgProc);
 
     ctrl_free_box(ctrlbox);
+    get_sesslist(&sesslist, "", FALSE);
     winctrl_cleanup(&ctrls_base);
     winctrl_cleanup(&ctrls_panel);
     dp_cleanup(&dp);
@@ -848,6 +850,7 @@ int verify_ssh_host_key(void *frontend, char *host, int port,
 	    return 1;
 	return 0;
     }
+    return 0;
 }
 
 /*

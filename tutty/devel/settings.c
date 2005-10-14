@@ -870,8 +870,8 @@ static int sessioncmp(const void *av, const void *bv)
     if (!strcmp(b, ".."))
 	return +1;
 
-    a_folder = ses_is_folder((char *)a, &cfg);
-    b_folder = ses_is_folder((char *)b, &cfg);
+    a_folder = ses_is_folder(&cfg.sessionroot, (char *)a);
+    b_folder = ses_is_folder(&cfg.sessionroot, (char *)b);
     if (a_folder && !b_folder)
 	return -1;
     else if (!a_folder && b_folder)

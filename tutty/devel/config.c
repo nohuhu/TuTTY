@@ -32,7 +32,7 @@ static void port_editbox_handler(union control *ctrl, void *dlg,
 
 	if (cfg->protocol == PROT_SERIAL) {
 	    int i, port;
-	    char portnames[2048], *curdev, pname[100];
+	    char portnames[BUFSIZE], *curdev, pname[100];
 
 	    memset(portnames, 0, sizeof(portnames));
 	    serial_getportnames(portnames);
@@ -384,7 +384,7 @@ struct sessionsaver_data {
     union control *mkfolderbutton, *pathview;
     struct sesslist *sesslist;
     int midsession;
-    char currentpath[1024];
+    char currentpath[BUFSIZE];
 };
 
 /* 
@@ -396,7 +396,7 @@ static int load_selected_session(struct sessionsaver_data *ssd,
 				 char *savedsession,
 				 void *dlg, Config * cfg)
 {
-    char *name, *path;
+    char *name, path[BUFSIZE];
 
     int i = dlg_listbox_index(ssd->listbox, dlg);
     int isdef;
@@ -405,15 +405,15 @@ static int load_selected_session(struct sessionsaver_data *ssd,
 	return 0;
     }
     if (!strcmp(ssd->sesslist->sessions[i], "..")) {
-	path = ses_pathname(ssd->currentpath);
+	ses_pathname(ssd->currentpath, path, BUFSIZE);
 	get_sesslist(ssd->sesslist, path, FALSE);
 	get_sesslist(ssd->sesslist, path, TRUE);
 	savedsession[0] = '\0';
 	strcpy(ssd->currentpath, path);
 	dlg_setcontroltext(ssd->pathview, dlg, savedsession);
 	return 0;
-    } else if (ses_is_folder(ssd->sesslist->sessions[i], cfg)) {
-	path = dupstr(ssd->sesslist->sessions[i]);
+    } else if (ses_is_folder(&cfg->sessionroot, ssd->sesslist->sessions[i])) {
+	strncpy(path, ssd->sesslist->sessions[i], BUFSIZE);
 	get_sesslist(ssd->sesslist, path, FALSE);
 	get_sesslist(ssd->sesslist, path, TRUE);
 	savedsession[0] = '\0';
@@ -444,7 +444,7 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
     struct sessionsaver_data *ssd =
 	(struct sessionsaver_data *) ctrl->generic.context.p;
     char *savedsession;
-    char *tmp;
+    char buf[BUFSIZE], *tmp;
 
     /*
      * The first time we're called in a new dialog, we must
@@ -458,9 +458,8 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 	savedsession = (char *)
 	    dlg_alloc_privdata(ssd->editbox, dlg, SAVEDSESSION_LEN);
 	if (loaded_session_edit) {
-	    tmp = ses_pathname(loaded_session_name);
-	    strcpy(ssd->currentpath, tmp);
-	    sfree(tmp);
+	    ses_pathname(loaded_session_name, buf, BUFSIZE);
+	    strcpy(ssd->currentpath, buf);
 	    tmp = ses_lastname(loaded_session_name);
 	    strcpy(savedsession, tmp);
 	    dlg_setcontroltext(ssd->pathview, dlg, loaded_session_name);
@@ -511,8 +510,7 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 				   ssd->sesslist->sessions[i]);
 	}
     } else if (event == EVENT_ACTION) {
-	if (!ssd->midsession &&
-	    (ctrl == ssd->listbox ||
+	if ((ctrl == ssd->listbox ||
 	     (ssd->loadbutton && ctrl == ssd->loadbutton))) {
 	    /*
 	     * The user has double-clicked a session, or hit Load.
@@ -521,7 +519,17 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 	     * double-click on the list box _and_ that session
 	     * contains a hostname.
 	     */
-	    if (load_selected_session(ssd, savedsession, dlg, cfg) &&
+	    int i, isfolder;
+
+	    i = dlg_listbox_index(ctrl, dlg);
+	    isfolder = !strcmp(ssd->sesslist->sessions[i], "..") ||
+		ses_is_folder(&cfg->sessionroot, ssd->sesslist->sessions[i]);
+	    
+	    if ((ssd->midsession && 
+		 isfolder &&
+		 load_selected_session(ssd, savedsession, dlg, cfg)) ||
+	         (!ssd->midsession &&
+		  load_selected_session(ssd, savedsession, dlg, cfg)) &&
 		/*
 		 * With Serial backend, host name is not required.
 		 * If it is present, it should contain a number
@@ -586,14 +594,14 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 	    dlg_refresh(ssd->editbox, dlg);
 	    dlg_refresh(ssd->listbox, dlg);
 	} else if (ctrl == ssd->mkfolderbutton) {
-	    char tmp[2048];
+	    char tmp[BUFSIZE];
 
 	    if (ssd->currentpath[0])
 		sprintf(tmp, "%s\\%s", ssd->currentpath,
 			savedsession[0] ? savedsession : "New folder");
 	    else
 		strcpy(tmp, savedsession[0] ? savedsession : "New folder");
-	    ses_make_folder(tmp, cfg);
+	    ses_make_folder(&cfg->sessionroot, tmp);
 	    get_sesslist(ssd->sesslist, ssd->currentpath, FALSE);
 	    get_sesslist(ssd->sesslist, ssd->currentpath, TRUE);
 	    savedsession[0] = '\0';
@@ -605,8 +613,8 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 	    if (i <= 0) {
 		dlg_beep(dlg);
 	    } else {
-		if (ses_is_folder(ssd->sesslist->sessions[i], cfg)) {
-		    char msg[1024];
+		if (ses_is_folder(&cfg->sessionroot, ssd->sesslist->sessions[i])) {
+		    char msg[BUFSIZE];
 
 		    sprintf(msg, "Are you sure you want to delete \"%s\" folder and all its contents?",
 			ses_lastname(ssd->sesslist->sessions[i]));
@@ -629,7 +637,7 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 		if (i < 0)
 		    dlg_beep(dlg);
 		else if (!strcmp(ssd->sesslist->sessions[i], "..") ||
-			 ses_is_folder(ssd->sesslist->sessions[i], cfg)) {
+			ses_is_folder(&cfg->sessionroot, ssd->sesslist->sessions[i])) {
 		    load_selected_session(ssd, savedsession, dlg, cfg);
 		    dlg_refresh(ssd->editbox, dlg);
 		    dlg_refresh(ssd->listbox, dlg);
@@ -1428,7 +1436,7 @@ static void window_icon_handler(union control *ctrl, void *dlg,
     Config *cfg = (Config *) data;
 
     if (event == EVENT_ACTION) {
-	char buf[1024], iname[1024], *ipointer;
+	char buf[BUFSIZE], iname[BUFSIZE], *ipointer;
 	int iindex;
 
 	memset(&iname, 0, sizeof(iname));
@@ -1548,10 +1556,15 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
      */
     c = ctrl_text(s, " ", HELPCTX(no_help));
     c->generic.column = 1;
-    ssd->mkfolderbutton = ctrl_pushbutton(s, "New folder", 'f',
-					  HELPCTX(session_saved),
-					  sessionsaver_handler, P(ssd));
-    ssd->mkfolderbutton->generic.column = 1;
+    /*
+     * New folder button should not be available mid-session.
+     */
+    if (!midsession) {
+	ssd->mkfolderbutton = ctrl_pushbutton(s, "New folder", 'f',
+		HELPCTX(session_saved),
+		sessionsaver_handler, P(ssd));
+	ssd->mkfolderbutton->generic.column = 1;
+    };
     /* Reset columns so that the buttons are alongside the list, rather
      * than alongside that edit box. */
     ctrl_columns(s, 1, 100);
