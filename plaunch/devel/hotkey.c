@@ -6,7 +6,7 @@
 #include <stdio.h>
 #endif				/* _NDEBUG && MINIRTL */
 
-#define HOTKEY_NONE			"None"
+#define HOTKEY_NONE		"None"
 #define HOTKEY_INVALID		"Invalid hotkey"
 #define HOTKEY_CONTROL_KEY	"Ctrl"
 #define HOTKEY_ALT_KEY		"Alt"
@@ -17,9 +17,6 @@
 #define BUFSIZE 100
 
 static WNDPROC oldwindowproc;
-
-const char *const HOTKEY_STRINGS[HOTKEY_MAX_ACTION + 1] =
-    { "", "", "Launch", "Edit", "Hide", "Kill" };
 
 void key_name(UINT modifiers, UINT vkey, char *buffer,
 	      unsigned int bufsize)

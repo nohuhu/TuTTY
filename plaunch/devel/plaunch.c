@@ -1,7 +1,7 @@
 /*
  * PLaunch: a convenient PuTTY launching and session-management utility.
  * Distributed under MIT license, same as PuTTY itself.
- * (c) 2004 dwalin <dwalin@dwalin.ru>
+ * (c) 2004, 2005 dwalin <dwalin@dwalin.ru>
  * Portions (c) Simon Tatham.
  *
  * Implementation file.
@@ -12,8 +12,9 @@
 #include "entry.h"
 #include "dlgtmpl.h"
 #include "misc.h"
-#include "registry.h"
 #include "hotkey.h"
+#include "winmenu.h"
+#include "session.h"
 
 #define IMG_FOLDER_OPEN	    4
 #define IMG_FOLDER_CLOSED   3
@@ -144,30 +145,33 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	return TRUE;
     case WM_LAUNCHPUTTY:
 	{
-	    char buf[BUFSIZE];
+	    char *path;
 	    HWND pwin;
 	    int limit;
 
 	    if (!lParam)
 		return FALSE;
 
-	    reg_make_path(NULL, (char *) lParam, buf);
-	    reg_read_i(buf, PLAUNCH_LIMIT_ENABLE, 0, &limit);
+	    path = (char *)lParam;
+
+	    ses_read_i(&config->sessionroot, path, PLAUNCH_LIMIT_ENABLE, 
+		0, &limit);
 
 	    if (limit) {
 		int i, number, active, searchfor, action[2];
 		struct process_record *pr;
 
-		reg_read_i(buf, PLAUNCH_LIMIT_NUMBER, 0, &number);
+		ses_read_i(&config->sessionroot, path, PLAUNCH_LIMIT_NUMBER, 
+		    0, &number);
 
 		if (number) {
 		    active =
 			enum_process_records(process_records, nprocesses,
-					     (char *) lParam);
+					     (char *)lParam);
 
 		    if (active >= number) {
-			reg_read_i(buf, PLAUNCH_LIMIT_SEARCHFOR, 0,
-				   &searchfor);
+			ses_read_i(&config->sessionroot, path, 
+			    PLAUNCH_LIMIT_SEARCHFOR, 0, &searchfor);
 
 			pr = get_nth_process_record(process_records,
 						    nprocesses,
@@ -175,10 +179,10 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 						    searchfor);
 
 			if (pr && pr->window) {
-			    reg_read_i(buf, PLAUNCH_LIMIT_ACTION1, 0,
-				       &action[0]);
-			    reg_read_i(buf, PLAUNCH_LIMIT_ACTION2, 0,
-				       &action[1]);
+			    ses_read_i(&config->sessionroot, path, 
+				PLAUNCH_LIMIT_ACTION1, 0, &action[0]);
+			    ses_read_i(&config->sessionroot, path, 
+				PLAUNCH_LIMIT_ACTION2, 0, &action[1]);
 
 			    for (i = 0; i < 2; i++) {
 				switch (action[i]) {
@@ -340,23 +344,20 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	    x = dis->rcItem.left + 2;
 	    y = dis->rcItem.top + 1;
 
-	    if (is_folder(path)) {
+	    if (ses_is_folder(&config->sessionroot, path)) {
 		if (selected)
-		    icon =
-			ImageList_ExtractIcon(0, config->image_list,
-					      config->img_open);
+		    icon = ImageList_ExtractIcon(0, config->image_list,
+					config->img_open);
 		else
-		    icon =
-			ImageList_ExtractIcon(0, config->image_list,
-					      config->img_closed);
+		    icon = ImageList_ExtractIcon(0, config->image_list,
+					config->img_closed);
 	    } else {
-		char sesicon[256], buf[1024];
+		char sesicon[256];
 
 		icon = NULL;
 
-		buf[0] = '\0';
-		reg_make_path("", path, buf);
-		if (reg_read_s(buf, SESSIONICON, "", sesicon, 255)
+		if (ses_read_s(&config->sessionroot, path, SESSIONICON, 
+		    "", sesicon, 255)
 		    && sesicon[0]) {
 		    char iname[256], *comma;
 		    int iindex;
@@ -489,6 +490,18 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
     config->hinst = inst;
 
     config->main_icon = LoadIcon(inst, MAKEINTRESOURCE(IDI_MAINICON));
+
+    /*
+     * initialize non-default session root
+     */
+    {
+	char errmsg[BUFSIZE];
+
+	if (!ses_init_session_root(&config->sessionroot, cmdline, errmsg)) {
+	    MessageBox(NULL, errmsg, "PuTTY Launcher Error", MB_OK | MB_ICONERROR);
+	    return 0;
+	};
+    };
 
     /*
      * set up the config
@@ -655,6 +668,10 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 			action = "hiding";
 			destination = "active window";
 			break;
+		    case WM_CYCLEWINDOW:
+			action = "cycling through";
+			destination = "session windows";
+			break;
 		    };
 		    break;
 		case HOTKEY_ACTION_LAUNCH:
@@ -790,6 +807,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
     DestroyMenu(config->systray_menu);
 
 //      UnregisterClass("PLaunchTransparentChildDialog", config->hinst);
+
+    ses_finish_session_root(&config->sessionroot);
 
     /*
      * clean up the config

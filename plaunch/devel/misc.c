@@ -4,6 +4,7 @@
 #include "misc.h"
 #include "registry.h"
 #include "hotkey.h"
+#include "winmenu.h"
 
 typedef BOOL(WINAPI * SHGIL_PROC) (HIMAGELIST * phLarge,
 				   HIMAGELIST * phSmall);
@@ -87,33 +88,34 @@ static char *firstname(char *path)
 };
 
 HTREEITEM treeview_additem(HWND treeview, HTREEITEM parent,
-			   struct _config * cfg, char *name, char *path,
-			   int isfolder)
+			   session_callback_t *scb)
 {
     HTREEITEM hti;
     TVITEM tvi;
     TVINSERTSTRUCT tvins;
 
+    if (!scb)
+	return NULL;
+
     memset(&tvi, 0, sizeof(TVITEM));
     tvi.mask = TVIF_TEXT | TVIF_CHILDREN | TVIF_IMAGE | TVIF_SELECTEDIMAGE;
-    tvi.pszText = name;
-    tvi.cchTextMax = strlen(name);
-    tvi.cChildren = isfolder;
+    tvi.pszText = scb->session->name;
+    tvi.cchTextMax = strlen(scb->session->name);
+    tvi.cChildren = scb->session->isfolder;
 
     if (tvi.cChildren) {
-	tvi.iImage = cfg->img_closed;
-	tvi.iSelectedImage = cfg->img_closed;
+	tvi.iImage = config->img_closed;
+	tvi.iSelectedImage = config->img_closed;
     } else {
-	char sesicon[256], buf[1024];
+	char sesicon[256];
 	HICON icon;
 	int iindex;
 
 	icon = NULL;
 	iindex = 0;
 
-	buf[0] = '\0';
-	reg_make_path("", path, buf);
-	if (reg_read_s(buf, SESSIONICON, "", sesicon, 255) && sesicon[0]) {
+	if (ses_read_s(&scb->session->root, scb->session->path, SESSIONICON, 
+	    "", sesicon, 255) && sesicon[0]) {
 	    char iname[256], *comma;
 
 	    iname[0] = '\0';
@@ -135,14 +137,14 @@ HTREEITEM treeview_additem(HWND treeview, HTREEITEM parent,
 	    tvi.iImage = iindex;
 	    tvi.iSelectedImage = iindex;
 	} else {
-	    tvi.iImage = cfg->img_session;
-	    tvi.iSelectedImage = cfg->img_session;
+	    tvi.iImage = config->img_session;
+	    tvi.iSelectedImage = config->img_session;
 	};
     };
 
     tvins.item = tvi;
     tvins.hParent = parent;
-    tvins.hInsertAfter = TVI_FIRST;
+    tvins.hInsertAfter = TVI_LAST;
 
     hti = TreeView_InsertItem(treeview, &tvins);
 
@@ -155,45 +157,57 @@ HTREEITEM treeview_additem(HWND treeview, HTREEITEM parent,
     return hti;
 };
 
-static int treeview_callback(char *name, char *path,
-			     int isfolder, int mode,
-			     void *priv1, void *priv2, void *priv3)
+static void treeview_callback(session_callback_t *scb)
 {
     HWND treeview;
-    HTREEITEM hti;
+    HTREEITEM item, newitem;
     int isexpanded;
-    char buf[BUFSIZE];
 
-    switch (mode) {
-    case REG_MODE_PREPROCESS:
-	return (int) treeview_additem((HWND) priv2, (HTREEITEM) priv1,
-				      (struct _config *) priv3, name, path,
-				      isfolder);
-    case REG_MODE_POSTPROCESS:
+    if (!scb)
+	return;
+
+    treeview = (HWND) scb->public2;
+
+    item = scb->protected1 ? 
+	(HTREEITEM) scb->protected1 : 
+	(HTREEITEM) scb->public1;
+
+    switch (scb->mode) {
+    case SES_MODE_PREPROCESS:
+	newitem = treeview_additem(treeview, item, scb);
+
+	if (scb->session->isfolder)
+	    scb->protected1 = (void *) newitem;
+
+	break;
+    case SES_MODE_POSTPROCESS:
 	{
-	    int ret;
+	    if (!scb->session->isfolder)
+		return;
 
-	    if (!isfolder)
-		return 0;
+	    ses_read_i(&scb->session->root, scb->session->path, 
+		ISEXPANDED, 0, &isexpanded);
 
-	    hti = (HTREEITEM) priv1;
-	    treeview = (HWND) priv2;
-
-	    reg_make_path(NULL, path, buf);
-	    reg_read_i(buf, ISEXPANDED, 0, &isexpanded);
-
-	    if (isfolder && isexpanded)
-		ret = TreeView_Expand(treeview, hti, TVE_EXPAND);
-
-	    return (int) hti;
+	    if (scb->session->isfolder && isexpanded)
+		TreeView_Expand(treeview, item, TVE_EXPAND);
 	};
     };
-    return 0;
+    return;
 };
 
 HTREEITEM treeview_addtree(HWND hwndTV, HTREEITEM _parent, char *root)
 {
-    reg_walk_over_tree(root, treeview_callback, _parent, hwndTV, config);
+    session_walk_t sw;
+
+    memset(&sw, 0, sizeof(sw));
+    sw.root = config->sessionroot;
+    sw.root_path = root;
+    sw.depth = SES_MAX_DEPTH;
+    sw.callback = treeview_callback;
+    sw.public1 = _parent;
+    sw.public2 = hwndTV;
+
+    ses_walk_over_tree(&sw);
 
     return _parent;
 };
@@ -231,8 +245,7 @@ unsigned int treeview_getitempath(HWND treeview, HTREEITEM item, char *buf)
     while (parent = TreeView_GetParent(treeview, curitem)) {
 	treeview_getitemname(treeview, parent, buf3, BUFSIZE);
 	strcpy(buf2, buf);
-	sprintf(buf, "%s\\%s", buf2, buf3);
-	strcpy(buf, buf2);
+	sprintf(buf, "%s\\%s", buf3, buf2);
 	curitem = parent;
     };
 
@@ -259,7 +272,7 @@ static HTREEITEM _treeview_getitemfrompath(HWND treeview, HTREEITEM parent,
     do {
 	treeview_getitemname(treeview, child, iname, BUFSIZE);
 	if (!strcmp(name, iname)) {
-	    if (fname[0] == '\0')
+	    if (!fname[0])
 		return child;
 	    else
 		return _treeview_getitemfrompath(treeview, child,
@@ -290,7 +303,7 @@ HMENU menu_addrunning(HMENU menu)
 
     memset(&wl, 0, sizeof(struct windowlist));
 
-    EnumWindows(CountPuTTYWindows, (LPARAM) & wl.nhandles);
+    EnumWindows(CountPuTTYWindows, (LPARAM)&wl.nhandles);
 
     if (!wl.nhandles) {
 	AppendMenu(menu, MF_STRING | MF_GRAYED, IDM_EMPTY,
@@ -394,12 +407,18 @@ HMENU menu_refresh(HMENU menu, char *root)
  * puttytel.exe. If this search is also unsuccessful, it simply 
  * returns NULL and relies on the user to set the correct path 
  * in the options dialog.
+ * UPDATE: now this function first tries to find tutty.exe or
+ * tuttytel.exe, then putty.exe or puttytel.exe.
  */
 unsigned int get_putty_path(char *buf, unsigned int bufsize)
 {
     char *file;
 
-    if (SearchPath(NULL, "putty.exe", NULL, bufsize, buf, &file))
+    if (SearchPath(NULL, "tutty.exe", NULL, bufsize, buf, &file))
+	return TRUE;
+    else if (SearchPath(NULL, "tuttytel.exe", NULL, bufsize, buf, &file))
+	return TRUE;
+    else if (SearchPath(NULL, "putty.exe", NULL, bufsize, buf, &file))
 	return TRUE;
     else if (SearchPath(NULL, "puttytel.exe", NULL, bufsize, buf, &file))
 	return TRUE;
@@ -407,69 +426,85 @@ unsigned int get_putty_path(char *buf, unsigned int bufsize)
 	return FALSE;
 };
 
-static int hotkeys_callback(char *name, char *path, int isfolder, int mode,
-			    void *priv1, void *priv2, void *priv3)
+static void hotkeys_callback(session_callback_t *scb)
 {
-    struct _config *cfg = (struct _config *) priv2;
-    char buf1[BUFSIZE], buf2[BUFSIZE];
+    char buf[BUFSIZE];
     int i, hotkey;
+    Config *cfg = (Config *) scb->public1;
 
-    if (mode == REG_MODE_POSTPROCESS)
-	return 0;
+    if (!scb)
+	return;
 
-    reg_make_path(NULL, path, buf1);
+    if (scb->session->isfolder || 
+	scb->mode == SES_MODE_POSTPROCESS)
+	return;
 
-    for (i = 2; i <= 5; i++) {
-	sprintf(buf2, "%s%d", HOTKEY, i);
-	if (reg_read_i(buf1, buf2, 0, &hotkey) && hotkey) {
-	    cfg->hotkeys[cfg->nhotkeys].action = i;
+    for (i = 0; i < 3; i++) {
+	sprintf(buf, "%s%d", HOTKEY, i);
+	if (ses_read_i(&scb->session->root, scb->session->path, 
+	    buf, 0, &hotkey) && hotkey) {
+	    cfg->hotkeys[cfg->nhotkeys].action = i + HOTKEY_ACTION_LAUNCH;
 	    cfg->hotkeys[cfg->nhotkeys].hotkey = hotkey;
-	    cfg->hotkeys[cfg->nhotkeys].destination = dupstr(path);
+	    cfg->hotkeys[cfg->nhotkeys].destination = 
+		dupstr(scb->session->path);
 	    cfg->nhotkeys++;
 	};
     };
 
-    return 0;
+    return;
 };
 
-static int extract_hotkeys(struct _config *cfg, char *root)
+static int extract_hotkeys(Config *cfg, char *root)
 {
-    reg_walk_over_tree(root, hotkeys_callback, NULL, config, NULL);
+    session_walk_t sw;
+
+    memset(&sw, 0, sizeof(sw));
+    sw.root = cfg->sessionroot;
+    sw.root_path = root;
+    sw.depth = SES_MAX_DEPTH;
+    sw.callback = hotkeys_callback;
+    sw.public1 = cfg;
+    
+    ses_walk_over_tree(&sw);
 
     return TRUE;
 };
 
-static int launching_callback(char *name, char *path, int isfolder,
-			      int mode, void *priv1, void *priv2,
-			      void *priv3)
+static void launching_callback(session_callback_t *scb)
 {
-    char buf[BUFSIZE];
     HWND pwin;
-    int i, when = (int) priv2;
+    int i, when;
 
-    if (mode == REG_MODE_POSTPROCESS)
-	return 0;
+    if (!scb)
+	return;
 
-    reg_make_path(NULL, path, buf);
-    reg_read_i(buf, PLAUNCH_AUTORUN_ENABLE, 0, &i);
+    when = (int) scb->public1;
+
+    if (scb->mode == SES_MODE_POSTPROCESS)
+	return;
+
+    ses_read_i(&scb->session->root, scb->session->path, 
+	PLAUNCH_AUTORUN_ENABLE, 0, &i);
 
     if (!i)
-	return 0;
+	return;
 
-    reg_read_i(buf, PLAUNCH_AUTORUN_WHEN, 0, &i);
+    ses_read_i(&scb->session->root, scb->session->path, 
+	PLAUNCH_AUTORUN_WHEN, 0, &i);
 
     if (i != when)
-	return 0;
+	return;
 
-    pwin = launch_putty(0, path);
+    pwin = launch_putty(0, scb->session->path);
 
     if (!pwin)
-	return 0;
+	return;
 
-    reg_read_i(buf, PLAUNCH_AUTORUN_ACTION, 0, &i);
+    ses_read_i(&scb->session->root, scb->session->path, 
+	PLAUNCH_AUTORUN_ACTION, 0, &i);
 
     if (!i)
-	return 0;
+	return;
 
     switch (i) {
     case AUTORUN_ACTION_HIDE:
@@ -490,18 +525,26 @@ static int launching_callback(char *name, char *path, int isfolder,
 	break;
     };
 
-    return 0;
+    return;
 };
 
 int launch_autoruns(char *root, int when)
 {
-    reg_walk_over_tree(root, launching_callback, NULL, (void *) when,
-		       NULL);
+    session_walk_t sw;
+
+    memset(&sw, 0, sizeof(sw));
+    sw.root = config->sessionroot;
+    sw.root_path = root;
+    sw.depth = SES_MAX_DEPTH;
+    sw.callback = launching_callback;
+    sw.public1 = (void *) when;
+
+    ses_walk_over_tree(&sw);
 
     return TRUE;
 };
 
-unsigned int read_config(struct _config *cfg)
+unsigned int read_config(Config *cfg)
 {
     char buf[BUFSIZE];
     int hk;
@@ -509,8 +552,8 @@ unsigned int read_config(struct _config *cfg)
     if (!cfg)
 	return FALSE;
 
-    if (reg_read_s
-	(PLAUNCH_REGISTRY_ROOT, PLAUNCH_PUTTY_PATH, NULL, buf, BUFSIZE))
+    if (reg_read_s(PLAUNCH_REGISTRY_ROOT, PLAUNCH_PUTTY_PATH, 
+	NULL, buf, BUFSIZE))
 	strcpy(config->putty_path, buf);
     else
 	get_putty_path(config->putty_path, BUFSIZE);
@@ -520,30 +563,38 @@ unsigned int read_config(struct _config *cfg)
     if (hk == 0)
 	hk = MAKELPARAM(MOD_WIN, 'P');
 
-    config->hotkeys[config->nhotkeys].action = HOTKEY_ACTION_MESSAGE;
-    config->hotkeys[config->nhotkeys].hotkey = hk;
-    config->hotkeys[config->nhotkeys].destination = (char *) WM_LAUNCHBOX;
-    config->nhotkeys++;
+    config->hotkeys[HOTKEY_LAUNCHBOX].action = HOTKEY_ACTION_MESSAGE;
+    config->hotkeys[HOTKEY_LAUNCHBOX].hotkey = hk;
+    config->hotkeys[HOTKEY_LAUNCHBOX].destination = (char *)WM_LAUNCHBOX;
 
     reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_WL, 0, &hk);
 
     if (hk == 0)
 	hk = MAKELPARAM(MOD_WIN, 'W');
 
-    config->hotkeys[config->nhotkeys].action = HOTKEY_ACTION_MESSAGE;
-    config->hotkeys[config->nhotkeys].hotkey = hk;
-    config->hotkeys[config->nhotkeys].destination = (char *) WM_WINDOWLIST;
-    config->nhotkeys++;
+    config->hotkeys[HOTKEY_WINDOWLIST].action = HOTKEY_ACTION_MESSAGE;
+    config->hotkeys[HOTKEY_WINDOWLIST].hotkey = hk;
+    config->hotkeys[HOTKEY_WINDOWLIST].destination = (char *)WM_WINDOWLIST;
 
     reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_HIDEWINDOW, 0, &hk);
 
-//      if (hk == 0)
-//              hk = MAKELPARAM(MOD_WIN, 'H');
+    if (hk == 0)
+	hk = MAKELPARAM(MOD_WIN, 'H');
 
-    config->hotkeys[config->nhotkeys].action = HOTKEY_ACTION_MESSAGE;
-    config->hotkeys[config->nhotkeys].hotkey = hk;
-    config->hotkeys[config->nhotkeys].destination = (char *) WM_HIDEWINDOW;
-    config->nhotkeys++;
+    config->hotkeys[HOTKEY_HIDEWINDOW].action = HOTKEY_ACTION_MESSAGE;
+    config->hotkeys[HOTKEY_HIDEWINDOW].hotkey = hk;
+    config->hotkeys[HOTKEY_HIDEWINDOW].destination = (char *)WM_HIDEWINDOW;
+
+    reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_CYCLEWINDOW, 0, &hk);
+
+    if (hk == 0)
+	hk = MAKELPARAM(MOD_WIN, 'Q');
+
+    config->hotkeys[HOTKEY_CYCLEWINDOW].action = HOTKEY_ACTION_MESSAGE;
+    config->hotkeys[HOTKEY_CYCLEWINDOW].hotkey = hk;
+    config->hotkeys[HOTKEY_CYCLEWINDOW].destination = (char *)WM_CYCLEWINDOW;
+
+    config->nhotkeys = 4;
 
     reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLEDRAGDROP, TRUE, &hk);
     if (hk)
@@ -570,7 +621,7 @@ unsigned int read_config(struct _config *cfg)
     return TRUE;
 };
 
-unsigned int save_config(struct _config *cfg, int what)
+unsigned int save_config(Config *cfg, int what)
 {
     char buf[BUFSIZE];
 
@@ -587,27 +638,35 @@ unsigned int save_config(struct _config *cfg, int what)
     };
 
     if (what & CFG_SAVE_HOTKEY_LB) {
-	if (config->hotkeys[0].hotkey == MAKELPARAM(MOD_WIN, 'P'))
+	if (config->hotkeys[HOTKEY_LAUNCHBOX].hotkey == MAKELPARAM(MOD_WIN, 'P'))
 	    reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_LB);
 	else
 	    reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_LB,
-			config->hotkeys[0].hotkey);
+			config->hotkeys[HOTKEY_LAUNCHBOX].hotkey);
     };
 
     if (what & CFG_SAVE_HOTKEY_WL) {
-	if (config->hotkeys[1].hotkey == MAKELPARAM(MOD_WIN, 'W'))
+	if (config->hotkeys[HOTKEY_WINDOWLIST].hotkey == MAKELPARAM(MOD_WIN, 'W'))
 	    reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_WL);
 	else
 	    reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_WL,
-			config->hotkeys[1].hotkey);
+			config->hotkeys[HOTKEY_WINDOWLIST].hotkey);
     };
 
     if (what & CFG_SAVE_HOTKEY_HIDEWINDOW) {
-	if (config->hotkeys[2].hotkey == 0)
+	if (config->hotkeys[HOTKEY_HIDEWINDOW].hotkey == 0)
 	    reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_HIDEWINDOW);
 	else
 	    reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_HIDEWINDOW,
-			config->hotkeys[2].hotkey);
+			config->hotkeys[HOTKEY_HIDEWINDOW].hotkey);
+    };
+
+    if (what & CFG_SAVE_HOTKEY_CYCLEWINDOW) {
+	if (config->hotkeys[HOTKEY_CYCLEWINDOW].hotkey == 0)
+	    reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_CYCLEWINDOW);
+	else
+	    reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_CYCLEWINDOW,
+			config->hotkeys[HOTKEY_CYCLEWINDOW].hotkey);
     };
 
     if (what & CFG_SAVE_DRAGDROP) {

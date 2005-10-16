@@ -6,19 +6,6 @@
 
 #include "dlgtmpl.h"
 
-/*
-static LPWORD lpwAlign(LPWORD lpIn) {
-    ULONG ul;
-
-    ul = (ULONG) lpIn;
-    ul +=3;
-    ul >>=2;
-    ul <<=2;
-
-    return (LPWORD) ul;
-}
-*/
-
 void *dialogtemplate_create_ex(void *templt, DWORD style, DWORD exstyle,
 			       int x, int y, int cx, int cy,
 			       char *caption, int controls,

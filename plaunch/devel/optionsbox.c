@@ -7,6 +7,7 @@
 #include "registry.h"
 #include "resource.h"
 #include "dlgtmpl.h"
+#include "resrc1.h"
 
 #define PLAUNCH_AUTO_STARTUP	"Software\\Microsoft\\Windows\\CurrentVersion\\Run"
 
@@ -16,7 +17,7 @@
 static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 				   WPARAM wParam, LPARAM lParam)
 {
-    static HWND ppedit, ppbutton, lbedit, wledit, hdedit;
+    static HWND ppedit, ppbutton, lbedit, wledit, hdedit, cycledit;
     static DWORD lb_key, wl_key;
     int check;
     char buf[256];
@@ -33,12 +34,14 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 	ppedit = GetDlgItem(hwnd, IDC_OPTIONSBOX_EDITBOX_PUTTYPATH);
 	ppbutton = GetDlgItem(hwnd, IDC_OPTIONSBOX_BUTTON_PUTTYPATH);
 	lbedit = GetDlgItem(hwnd, IDC_OPTIONSBOX_EDITBOX_HOTKEY_LBOX);
-	make_hotkey(lbedit, config->hotkeys[0].hotkey);
+	make_hotkey(lbedit, config->hotkeys[HOTKEY_LAUNCHBOX].hotkey);
 	wledit = GetDlgItem(hwnd, IDC_OPTIONSBOX_EDITBOX_HOTKEY_WLIST);
-	make_hotkey(wledit, config->hotkeys[1].hotkey);
+	make_hotkey(wledit, config->hotkeys[HOTKEY_WINDOWLIST].hotkey);
 	hdedit =
 	    GetDlgItem(hwnd, IDC_OPTIONSBOX_EDITBOX_HOTKEY_HIDEWINDOW);
-	make_hotkey(hdedit, config->hotkeys[2].hotkey);
+	make_hotkey(hdedit, config->hotkeys[HOTKEY_HIDEWINDOW].hotkey);
+	cycledit = GetDlgItem(hwnd, IDC_OPTIONSBOX_EDITBOX_HOTKEY_CYCLEWINDOW);
+	make_hotkey(cycledit, config->hotkeys[HOTKEY_CYCLEWINDOW].hotkey);
 
 	if (reg_read_s(PLAUNCH_AUTO_STARTUP, APPNAME, NULL, buf, BUFSIZE))
 	    check = BST_CHECKED;
@@ -90,6 +93,7 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 	unmake_hotkey(lbedit);
 	unmake_hotkey(wledit);
 	unmake_hotkey(hdedit);
+	unmake_hotkey(cycledit);
 	return FALSE;
     case WM_COMMAND:
 	switch (wParam) {
@@ -101,28 +105,36 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 		hotkey = get_hotkey(lbedit);
 
 		if (hotkey) {
-		    config->hotkeys[0].hotkey = hotkey;
+		    config->hotkeys[HOTKEY_LAUNCHBOX].hotkey = hotkey;
 		    what |= CFG_SAVE_HOTKEY_LB;
 		    SendMessage(config->hwnd_mainwindow, WM_HOTKEYCHANGE,
-				0, 0);
+				HOTKEY_LAUNCHBOX, 0);
 		};
 
 		hotkey = get_hotkey(wledit);
 
 		if (hotkey) {
-		    config->hotkeys[1].hotkey = hotkey;
+		    config->hotkeys[HOTKEY_WINDOWLIST].hotkey = hotkey;
 		    what |= CFG_SAVE_HOTKEY_WL;
 		    SendMessage(config->hwnd_mainwindow, WM_HOTKEYCHANGE,
-				1, 0);
+				HOTKEY_WINDOWLIST, 0);
 		};
 
 		hotkey = get_hotkey(hdedit);
 
 		if (hotkey) {
-		    config->hotkeys[2].hotkey = hotkey;
+		    config->hotkeys[HOTKEY_HIDEWINDOW].hotkey = hotkey;
 		    what |= CFG_SAVE_HOTKEY_HIDEWINDOW;
 		    SendMessage(config->hwnd_mainwindow, WM_HOTKEYCHANGE,
-				2, 0);
+				HOTKEY_HIDEWINDOW, 0);
+		};
+
+		hotkey = get_hotkey(cycledit);
+		if (hotkey) {
+		    config->hotkeys[HOTKEY_CYCLEWINDOW].hotkey = hotkey;
+		    what |= CFG_SAVE_HOTKEY_CYCLEWINDOW;
+		    SendMessage(config->hwnd_mainwindow, WM_HOTKEYCHANGE,
+				HOTKEY_CYCLEWINDOW, 0);
 		};
 
 		if (SendMessage(ppedit, EM_GETMODIFY, 0, 0)) {
@@ -218,7 +230,7 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 		ofn.lStructSize = sizeof(OPENFILENAME);
 		ofn.hwndOwner = hwnd;
 		ofn.lpstrFilter =
-		    "PuTTY executable\0putty.exe;puttytel.exe\0All Files\0*.*\0\0";
+		    "PuTTY executable\0tutty.exe;tuttytel.exe;putty.exe;puttytel.exe\0All Files\0*.*\0\0";
 		ofn.lpstrFile = buf;
 		ofn.nMaxFile = BUFSIZE;
 		ofn.lpstrTitle = "Locate PuTTY executable";

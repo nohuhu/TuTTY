@@ -3,22 +3,25 @@
 
 #include <windows.h>
 #include <commctrl.h>
+#include "session.h"
 
 #define CFG_SAVE_PUTTY_PATH			0x0001
 #define CFG_SAVE_HOTKEY_LB			0x0002
 #define CFG_SAVE_HOTKEY_WL			0x0004
-#define	CFG_SAVE_HOTKEY_HIDEWINDOW	0x0008
-#define CFG_SAVE_DRAGDROP			0x0010
-#define CFG_SAVE_SAVECURSOR			0x0020
-#define	CFG_SAVE_SHOWONQUIT			0x0040
-#define	CFG_SAVE_MENUSESSIONS		0x0080
-#define	CFG_SAVE_MENURUNNING		0x0100
+#define	CFG_SAVE_HOTKEY_HIDEWINDOW		0x0008
+#define	CFG_SAVE_HOTKEY_CYCLEWINDOW		0x0010
+#define CFG_SAVE_DRAGDROP			0x0020
+#define CFG_SAVE_SAVECURSOR			0x0040
+#define	CFG_SAVE_SHOWONQUIT			0x0080
+#define	CFG_SAVE_MENUSESSIONS			0x0100
+#define	CFG_SAVE_MENURUNNING			0x0200
 
 #define PLAUNCH_REGISTRY_ROOT		"Software\\SimonTatham\\PuTTY\\PLaunch"
 #define PLAUNCH_PUTTY_PATH			"PuTTYPath"
 #define PLAUNCH_HOTKEY_LB			"HotKeyLaunchBox"
 #define PLAUNCH_HOTKEY_WL			"HotKeyWindowList"
 #define	PLAUNCH_HOTKEY_HIDEWINDOW	"HotKeyHideForegroundWindow"
+#define PLAUNCH_HOTKEY_CYCLEWINDOW	"HotKeyCycleThroughWindows"
 #define PLAUNCH_ENABLEDRAGDROP		"EnableDragDrop"
 #define PLAUNCH_ENABLESAVECURSOR	"EnableSaveCursor"
 #define PLAUNCH_SAVEDCURSORPOS		"SavedCursorPosition"
@@ -32,8 +35,7 @@ int GetSystemImageLists(HMODULE * hShell32, HIMAGELIST * phLarge,
 void FreeSystemImageLists(HMODULE hShell32);
 
 HTREEITEM treeview_additem(HWND treeview, HTREEITEM parent,
-			   struct _config *cfg, char *name, char *path,
-			   int isfolder);
+			   session_callback_t *scb);
 HTREEITEM treeview_addtree(HWND hwndTV, HTREEITEM _parent, char *root);
 
 unsigned int treeview_getitemname(HWND treeview, HTREEITEM item, char *buf,

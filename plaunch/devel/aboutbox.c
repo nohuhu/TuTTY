@@ -1,6 +1,10 @@
 #include "plaunch.h"
 #include "resource.h"
 #include "dlgtmpl.h"
+#include "build.h"
+
+#define STR1(x) #x
+#define STR(x) STR1(x)
 
 #define HOMEPAGE	"http://putty.dwalin.ru/plaunch"
 
@@ -21,11 +25,11 @@ static int CALLBACK AboutProc(HWND hwnd, UINT msg,
 		    (LPARAM) config->main_icon);
 #ifdef RELEASE
 	SetWindowText(GetDlgItem(hwnd, IDC_ABOUTBOX_STATIC_VERSION),
-		      "Version " APPVERSION ", release.");
+		      "Release " APPVERSION " build " STR(BUILDNUMBER) ".");
 #else
 	SetWindowText(GetDlgItem(hwnd, IDC_ABOUTBOX_STATIC_VERSION),
-		      "Verion " APPVERSION ", built on " __DATE__ " "
-		      __TIME__);
+		      "Version " APPVERSION " build " STR(BUILDNUMBER) ", compiled " 
+		      __DATE__ " " __TIME__);
 #endif				/* RELEASE */
 	return TRUE;
     case WM_COMMAND:

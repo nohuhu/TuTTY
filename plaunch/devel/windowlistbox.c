@@ -22,8 +22,10 @@ BOOL CALLBACK CountPuTTYWindows(HWND hwnd, LPARAM lParam)
     memset(classname, 0, BUFSIZE);
 
     if (GetClassName(hwnd, classname, BUFSIZE) &&
-	(strcmp(classname, PUTTY) == 0 ||
-	 strcmp(classname, PUTTYTEL) == 0))
+	(!strcmp(classname, TUTTY) ||
+	 !strcmp(classname, TUTTYTEL) ||
+	 !strcmp(classname, PUTTY) ||
+	 !strcmp(classname, PUTTYTEL)))
 	(*count)++;
 
     free(classname);
@@ -46,8 +48,10 @@ BOOL CALLBACK EnumPuTTYWindows(HWND hwnd, LPARAM lParam)
     memset(classname, 0, BUFSIZE);
 
     if (GetClassName(hwnd, classname, BUFSIZE) &&
-	(strcmp(classname, PUTTY) == 0 ||
-	 strcmp(classname, PUTTYTEL) == 0)) {
+	(!strcmp(classname, TUTTY) ||
+	 !strcmp(classname, TUTTYTEL) ||
+	 !strcmp(classname, PUTTY) ||
+	 !strcmp(classname, PUTTYTEL))) {
 	wl->handles[wl->current] = hwnd;
 	wl->current++;
     };

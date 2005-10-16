@@ -24,10 +24,11 @@
 				AdditionalOptions="/Gs "
 				Optimization="1"
 				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="1"
 				FavorSizeOrSpeed="2"
 				OptimizeForWindowsApplication="TRUE"
 				AdditionalIncludeDirectories="c:\home\plaunch"
-				PreprocessorDefinitions="NDEBUG;MINIRTL;WIN32;_WINDOWS;NO_PARSE_CMD_LINE"
+				PreprocessorDefinitions="NDEBUG;MINIRTL;WIN32;_WINDOWS;NO_PARSE_CMD_LINE;PLAUNCH"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="4"
@@ -50,6 +51,8 @@
 				OutputFile=".\Release/plaunch.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
+				IgnoreAllDefaultLibraries="FALSE"
+				IgnoreDefaultLibraryNames="LIBC.LIB"
 				GenerateMapFile="TRUE"
 				MapFileName=".\Release/plaunch.map"
 				SubSystem="2"
@@ -99,6 +102,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				EnableIntrinsicFunctions="TRUE"
+				AdditionalIncludeDirectories="c:\home\plaunch"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;PLAUNCH"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
@@ -137,7 +141,9 @@
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
-				Name="VCPreBuildEventTool"/>
+				Name="VCPreBuildEventTool"
+				Description="Generating build number"
+				CommandLine="c:\usr\perl\bin\perl c:\home\plaunch\build.pl"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
 			<Tool
@@ -298,7 +304,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""/>
+						PreprocessorDefinitions="PLAUNCH"/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Win32">
@@ -328,6 +334,9 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\session.c">
+			</File>
+			<File
 				RelativePath="windowlistbox.c">
 				<FileConfiguration
 					Name="Release|Win32">
@@ -353,6 +362,9 @@
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
+				RelativePath=".\build.h">
+			</File>
+			<File
 				RelativePath="dlgtmpl.h">
 			</File>
 			<File
@@ -372,6 +384,9 @@
 			</File>
 			<File
 				RelativePath="resource.h">
+			</File>
+			<File
+				RelativePath=".\session.h">
 			</File>
 			<File
 				RelativePath=".\winmenu.h">

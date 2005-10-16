@@ -6,6 +6,7 @@
 #include "plaunch.h"
 #endif
 #include "misc.h"
+#include "session.h"
 
 #ifndef PLAUNCH
 #define IDM_SAVED_MIN 0x1000
@@ -17,46 +18,57 @@
 #define BUFSIZE		2048
 #endif
 
-static int menu_callback(char *name, char *path,
-			 int isfolder, int mode,
-			 void *priv1, void *priv2, void *priv3)
+static void menu_callback(session_callback_t *scb)
 {
     HMENU menu;
     HMENU add_menu;
     static int id = 0;
-    int ret;
 
-    if (mode == REG_MODE_POSTPROCESS)
-	return 0;
+    if (!scb)
+	return;
 
-    menu = (HMENU) priv1;
+    if (scb->mode == SES_MODE_POSTPROCESS)
+	return;
 
-    if (isfolder) {
+    menu = scb->protected1 ?
+	(HMENU) scb->protected1 :
+	(HMENU) scb->public1;
+
+    if (scb->session->isfolder) {
 	add_menu = CreatePopupMenu();
-	ret = InsertMenu(menu, 0, MF_OWNERDRAW | MF_POPUP | MF_BYPOSITION,
-			 (UINT) add_menu, dupstr(path));
-	return (int) add_menu;
+	AppendMenu(menu, MF_OWNERDRAW | MF_POPUP,
+		   (UINT)add_menu, dupstr(scb->session->path));
+	scb->protected1 = (void *) add_menu;
+	return;
     } else {
-	ret =
-	    InsertMenu(menu, 0, MF_OWNERDRAW | MF_ENABLED | MF_BYPOSITION,
+	AppendMenu(menu, MF_OWNERDRAW | MF_ENABLED,
 #ifdef PLAUNCH
-		       IDM_SESSION_BASE + id,
+		    IDM_SESSION_BASE + id,
 #else
-		       IDM_SAVED_MIN + id,
+		    IDM_SAVED_MIN + id,
 #endif
-		       dupstr(path));
+		    dupstr(scb->session->path));
 #ifdef PLAUNCH
 	id++;
 #else
 	id += MENU_SAVED_STEP;
 #endif
-	return 0;
+	return;
     };
 };
 
 HMENU menu_addsession(HMENU menu, char *root)
 {
-    reg_walk_over_tree(root, menu_callback, menu, NULL, NULL);
+    session_walk_t sw;
+
+    memset(&sw, 0, sizeof(sw));
+    sw.root = config->sessionroot;
+    sw.root_path = root;
+    sw.depth = SES_MAX_DEPTH;
+    sw.callback = menu_callback;
+    sw.public1 = menu;
+
+    ses_walk_over_tree(&sw);
 
     if (GetMenuItemCount(menu) == 0)
 	AppendMenu(menu, MF_STRING | MF_GRAYED, IDM_EMPTY,
