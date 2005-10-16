@@ -2,12 +2,16 @@
 #define SESSION_H
 
 #ifdef PLAUNCH
-#include "plaunch.h"
+//#include "plaunch.h"
 #endif
 
 #ifndef BUFSIZE
 #define BUFSIZE			2048
 #endif /* BUFSIZE */
+
+#ifndef PUTTY_SESSION_ROOT
+#define	PUTTY_SESSION_ROOT	"PUTTY_SESSION_ROOT"
+#endif /* PUTTY_SESSION_ROOT */
 
 #define SES_MODE_PREPROCESS	1
 #define	SES_MODE_POSTPROCESS	2
@@ -51,14 +55,32 @@ typedef struct _session_callback_t {
     session_root_t root;
     session_t *session;
     int mode;			    /* session callback mode: pre/post process */
-    void *retval;		    /* 
-				     * any custom return value that should be passed
-				     * further 
+    void *public1;		    /*
+				     * this is a public data passed to callback
+				     * function as an input. these pointers
+				     * are guaranteed to never be changed by the 
+				     * callback function itself.
 				     */
-    void *p1;			    /* any private data */
-    void *p2;
-    void *p3;
-    void *p4;
+    void *public2;
+    void *public3;
+    void *public4;
+    void *protected1;		    /*
+				     * these pointers are used for passing
+				     * data deeper into the tree. we can provide
+				     * allocated storage space from the outside
+				     * but should never ever try to preset any values.
+				     */
+    void *protected2;
+    void *protected3;
+    void *protected4;
+    void *private1;		    /* 
+				     * any private data passed between callbacks
+				     * on the same level. it is not available for
+				     * manipulating from outside in any way.
+				     */
+    void *private2;
+    void *private3;
+    void *private4;
 } session_callback_t;
 
 /*
@@ -89,14 +111,25 @@ typedef struct _session_walk_t {
 				     */
     ses_callback_f callback;	    /* call back function */
     ses_compare_f compare;	    /* comparison function. use default if NULL */
-    void *retval;		    /* 
-				     * any custom return value that should be passed
-				     * further 
+    void *public1;		    /*
+				     * this is a public data passed to callback
+				     * function as an input. these pointers
+				     * are guaranteed to never be changed by the 
+				     * callback function itself.
 				     */
-    void *p1;			    /* any private data */
-    void *p2;			     
-    void *p3;			     
-    void *p4;
+
+    void *public2;			     
+    void *public3;			     
+    void *public4;
+    void *protected1;		    /*
+				     * these pointers are used for passing
+				     * data deeper into the tree. we can provide
+				     * allocated storage space from the outside
+				     * but should never ever try to preset any values.
+				     */
+    void *protected2;
+    void *protected3;
+    void *protected4;
 } session_walk_t;
 
 char *ses_lastname(char *in);
@@ -108,23 +141,35 @@ int ses_is_folder(session_root_t *root, char *path);
 
 int ses_make_folder(session_root_t *root, char *path);
 
+int ses_copy_session(session_root_t *root, char *frompath, char *topath);
 int ses_copy_tree(session_root_t *root, char *frompath, char *topath);
+
+int ses_delete_value(session_root_t *root, char *path, char *valname);
+int ses_delete_session(session_root_t *root, char *path);
+int ses_delete_folder(session_root_t *root, char *path);
+int ses_delete_tree(session_root_t *root, char *path);
+
 int ses_move_tree(session_root_t *root, char *frompath, char *topath);
 
-int ses_delete_value(session_root_t *root, char *spath, char *valname);
-int ses_delete_session(session_root_t *root, char *spath);
-int ses_delete_tree(session_root_t *root, char *spath);
-
-int ses_read_i(session_root_t *root, char *spath, char *valname, 
+int ses_read_i(session_root_t *root, char *path, char *valname, 
 	       int defval, int *value);
-int ses_write_i(session_root_t *root, char *spath, char *valname, 
+int ses_write_i(session_root_t *root, char *path, char *valname, 
 		int value);
 
-int ses_read_s(session_root_t *root, char *spath, char *valname, 
+int ses_read_s(session_root_t *root, char *path, char *valname, 
 	       char *defval, char *buffer, int bufsize);
-int ses_write_s(session_root_t *root, char *spath, char *valname, 
+int ses_write_s(session_root_t *root, char *path, char *valname, 
 		char *value);
 
 int ses_walk_over_tree(session_walk_t *sw);
+
+void *ses_enum_settings_start(session_root_t *root, char *path);
+int ses_enum_settings_count(session_root_t *root, void *handle);
+char *ses_enum_settings_next(session_root_t *root, void *handle, 
+			     char *buffer, int buflen);
+void ses_enum_settings_finish(session_root_t *root, void *handle);
+
+int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg);
+int ses_finish_session_root(session_root_t *root);
 
 #endif				/* SESSION_H */

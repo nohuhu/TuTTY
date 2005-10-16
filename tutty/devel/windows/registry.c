@@ -96,30 +96,29 @@ static void stupid_sort(char **strings, unsigned int count)
 };
 
 int reg_make_path(char *parent, char *path, char *buffer,
-		  unsigned int bufsize)
+		  int bufsize)
+{
+    return reg_make_path_specific(REGROOT, parent, path, buffer, bufsize);
+};
+
+int reg_make_path_specific(char *root, char *parent, char *path,
+			   char *buffer, int bufsize)
 {
     int ret = 0;
 
-    if (!path || !path[0] || !buffer || !bufsize)
+    if (!root || !path || !buffer || !bufsize)
 	return FALSE;
 
     if (parent && parent[0])
-#ifdef _WINDOWS
-	ret = _snprintf(buffer, bufsize, "%s\\%s\\%s", REGROOT, parent, path);
-#else
-	snprintf(buffer, bufsize, "%s\\%s\\%s", REGROOT, parent, path);
-#endif /* _WINDOWS */
+	ret = _snprintf(buffer, bufsize, "%s\\%s\\%s", root, parent, path);
     else if (path && path[0])
-#ifdef _WINDOWS
-	ret = _snprintf(buffer, bufsize, "%s\\%s", REGROOT, path);
-#else
-	snprintf(buffer, bufsize, "%s\\%s", REGROOT, path);
-#endif /* _WINDOWS */
+	ret = _snprintf(buffer, bufsize, "%s\\%s", root, path);
     else
-	strncpy(buffer, REGROOT, bufsize);
+	strncpy(buffer, root, bufsize);
 
     return ret < 0 ? FALSE : TRUE;
 };
+
 
 int reg_read_i(char *keyname, char *valname, int defval, int *value)
 {
@@ -175,7 +174,7 @@ int reg_write_i(char *keyname, char *valname, int value)
 };
 
 int reg_read_s(char *keyname, char *valname, char *defval,
-			char *buffer, unsigned int bufsize)
+			char *buffer, int bufsize)
 {
     HKEY key = 0;
     DWORD type, size;
@@ -261,6 +260,53 @@ int reg_delete_k(char *keyname)
     RegCloseKey(key);
 
     return (err == ERROR_SUCCESS);
+};
+
+int reg_copy_session(char *frompath, char *topath)
+{
+    HKEY key1, key2;
+    char from[BUFSIZE], to[BUFSIZE], name[BUFSIZE];
+    BYTE data[16384];
+    DWORD i, size, dsize, subkeys, values;
+
+    if (!frompath || !topath)
+	return FALSE;
+
+    mungestr(frompath, from, BUFSIZE);
+    mungestr(topath, to, BUFSIZE);
+
+    if (RegOpenKeyEx(HKEY_CURRENT_USER, from, 0, KEY_READ, &key1) !=
+	ERROR_SUCCESS)
+	return FALSE;
+
+    if (RegCreateKeyEx(HKEY_CURRENT_USER, to, 0, NULL, 
+	REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, 
+	&key2, &size) != ERROR_SUCCESS) {
+	RegCloseKey(key1);
+	return FALSE;
+    };
+
+    if (RegQueryInfoKey(key1, NULL, NULL, NULL, &subkeys,
+			NULL, NULL, &values, NULL,
+			NULL, NULL, NULL) != ERROR_SUCCESS) {
+	RegCloseKey(key1);
+	RegCloseKey(key2);
+	return FALSE;
+    };
+
+    for (i = 0; i < values; i++) {
+	size = dsize = 16384;
+	if ((RegEnumValue(key1, i, (LPSTR) name, &size, NULL,
+			  &subkeys, data, &dsize) != ERROR_SUCCESS) ||
+	    (RegSetValueEx(key2, name, 0, subkeys, data, dsize) !=
+	     ERROR_SUCCESS)) {
+	    RegCloseKey(key1);
+	    RegCloseKey(key2);
+	    return FALSE;
+	};
+    };
+
+    return FALSE;
 };
 
 static int _reg_copy_tree(char *from, char *to)
@@ -435,15 +481,11 @@ void *reg_enum_settings_start(char *path)
 {
     struct enumsettings *ret;
     HKEY key;
-    char tmp[BUFSIZE], munge[BUFSIZE];
+    char munge[BUFSIZE];
 
-    if (path && path[0]) {
-	mungestr(path, munge, BUFSIZE);
-	_snprintf(tmp, BUFSIZE, "%s\\%s", REGROOT, munge);
-    } else
-	strncpy(tmp, REGROOT, BUFSIZE);
+    mungestr(path, munge, BUFSIZE);
 
-    if (RegOpenKey(HKEY_CURRENT_USER, tmp, &key) != ERROR_SUCCESS) {
+    if (RegOpenKey(HKEY_CURRENT_USER, munge, &key) != ERROR_SUCCESS) {
 	return NULL;
     };
 

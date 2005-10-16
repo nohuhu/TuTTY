@@ -70,8 +70,12 @@ extern const char *const AUTORUN_ACTION_STRINGS[];
 int sessioncmp(const char *a, const char *b);
 
 int reg_make_path(char *parent, char *path, char *buffer,
-		  unsigned int bufsize);
+		  int bufsize);
 
+int reg_make_path_specific(char *root, char *parent, char *path,
+			   char *buffer, int bufsize);
+
+int reg_copy_session(char *from, char *to);
 int reg_copy_tree(char *keyfrom, char *keyto);
 
 int reg_delete_v(char *keyname, char *valname);
@@ -84,7 +88,7 @@ int reg_read_i(char *keyname, char *valname, int defval, int *value);
 int reg_write_i(char *keyname, char *valname, int value);
 
 int reg_read_s(char *keyname, char *valname, char *defval,
-	       char *buffer, unsigned int bufsize);
+	       char *buffer, int bufsize);
 
 int reg_write_s(char *keyname, char *valname, char *value);
 

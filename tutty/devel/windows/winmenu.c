@@ -30,16 +30,15 @@ static void menu_callback(session_callback_t *scb)
     if (scb->mode == SES_MODE_POSTPROCESS)
 	return;
 
-    menu = (HMENU)scb->retval;
-
-    if (!menu)
-	menu = (HMENU)scb->p1;
+    menu = scb->protected1 ?
+	(HMENU) scb->protected1 :
+	(HMENU) scb->public1;
 
     if (scb->session->isfolder) {
 	add_menu = CreatePopupMenu();
 	AppendMenu(menu, MF_OWNERDRAW | MF_POPUP,
 		   (UINT)add_menu, dupstr(scb->session->path));
-	scb->retval = (void *)add_menu;
+	scb->protected1 = (void *) add_menu;
 	return;
     } else {
 	AppendMenu(menu, MF_OWNERDRAW | MF_ENABLED,
@@ -63,10 +62,11 @@ HMENU menu_addsession(HMENU menu, char *root)
     session_walk_t sw;
 
     memset(&sw, 0, sizeof(sw));
+    sw.root = config->sessionroot;
     sw.root_path = root;
     sw.depth = SES_MAX_DEPTH;
     sw.callback = menu_callback;
-    sw.p1 = menu;
+    sw.public1 = menu;
 
     ses_walk_over_tree(&sw);
 
