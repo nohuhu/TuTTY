@@ -88,11 +88,12 @@ static char *firstname(char *path)
 };
 
 HTREEITEM treeview_additem(HWND treeview, HTREEITEM parent,
-			   session_callback_t *scb)
+			   void *scbt)
 {
     HTREEITEM hti;
     TVITEM tvi;
     TVINSERTSTRUCT tvins;
+    session_callback_t *scb = (session_callback_t *)scbt;
 
     if (!scb)
 	return NULL;

@@ -3,17 +3,6 @@
 
 #include <windows.h>
 
-#define	HOTKEY_ACTION_NONE		0
-#define HOTKEY_ACTION_MESSAGE		1
-#define	HOTKEY_ACTION_LAUNCH		2
-#define	HOTKEY_ACTION_EDIT		3
-#define	HOTKEY_ACTION_KILL		4
-#define	HOTKEY_ACTION_HIDE		5
-
-#define	HOTKEY_MAX_ACTION		5
-
-extern const char *const HOTKEY_STRINGS[];
-
 #define HK_CHANGE	0x9000
 
 void key_name(UINT modifiers, UINT vkey, char *buffer,

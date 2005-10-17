@@ -8,7 +8,9 @@
  */
 
 #include "plaunch.h"
+#include <tchar.h>
 #include <wininet.h>
+#include <stdio.h>
 #include "entry.h"
 #include "dlgtmpl.h"
 #include "misc.h"

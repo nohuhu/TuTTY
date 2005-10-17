@@ -1,6 +1,6 @@
+#include "plaunch.h"
 #include <stdio.h>
 #include "entry.h"
-#include "plaunch.h"
 #include "misc.h"
 #include "hotkey.h"
 #include "registry.h"
@@ -88,6 +88,28 @@ static DLGPROC childdialogprocedures[TAB_CHILDDIALOGS] =
       LaunchBoxChildDialogProc4 };
 
 /*
+ * trivial case for tree-view: we don't mind whether this is a folder
+ * or a session, just plain case-sensitive comparison.
+ * default settings come first, of course
+ */
+static int treeview_sessioncmp(const char *a, const char *b)
+{
+    /*
+     * Alphabetical order, except that "Default Settings" is a
+     * special case and comes first.
+     */
+    if (!strcmp(a, "Default Settings"))
+	return -1;		/* a comes first */
+    if (!strcmp(b, "Default Settings"))
+	return +1;		/* b comes first */
+    /*
+     * FIXME: perhaps we should ignore the first & in determining
+     * sort order.
+     */
+    return strcmp(a, b);	/* otherwise, compare normally */
+};
+
+/*
  * Launch Box: tree view compare function.
  */
 
@@ -98,7 +120,7 @@ static int CALLBACK treeview_compare(LPARAM p1, LPARAM p2, LPARAM sort)
     treeview_getitemname((HWND) sort, (HTREEITEM) p1, item1, BUFSIZE);
     treeview_getitemname((HWND) sort, (HTREEITEM) p2, item2, BUFSIZE);
 
-    return sessioncmp(item1, item2);
+    return treeview_sessioncmp(item1, item2);
 };
 
 /*

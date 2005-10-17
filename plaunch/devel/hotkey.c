@@ -66,6 +66,7 @@ void key_name(UINT modifiers, UINT vkey, char *buffer,
 static int CALLBACK HotKeyControlProc(HWND hwnd, UINT msg,
 				      WPARAM wParam, LPARAM lParam)
 {
+    LONG hotkey;
     static LONG oldhotkey = 0;
     static unsigned int firstmessage = FALSE;
 
@@ -81,7 +82,7 @@ static int CALLBACK HotKeyControlProc(HWND hwnd, UINT msg,
     case WM_SYSKEYDOWN:
 	{
 	    UINT modifiers, vkey;
-	    char buf[32];
+	    char buf[BUFSIZE];
 
 	    firstmessage = TRUE;
 
@@ -106,7 +107,7 @@ static int CALLBACK HotKeyControlProc(HWND hwnd, UINT msg,
 
 	    oldhotkey = GetWindowLong(hwnd, GWL_USERDATA);
 
-	    key_name(modifiers, vkey, buf, 32);
+	    key_name(modifiers, vkey, buf, BUFSIZE);
 	    SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM) buf);
 
 	    return FALSE;
@@ -114,9 +115,8 @@ static int CALLBACK HotKeyControlProc(HWND hwnd, UINT msg,
     case WM_KEYUP:
     case WM_SYSKEYUP:
 	{
-	    LONG hotkey;
 	    UINT modifiers, vkey;
-	    char buf[32];
+	    char buf[BUFSIZE];
 	    unsigned int modf = 0;
 
 	    if (!firstmessage)
@@ -140,6 +140,15 @@ static int CALLBACK HotKeyControlProc(HWND hwnd, UINT msg,
 
 		return FALSE;
 	    case VK_TAB:
+		hotkey = GetWindowLong(hwnd, GWL_USERDATA);
+		if (hotkey) {
+		    modifiers = LOWORD(hotkey);
+		    vkey = HIWORD(hotkey);
+		    key_name(modifiers, vkey, buf, BUFSIZE);
+		    SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM) buf);
+		} else
+		    SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM) HOTKEY_NONE);
+		SendMessage(hwnd, EM_SETMODIFY, (WPARAM) TRUE, 0);
 		SetFocus(GetNextDlgTabItem(GetParent(hwnd),
 					   hwnd,
 					   GetAsyncKeyState(VK_SHIFT)));
@@ -150,6 +159,15 @@ static int CALLBACK HotKeyControlProc(HWND hwnd, UINT msg,
 
 		return FALSE;
 	    case VK_ESCAPE:
+		hotkey = GetWindowLong(hwnd, GWL_USERDATA);
+		if (hotkey) {
+		    modifiers = LOWORD(hotkey);
+		    vkey = HIWORD(hotkey);
+		    key_name(modifiers, vkey, buf, BUFSIZE);
+		    SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM) buf);
+		} else
+		    SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM) HOTKEY_NONE);
+		SendMessage(hwnd, EM_SETMODIFY, (WPARAM) TRUE, 0);
 		PostMessage(GetParent(hwnd), WM_COMMAND, (WPARAM) IDCANCEL,
 			    0);
 
@@ -186,7 +204,7 @@ static int CALLBACK HotKeyControlProc(HWND hwnd, UINT msg,
 	    if (RegisterHotKey(hwnd, 0, modifiers, vkey)) {
 		hotkey = MAKELPARAM(modifiers, vkey);
 		SetWindowLong(hwnd, GWL_USERDATA, hotkey);
-		key_name(modifiers, vkey, buf, 32);
+		key_name(modifiers, vkey, buf, BUFSIZE);
 		SendMessage(hwnd, WM_SETTEXT, 0, (LPARAM) buf);
 		UnregisterHotKey(hwnd, 0);
 		SendMessage(hwnd, EM_SETMODIFY, (WPARAM) TRUE, 0);
@@ -208,14 +226,14 @@ static int CALLBACK HotKeyControlProc(HWND hwnd, UINT msg,
 
 unsigned int make_hotkey(HWND editbox, LONG defhotkey)
 {
-    char buf[32];
+    char buf[BUFSIZE];
 
     oldwindowproc =
 	(WNDPROC) SetWindowLong(editbox, GWL_WNDPROC,
 				(LONG) HotKeyControlProc);
     SetWindowLong(editbox, GWL_USERDATA, defhotkey);
     if (defhotkey) {
-	key_name(LOWORD(defhotkey), HIWORD(defhotkey), buf, 32);
+	key_name(LOWORD(defhotkey), HIWORD(defhotkey), buf, BUFSIZE);
 	SendMessage(editbox, WM_SETTEXT, 0, (LPARAM) buf);
     } else
 	SendMessage(editbox, WM_SETTEXT, 0, (LPARAM) HOTKEY_NONE);
@@ -237,12 +255,12 @@ LONG get_hotkey(HWND editbox)
 
 LONG set_hotkey(HWND editbox, LONG newhotkey)
 {
-    char buf[32];
+    char buf[BUFSIZE];
     LONG oldhotkey;
 
     oldhotkey = SetWindowLong(editbox, GWL_USERDATA, newhotkey);
     if (newhotkey) {
-	key_name(LOWORD(newhotkey), HIWORD(newhotkey), buf, 32);
+	key_name(LOWORD(newhotkey), HIWORD(newhotkey), buf, BUFSIZE);
 	SendMessage(editbox, WM_SETTEXT, 0, (LPARAM) buf);
     } else
 	SendMessage(editbox, WM_SETTEXT, 0, (LPARAM) HOTKEY_NONE);

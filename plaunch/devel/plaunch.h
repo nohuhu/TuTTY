@@ -10,13 +10,13 @@
 #ifndef PLAUNCH_H
 #define PLAUNCH_H
 
-#include <stdio.h>
 #include <windows.h>
-#include <tchar.h>
-#include <shellapi.h>
 #include <commctrl.h>
+#include "session.h"
 
-#define BUFSIZE 512
+#ifndef BUFSIZE
+#define BUFSIZE 2048
+#endif /* BUFSIZE */
 
 #define WM_XUSER		(WM_APP + 0x2000)
 #define WM_SYSTRAY		(WM_XUSER + 6)
@@ -76,8 +76,6 @@
 #define	HOTKEY_HIDEWINDOW	2
 #define	HOTKEY_CYCLEWINDOW	3
 #define	HOTKEY_LAST		3
-
-#include "session.h"
 
 struct _config {
     HINSTANCE hinst;

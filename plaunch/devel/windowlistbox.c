@@ -1,4 +1,5 @@
 #include "plaunch.h"
+#include <stdio.h>
 #include "entry.h"
 #include "misc.h"
 #include "resource.h"
