@@ -3,7 +3,8 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="tutty"
-	SccProjectName="&quot;//depot/putty/MSVC/putty&quot;"
+	ProjectGUID="{EA8D6D2E-36C8-441A-B241-C567B8F1AF69}"
+	SccProjectName="&quot;//depot/tutty/MSVC/tutty&quot;"
 	SccLocalPath=".">
 	<Platforms>
 		<Platform
@@ -17,7 +18,7 @@
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="0"
+			CharacterSet="2"
 			WholeProgramOptimization="TRUE">
 			<Tool
 				Name="VCCLCompilerTool"
@@ -26,8 +27,8 @@
 				InlineFunctionExpansion="1"
 				FavorSizeOrSpeed="2"
 				OptimizeForWindowsApplication="TRUE"
-				AdditionalIncludeDirectories="c:\home\putty,c:\home\putty\windows,c:\home\plaunch"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;RELEASE=0.58"
+				AdditionalIncludeDirectories="c:\home\tutty-0.58.1,c:\home\tutty-0.58.1\windows"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;RELEASE=0.58.1.0"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="4"
@@ -35,13 +36,13 @@
 				BufferSecurityCheck="FALSE"
 				EnableFunctionLevelLinking="FALSE"
 				UsePrecompiledHeader="0"
-				PrecompiledHeaderFile=".\Release/putty.pch"
+				PrecompiledHeaderFile=".\Release/tutty.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				Detect64BitPortabilityProblems="FALSE"
+				CallingConvention="0"
 				CompileAs="1"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -49,9 +50,10 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib imm32.lib winmm.lib"
 				OutputFile=".\Release/tutty.exe"
+				Version="0.58.1"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\Release/putty.pdb"
+				ProgramDatabaseFile=".\Release/tutty.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -63,7 +65,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/putty.tlb"
+				TypeLibraryName=".\Release/tutty.tlb"
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
@@ -93,31 +95,24 @@
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="0">
+			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				EnableIntrinsicFunctions="TRUE"
-				AdditionalIncludeDirectories="c:\home\putty,c:\home\putty\windows,c:\home\plaunch"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;SNAPSHOT"
-				MinimalRebuild="TRUE"
-				ExceptionHandling="FALSE"
-				BasicRuntimeChecks="0"
-				SmallerTypeCheck="FALSE"
+				AdditionalIncludeDirectories="c:\home\tutty-0.58.1,c:\home\tutty-0.58.1\windows"
+				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;SNAPSHOT=0.58.1.1"
+				BasicRuntimeChecks="3"
 				RuntimeLibrary="5"
 				StructMemberAlignment="3"
-				BufferSecurityCheck="TRUE"
-				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\Debug/putty.pch"
+				PrecompiledHeaderFile=".\Debug/tutty.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
-				CompileAs="1"/>
+				DebugInformationFormat="4"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
@@ -127,7 +122,7 @@
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\Debug/putty.pdb"
+				ProgramDatabaseFile=".\Debug/tutty.pdb"
 				SubSystem="2"
 				TargetMachine="1"/>
 			<Tool
@@ -136,14 +131,12 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/putty.tlb"
+				TypeLibraryName=".\Debug/tutty.tlb"
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
-				Name="VCPreBuildEventTool"
-				Description="Generating build number"
-				CommandLine="c:\usr\perl\bin\perl c:\home\putty\build.pl"/>
+				Name="VCPreBuildEventTool"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
 			<Tool
@@ -425,7 +418,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\plaunch\registry.c">
+				RelativePath="..\..\windows\registry.c">
 			</File>
 			<File
 				RelativePath="..\..\rlogin.c">
@@ -907,21 +900,9 @@
 			</File>
 			<File
 				RelativePath="..\..\windows\window.c">
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						GlobalOptimizations="TRUE"
-						FavorSizeOrSpeed="2"
-						OptimizeForWindowsApplication="TRUE"
-						AdditionalIncludeDirectories="c:\home\putty;c:\home\putty\windows"
-						ExceptionHandling="FALSE"
-						BufferSecurityCheck="FALSE"
-						EnableFunctionLevelLinking="FALSE"/>
-				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\plaunch\winmenu.c">
+				RelativePath="..\..\windows\winmenu.c">
 			</File>
 			<File
 				RelativePath="..\..\windows\winmisc.c">
@@ -931,19 +912,6 @@
 			</File>
 			<File
 				RelativePath="..\..\windows\winnoise.c">
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="c:\home\putty;c:\home\putty\windows"
-						UsePrecompiledHeader="0"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="c:\home\putty;c:\home\putty\windows"/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\windows\winpgntc.c">
@@ -990,9 +958,6 @@
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\build.h">
-			</File>
-			<File
 				RelativePath="..\..\charset\charset.h">
 			</File>
 			<File
@@ -1032,7 +997,7 @@
 				RelativePath="..\..\puttyps.h">
 			</File>
 			<File
-				RelativePath="..\..\..\plaunch\registry.h">
+				RelativePath="..\..\windows\registry.h">
 			</File>
 			<File
 				RelativePath="..\..\session.h">
@@ -1059,7 +1024,7 @@
 				RelativePath="..\..\winhelp.h">
 			</File>
 			<File
-				RelativePath="..\..\..\plaunch\winmenu.h">
+				RelativePath="..\..\windows\winmenu.h">
 			</File>
 			<File
 				RelativePath="..\..\windows\winstuff.h">
@@ -1069,10 +1034,10 @@
 			Name="Resource Files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
 			<File
-				RelativePath="..\..\putty.ico">
+				RelativePath="..\..\windows\putty.ico">
 			</File>
 			<File
-				RelativePath="..\..\puttycfg.ico">
+				RelativePath="..\..\windows\puttycfg.ico">
 			</File>
 			<File
 				RelativePath="..\..\windows\win_res.rc">

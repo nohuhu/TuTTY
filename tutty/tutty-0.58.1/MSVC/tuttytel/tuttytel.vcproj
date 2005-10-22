@@ -3,7 +3,8 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="tuttytel"
-	SccProjectName="&quot;//depot/putty/MSVC/puttytel&quot;"
+	ProjectGUID="{91016B2F-56E6-4796-963E-0894076A69D0}"
+	SccProjectName="&quot;//depot/tutty/MSVC/tuttytel&quot;"
 	SccLocalPath=".">
 	<Platforms>
 		<Platform
@@ -21,25 +22,20 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				EnableIntrinsicFunctions="TRUE"
-				AdditionalIncludeDirectories="c:\home\putty,c:\home\putty\windows,c:\home\plaunch"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;SNAPSHOT"
-				ExceptionHandling="FALSE"
+				AdditionalIncludeDirectories="c:\home\tutty-0.58.1,c:\home\tutty-0.58.1\windows"
+				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;SNAPSHOT=0.58.1.1"
 				BasicRuntimeChecks="3"
-				SmallerTypeCheck="FALSE"
 				RuntimeLibrary="5"
 				StructMemberAlignment="3"
-				BufferSecurityCheck="TRUE"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\Debug/puttytel.pch"
+				PrecompiledHeaderFile=".\Debug/tuttytel.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
-				CompileAs="1"/>
+				DebugInformationFormat="4"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
@@ -49,9 +45,8 @@
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\Debug/puttytel.pdb"
+				ProgramDatabaseFile=".\Debug/tuttytel.pdb"
 				SubSystem="2"
-				HeapReserveSize="0"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -59,14 +54,12 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/puttytel.tlb"
+				TypeLibraryName=".\Debug/tuttytel.tlb"
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
-				Name="VCPreBuildEventTool"
-				Description="Generating build number"
-				CommandLine="c:\usr\perl\bin\perl c:\home\putty\build.pl"/>
+				Name="VCPreBuildEventTool"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
 			<Tool
@@ -91,30 +84,23 @@
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2"
-			WholeProgramOptimization="TRUE">
+			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="1"
-				GlobalOptimizations="TRUE"
 				InlineFunctionExpansion="1"
-				FavorSizeOrSpeed="2"
-				OptimizeForWindowsApplication="TRUE"
-				AdditionalIncludeDirectories="c:\home\putty,c:\home\putty\windows,c:\home\plaunch"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;RELEASE=0.58"
+				AdditionalIncludeDirectories="c:\home\tutty-0.58.1,c:\home\tutty-0.58.1\windows"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;RELEASE=0.58.1.0"
 				StringPooling="TRUE"
-				ExceptionHandling="FALSE"
 				RuntimeLibrary="4"
 				StructMemberAlignment="3"
-				BufferSecurityCheck="FALSE"
-				EnableFunctionLevelLinking="FALSE"
-				PrecompiledHeaderFile=".\Release/puttytel.pch"
+				EnableFunctionLevelLinking="TRUE"
+				PrecompiledHeaderFile=".\Release/tuttytel.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
 				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				CompileAs="1"/>
+				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
@@ -123,11 +109,8 @@
 				OutputFile=".\Release/tuttytel.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\Release/puttytel.pdb"
+				ProgramDatabaseFile=".\Release/tuttytel.pdb"
 				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				OptimizeForWindows98="1"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -135,7 +118,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/puttytel.tlb"
+				TypeLibraryName=".\Release/tuttytel.tlb"
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
@@ -489,25 +472,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\testback.c">
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						PreprocessorDefinitions=""
-						BasicRuntimeChecks="3"
-						BrowseInformation="1"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="1"
-						PreprocessorDefinitions=""/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="..\..\timing.c">
 			</File>
 			<File
@@ -555,7 +519,6 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
-						AdditionalIncludeDirectories="c:\home\putty;c:\home\putty\windows"
 						PreprocessorDefinitions=""
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
@@ -593,6 +556,9 @@
 				RelativePath="..\..\windows\winnet.c">
 			</File>
 			<File
+				RelativePath="..\..\windows\winpgntc.c">
+			</File>
+			<File
 				RelativePath="..\..\windows\winprint.c">
 			</File>
 			<File
@@ -615,9 +581,6 @@
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
-				RelativePath="..\..\build.h">
-			</File>
-			<File
 				RelativePath="..\..\charset\charset.h">
 			</File>
 			<File
@@ -628,6 +591,9 @@
 			</File>
 			<File
 				RelativePath="..\..\ldisc.h">
+			</File>
+			<File
+				RelativePath="..\..\mac\macstuff.h">
 			</File>
 			<File
 				RelativePath="..\..\misc.h">
@@ -654,7 +620,7 @@
 				RelativePath="..\..\windows\registry.h">
 			</File>
 			<File
-				RelativePath="..\..\session.h">
+				RelativePath="..\..\..\plaunch\session.h">
 			</File>
 			<File
 				RelativePath="..\..\ssh.h">
@@ -669,20 +635,26 @@
 				RelativePath="..\..\tree234.h">
 			</File>
 			<File
-				RelativePath="..\..\windows\winmenu.h">
+				RelativePath="..\..\unix\unix.h">
 			</File>
 			<File
-				RelativePath="..\..\windows\winstuff.h">
+				RelativePath="..\..\win_res.h">
+			</File>
+			<File
+				RelativePath="..\..\winhelp.h">
+			</File>
+			<File
+				RelativePath="..\..\winstuff.h">
 			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
 			<File
-				RelativePath="..\..\putty.ico">
+				RelativePath="..\..\windows\putty.ico">
 			</File>
 			<File
-				RelativePath="..\..\puttycfg.ico">
+				RelativePath="..\..\windows\puttycfg.ico">
 			</File>
 			<File
 				RelativePath="..\..\windows\win_res.rc">

@@ -1,6 +1,5 @@
 #include <windows.h>
 #include <stdio.h>
-#include "entry.h"
 #include "registry.h"
 
 #define BUFSIZE			512
