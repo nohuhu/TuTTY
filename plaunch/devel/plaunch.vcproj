@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="plaunch"
+	ProjectGUID="{DBA909D6-49E1-4550-9912-5C20FB7030D3}"
 	SccProjectName="&quot;//plaunch&quot;"
 	SccLocalPath=".">
 	<Platforms>
