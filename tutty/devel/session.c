@@ -31,7 +31,7 @@ static int (* default_copy_session)(char *, char *) =
     reg_copy_session;
 #endif /* _WINDOWS */
 
-static int (* default_delete_value)(char *, char *) =
+static int (* default_delete_value)(void *, char *) =
 #ifdef _WINDOWS
     reg_delete_v;
 #endif /* _WINDOWS */
@@ -46,25 +46,40 @@ static int (* default_delete_folder)(char *) =
     reg_delete_k;
 #endif /* _WINDOWS */
 
-static int (* default_read_i)(char *, char *, int, int *) =
+static int (* default_read_i)(void *, char *, int, int *) =
 #ifdef _WINDOWS
     reg_read_i;
 #endif /* _WINDOWS */
 
-static int (* default_write_i)(char *, char *, int) =
+static int (* default_write_i)(void *, char *, int) =
 #ifdef _WINDOWS
     reg_write_i;
 #endif /* _WINDOWS */
 
-static int (* default_read_s)(char *, char *, char *,
+static int (* default_read_s)(void *, char *, char *,
 			      char *, int) =
 #ifdef _WINDOWS
     reg_read_s;
 #endif /* _WINDOWS */
 
-static int (* default_write_s)(char *, char *, char *) =
+static int (* default_write_s)(void *, char *, char *) =
 #ifdef _WINDOWS
     reg_write_s;
+#endif /* _WINDOWS */
+
+static void * (* default_open_session_r)(char *) =
+#ifdef _WINDOWS
+    reg_open_session_r;
+#endif /* _WINDOWS */
+
+static void * (* default_open_session_w)(char *) =
+#ifdef _WINDOWS
+    reg_open_session_w;
+#endif /* _WINDOWS */
+
+static void (* default_close_session)(void *) =
+#ifdef _WINDOWS
+    reg_close_session;
 #endif /* _WINDOWS */
 
 static void * (* default_enum_settings_start)(char *) =
@@ -142,22 +157,29 @@ int ses_make_path(char *parent, char *path, char *buffer,
 int ses_is_folder(session_root_t *root, char *path)
 {
     char ppath[BUFSIZE];
+    void *handle;
     int isfolder = FALSE;
 
     if (!path || !path[0])
 	return FALSE;
 
     if (!root || !root->root_type) {
-	if (default_make_path(NULL, path, ppath, BUFSIZE))
-	    default_read_i(ppath, ISFOLDER, 0, &isfolder);
+	if (default_make_path(NULL, path, ppath, BUFSIZE) &&
+	    (handle = default_open_session_r(ppath)) != NULL) {
+	    default_read_i(handle, ISFOLDER, 0, &isfolder);
+	    default_close_session(handle);
+	};
     } else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
 	    if (root->root_location &&
 		reg_make_path_specific(root->root_location, NULL, 
-		    path, ppath, BUFSIZE))
-		reg_read_i(ppath, ISFOLDER, 0, &isfolder);
+		    path, ppath, BUFSIZE) &&
+		(handle = default_open_session_r(ppath)) != NULL) {
+		reg_read_i(handle, ISFOLDER, 0, &isfolder);
+		reg_close_session(handle);
+	    };
 	    break;
 #endif /* _WINDOWS */
 	};
@@ -168,22 +190,29 @@ int ses_is_folder(session_root_t *root, char *path)
 
 int ses_make_folder(session_root_t *root, char *path) {
     char ppath[BUFSIZE];
+    void *handle;
     int ret = FALSE;
 
     if (!path || !path[0])
 	return FALSE;
 
     if (!root || !root->root_type) {
-	if (default_make_path(NULL, path, ppath, BUFSIZE))
+	if (default_make_path(NULL, path, ppath, BUFSIZE) &&
+	    (handle = default_open_session_w(ppath)) != NULL) {
 	    ret = default_write_i(ppath, ISFOLDER, TRUE);
+	    default_close_session(handle);
+	};
     } else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
 	    if (root->root_location &&
 		reg_make_path_specific(root->root_location, NULL, 
-		    path, ppath, BUFSIZE))
-		reg_write_i(ppath, ISFOLDER, TRUE);
+		    path, ppath, BUFSIZE) &&
+		(handle = reg_open_session_w(ppath)) != NULL) {
+		reg_write_i(handle, ISFOLDER, TRUE);
+		reg_close_session(handle);
+	    };
 	    break;
 #endif /* _WINDOWS */
 	};
@@ -312,26 +341,34 @@ int ses_copy_tree(session_root_t *root, char *frompath, char *topath)
 int ses_delete_value(session_root_t *root, char *path, char *valname) 
 {
     char ppath[BUFSIZE];
+    void *handle;
+    int ret = FALSE;
 
     if (!path || !valname)
 	return FALSE;
 
      if (!root || !root->root_type) {
-	if (default_make_path(NULL, path, ppath, BUFSIZE))
-	    return default_delete_value(ppath, valname);
+	if (default_make_path(NULL, path, ppath, BUFSIZE) &&
+	    (handle = default_open_session_w(ppath)) != NULL) {
+	    ret = default_delete_value(handle, valname);
+	    default_close_session(handle);
+	};
     } else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
 	    if (reg_make_path_specific(root->root_location,
-		    NULL, path, ppath, BUFSIZE))
-		return reg_delete_v(ppath, valname);
+		    NULL, path, ppath, BUFSIZE) &&
+		(handle = reg_open_session_w(ppath)) != NULL) {
+		ret = reg_delete_v(handle, valname);
+		reg_close_session(handle);
+	    };
 	    break;
 #endif /* _WINDOWS */
 	};
     };
 
-    return FALSE;
+    return ret;
 };
 
 int ses_delete_session(session_root_t *root, char *path)
@@ -445,103 +482,135 @@ int ses_read_i(session_root_t *root, char *path, char *valname,
 	       int defval, int *value)
 {
     char ppath[BUFSIZE];
+    void *handle;
+    int ret = FALSE;
 
     if (!path || !valname)
 	return FALSE;
 
      if (!root || !root->root_type) {
-	if (default_make_path(NULL, path, ppath, BUFSIZE))
-	    return default_read_i(ppath, valname, defval, value);
+	if (default_make_path(NULL, path, ppath, BUFSIZE) &&
+	    (handle = default_open_session_r(ppath)) != NULL) {
+	    ret = default_read_i(handle, valname, defval, value);
+	    default_close_session(handle);
+	};
     } else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
 	    if (reg_make_path_specific(root->root_location,
-		    NULL, path, ppath, BUFSIZE))
-		return reg_read_i(ppath, valname, defval, value);
+		    NULL, path, ppath, BUFSIZE) &&
+		(handle = reg_open_session_r(ppath)) != NULL) {
+		ret = reg_read_i(handle, valname, defval, value);
+		reg_close_session(handle);
+	    };
 	    break;
 #endif /* _WINDOWS */
 	};
     };
 
-    return FALSE;
+    return ret;
 };
 
 int ses_write_i(session_root_t *root, char *path, char *valname, int value)
 {
     char ppath[BUFSIZE];
+    void *handle;
+    int ret = FALSE;
 
     if (!path || !valname)
 	return FALSE;
 
      if (!root || !root->root_type) {
-	if (default_make_path(NULL, path, ppath, BUFSIZE))
-	    return default_write_i(ppath, valname, value);
+	if (default_make_path(NULL, path, ppath, BUFSIZE) &&
+	    (handle = default_open_session_w(ppath)) != NULL) {
+	    ret = default_write_i(handle, valname, value);
+	    default_close_session(handle);
+	};
     } else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
 	    if (reg_make_path_specific(root->root_location,
-		    NULL, path, ppath, BUFSIZE))
-		return reg_write_i(ppath, valname, value);
+		    NULL, path, ppath, BUFSIZE) &&
+		(handle = reg_open_session_w(ppath)) != NULL) {
+		ret = reg_write_i(handle, valname, value);
+		reg_close_session(handle);
+	    };
 	    break;
 #endif /* _WINDOWS */
 	};
     };
 
-    return FALSE;
+    return ret;
 };
 
 int ses_read_s(session_root_t *root, char *path, char *valname, 
 	       char *defval, char *buffer, int bufsize)
 {
     char ppath[BUFSIZE];
+    void *handle;
+    int ret = FALSE;
 
     if (!path || !valname)
 	return FALSE;
 
      if (!root || !root->root_type) {
-	if (default_make_path(NULL, path, ppath, BUFSIZE))
-	    return default_read_s(ppath, valname, defval, buffer, bufsize);
+	if (default_make_path(NULL, path, ppath, BUFSIZE) &&
+	    (handle = default_open_session_r(ppath)) != NULL) {
+	    ret = default_read_s(handle, valname, defval, buffer, bufsize);
+	    default_close_session(handle);
+	};
     } else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
 	    if (reg_make_path_specific(root->root_location,
-		    NULL, path, ppath, BUFSIZE))
-		return reg_read_s(ppath, valname, defval, buffer, bufsize);
+		    NULL, path, ppath, BUFSIZE) &&
+		(handle = reg_open_session_r(ppath)) != NULL) {
+		ret = reg_read_s(handle, valname, defval, buffer, bufsize);
+		reg_close_session(handle);
+	    };
 	    break;
 #endif /* _WINDOWS */
 	};
     };
 
-    return FALSE;
+    return ret;
 };
 
 int ses_write_s(session_root_t *root, char *path, char *valname, 
 		char *value)
 {
     char ppath[BUFSIZE];
+    void *handle;
+    int ret = FALSE;
 
     if (!path || !valname)
 	return FALSE;
 
      if (!root || !root->root_type) {
-	if (default_make_path(NULL, path, ppath, BUFSIZE))
-	    return default_write_s(ppath, valname, value);
+	if (default_make_path(NULL, path, ppath, BUFSIZE) &&
+	    (handle = default_open_session_w(ppath)) != NULL) {
+	    ret = default_write_s(handle, valname, value);
+	    default_close_session(handle);
+	};
     } else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
 	    if (reg_make_path_specific(root->root_location,
-		    NULL, path, ppath, BUFSIZE))
-		return reg_write_s(ppath, valname, value);
+		    NULL, path, ppath, BUFSIZE) &&
+		(handle = reg_open_session_w(ppath)) != NULL) {
+		ret = reg_write_s(handle, valname, value);
+		reg_close_session(handle);
+	    };
 	    break;
 #endif /* _WINDOWS */
 	};
     };
 
-    return FALSE;
+    return ret;
 };
 
 static int ses_compare_default(const session_t *a, const session_t *b)
@@ -785,6 +854,143 @@ int ses_walk_over_tree(session_walk_t *sw)
     ses_free_slist(slist, sessions);
 
     return TRUE;
+};
+
+void *ses_open_session_r(session_root_t *root, char *path)
+{
+    char ppath[BUFSIZE];
+
+    if (!path)
+	return FALSE;
+
+     if (!root || !root->root_type) {
+	if (default_make_path(NULL, path, ppath, BUFSIZE))
+	    return default_open_session_r(ppath);
+    } else {
+	switch (root->root_type) {
+#ifdef _WINDOWS
+	case SES_ROOT_REGISTRY:
+	    if (reg_make_path_specific(root->root_location,
+		    NULL, path, ppath, BUFSIZE))
+		return reg_open_session_r(ppath);
+	    break;
+#endif /* _WINDOWS */
+	};
+    };
+
+    return NULL;
+};
+
+void *ses_open_session_w(session_root_t *root, char *path)
+{
+    char ppath[BUFSIZE];
+
+    if (!path)
+	return FALSE;
+
+     if (!root || !root->root_type) {
+	if (default_make_path(NULL, path, ppath, BUFSIZE))
+	    return default_open_session_w(ppath);
+    } else {
+	switch (root->root_type) {
+#ifdef _WINDOWS
+	case SES_ROOT_REGISTRY:
+	    if (reg_make_path_specific(root->root_location,
+		    NULL, path, ppath, BUFSIZE))
+		return reg_open_session_w(ppath);
+	    break;
+#endif /* _WINDOWS */
+	};
+    };
+
+    return NULL;
+};
+
+void ses_close_session(session_root_t *root, void *handle)
+{
+     if (!root || !root->root_type)
+	default_close_session(handle);
+    else {
+	switch (root->root_type) {
+#ifdef _WINDOWS
+	case SES_ROOT_REGISTRY:
+	    reg_close_session(handle);
+	    break;
+#endif /* _WINDOWS */
+	};
+    };
+};
+
+int ses_read_handle_i(session_root_t *root, void *handle, char *valname,
+		      int defval, int *value)
+{
+     if (!root || !root->root_type)
+	return default_read_i(handle, valname, defval, value);
+    else {
+	switch (root->root_type) {
+#ifdef _WINDOWS
+	case SES_ROOT_REGISTRY:
+	    return reg_read_i(handle, valname, defval, value);
+	    break;
+#endif /* _WINDOWS */
+	};
+    };
+
+    return FALSE;
+};
+
+int ses_write_handle_i(session_root_t *root, void *handle, char *valname,
+		       int value)
+{
+     if (!root || !root->root_type)
+	return default_write_i(handle, valname, value);
+    else {
+	switch (root->root_type) {
+#ifdef _WINDOWS
+	case SES_ROOT_REGISTRY:
+	    return reg_write_i(handle, valname, value);
+	    break;
+#endif /* _WINDOWS */
+	};
+    };
+
+    return FALSE;
+};
+
+int ses_read_handle_s(session_root_t *root, void *handle, char *valname,
+		      char *defval, char *buffer, int bufsize)
+{
+     if (!root || !root->root_type)
+	return default_read_s(handle, valname, defval, buffer, bufsize);
+    else {
+	switch (root->root_type) {
+#ifdef _WINDOWS
+	case SES_ROOT_REGISTRY:
+	    return reg_read_s(handle, valname, defval, buffer, bufsize);
+	    break;
+#endif /* _WINDOWS */
+	};
+    };
+
+    return FALSE;
+};
+
+int ses_write_handle_s(session_root_t *root, void *handle, char *valname,
+		       char *value)
+{
+     if (!root || !root->root_type)
+	return default_write_s(handle, valname, value);
+    else {
+	switch (root->root_type) {
+#ifdef _WINDOWS
+	case SES_ROOT_REGISTRY:
+	    return reg_write_s(handle, valname, value);
+	    break;
+#endif /* _WINDOWS */
+	};
+    };
+
+    return FALSE;
 };
 
 void *ses_enum_settings_start(session_root_t *root, char *path)

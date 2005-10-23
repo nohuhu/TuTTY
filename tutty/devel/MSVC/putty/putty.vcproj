@@ -26,7 +26,7 @@
 				InlineFunctionExpansion="1"
 				FavorSizeOrSpeed="2"
 				OptimizeForWindowsApplication="TRUE"
-				AdditionalIncludeDirectories="c:\home\putty,c:\home\putty\windows,c:\home\plaunch"
+				AdditionalIncludeDirectories="c:\home\tutty,c:\home\tutty\windows"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;RELEASE=0.58"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
@@ -98,7 +98,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				EnableIntrinsicFunctions="TRUE"
-				AdditionalIncludeDirectories="c:\home\putty,c:\home\putty\windows,c:\home\plaunch"
+				AdditionalIncludeDirectories="c:\home\tutty,c:\home\tutty\windows"
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;SNAPSHOT"
 				MinimalRebuild="TRUE"
 				ExceptionHandling="FALSE"
@@ -143,7 +143,7 @@
 			<Tool
 				Name="VCPreBuildEventTool"
 				Description="Generating build number"
-				CommandLine="c:\usr\perl\bin\perl c:\home\putty\build.pl"/>
+				CommandLine="c:\usr\perl\bin\perl c:\home\tutty\build.pl"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
 			<Tool

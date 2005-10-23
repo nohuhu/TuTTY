@@ -1,10 +1,6 @@
 #ifndef SESSION_H
 #define SESSION_H
 
-#ifdef PLAUNCH
-//#include "plaunch.h"
-#endif
-
 #ifndef BUFSIZE
 #define BUFSIZE			2048
 #endif /* BUFSIZE */
@@ -162,6 +158,20 @@ int ses_write_s(session_root_t *root, char *path, char *valname,
 		char *value);
 
 int ses_walk_over_tree(session_walk_t *sw);
+
+void *ses_open_session_r(session_root_t *root, char *path);
+void *ses_open_session_w(session_root_t *root, char *path);
+void ses_close_session(session_root_t *root, void *handle);
+
+int ses_read_handle_i(session_root_t *root, void *handle, char *valname,
+		      int defval, int *value);
+int ses_write_handle_i(session_root_t *root, void *handle, char *valname,
+		       int value);
+int ses_read_handle_s(session_root_t *root, void *handle, char *valname,
+		      char *defval, char *buffer, int bufsize);
+int ses_write_handle_s(session_root_t *root, void *handle, char *valname,
+		       char *value);
+int ses_delete_value_handle(session_root_t *root, void *handle, char *valname);
 
 void *ses_enum_settings_start(session_root_t *root, char *path);
 int ses_enum_settings_count(session_root_t *root, void *handle);
