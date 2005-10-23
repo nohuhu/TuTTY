@@ -1068,13 +1068,34 @@ void ses_enum_settings_finish(session_root_t *root, void *handle)
     };
 };
 
-int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg)
+int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg,
+			  int bufsize)
 {
     char *command, *url = NULL, *path;
 
     memset(root, 0, sizeof(session_root_t));
 
     if (cmdline) {
+	/*
+	 * check for shorter 'read-only' key
+	 */
+	command = strstr(cmdline, "-ro");
+
+	if (command)
+	    root->readonly = TRUE;
+	else {
+	    /*
+	     * check for longer 'read-only' key
+	     */
+    	    command = strstr(cmdline, "--read-only");
+
+	    if (command)
+		root->readonly = TRUE;
+	};
+
+	/*
+	 * check for shorter 'session root' key
+	 */
 	command = strstr(cmdline, "-sr");
 
 	if (command) {
@@ -1087,6 +1108,9 @@ int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg)
 
 	    url = command;
 	} else {
+	    /*
+	     * check for longer 'session root' key
+	     */
 	    command = strstr(cmdline, "--session-root");
 
 	    if (command) {
@@ -1100,25 +1124,46 @@ int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg)
     if (!url)
         url = getenv(PUTTY_SESSION_ROOT);
 
+    /*
+     * if url is not null, parse it
+     */
     if (url) {
+	/*
+	 * registry type root. should point at any HKLM key,
+	 * possibly default.
+	 */
 	if (strstr(url, "registry://")) {
 	    root->root_type = SES_ROOT_REGISTRY;
 	    url += 11;
+	/*
+	 * xml file type root. should point at filesystem destination.
+	 */
 	} else if (strstr(url, "file://")) {
 	    root->root_type = SES_ROOT_DISKXML;
 	    url += 7;
+	/*
+	 * legacy file type root. it is now used in unix version of PuTTY,
+	 * should not be used in windows version.
+	 */
 	} else if (strstr(url, "legacy://")) {
 #ifdef _WINDOWS
-	    strcpy(errmsg, "Legacy file type session root is not supported in Windows.");
+	    strncpy(errmsg, "Legacy file type session root"
+		" is not supported in Windows.", bufsize);
 	    return FALSE;
 #endif /* _WINDOWS */
 	    root->root_type = SES_ROOT_DISKLEGACY;
 	    url += 9;
+	/*
+	 * remote xml file type root, located on http server.
+	 */
 	} else if (strstr(url, "http://")) {
-	    root->root_type = SES_ROOT_URLXML;
+	    root->root_type = SES_ROOT_HTTPXML;
 	    url += 7;
+	/*
+	 * remote xml file type root, located on ftp server.
+	 */
 	} else if (strstr(url, "ftp://")) {
-	    root->root_type = SES_ROOT_URLXML;
+	    root->root_type = SES_ROOT_FTPXML;
 	    url += 6;
 	};
 
@@ -1138,6 +1183,47 @@ int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg)
 	memset(root->root_location, 0, url - path + 1);
 	strncpy(root->root_location, path, url - path);
     };
+
+    return TRUE;
+};
+
+int ses_cmdline_from_session_root(session_root_t *root, char *cmdline, int bufsize)
+{
+    char buf1[BUFSIZE], buf2[BUFSIZE];
+
+    if (!root)
+	return FALSE;
+
+    if (root->readonly)
+	/*
+	 * we prefer longer keys
+	 */
+	strcpy(buf1, "--read-only");
+    else
+	memset(buf1, 0, BUFSIZE);
+
+    switch (root->root_type) {
+    case SES_ROOT_DEFAULT:
+	memset(buf2, 0, BUFSIZE);
+	break;
+    case SES_ROOT_REGISTRY:
+	sprintf(buf2, "--session-root=registry://%s", root->root_location);
+	break;
+    case SES_ROOT_DISKLEGACY:
+	sprintf(buf2, "--session-root=legacy://%s", root->root_location);
+	break;
+    case SES_ROOT_DISKXML:
+	sprintf(buf2, "--session-root=file://%s", root->root_location);
+	break;
+    case SES_ROOT_HTTPXML:
+	sprintf(buf2, "--session-root=http://%s", root->root_location);
+	break;
+    case SES_ROOT_FTPXML:
+	sprintf(buf2, "--session-root=ftp://%s", root->root_location);
+	break;
+    };
+
+    _snprintf(cmdline, bufsize, "%s %s", buf1, buf2);
 
     return TRUE;
 };

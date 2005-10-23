@@ -259,7 +259,7 @@ static int CALLBACK LaunchBoxChildDialogProc0(HWND hwnd, UINT msg,
 	    HWND parent;
 
 	    /*
-	     * set up DLGHDR structure pointer...
+	     * get DLGHDR structure pointer...
 	     */
 
 	    parent = GetParent(hwnd);
