@@ -45,14 +45,15 @@ extern const char *const HOTKEY_STRINGS[];
 #define ISEXPANDED			"IsExpanded"
 #define	SESSIONICON			"WindowIcon"
 #define HOTKEY				"PLaunchHotKey"
-#define PLAUNCH_LIMIT_ENABLE		"PLaunchInstanceLimitEnable"
-#define PLAUNCH_LIMIT_NUMBER		"PLaunchInstanceLimitNumber"
-#define PLAUNCH_LIMIT_SEARCHFOR		"PLaunchInstanceLimitSearchFor"
-#define	PLAUNCH_LIMIT_ACTION1		"PLaunchInstanceLimitAction1"
-#define PLAUNCH_LIMIT_ACTION2		"PLaunchInstanceLimitAction2"
-#define	PLAUNCH_AUTORUN_ENABLE		"PLaunchAutoRunEnable"
-#define	PLAUNCH_AUTORUN_WHEN		"PLaunchAutoRunCondition"
-#define	PLAUNCH_AUTORUN_ACTION		"PLaunchAutoRunAction"
+
+#define PLAUNCH_ACTION_ENABLE_ATSTART	    "PLaunchAutoActionAtStartEnable"
+#define PLAUNCH_ACTION_SEQ_ATSTART	    "PLaunchAutoActionAtStart"
+#define PLAUNCH_ACTION_ENABLE_ATNETWORKUP   "PLaunchAutoActionAtNetworkUpEnable"
+#define PLAUNCH_ACTION_SEQ_ATNETWORKUP	    "PLaunchAutoActionAtNetworkUp"
+#define PLAUNCH_ACTION_ENABLE_ATNETWORKDOWN "PLaunchAutoActionAtNetworkDownEnable"
+#define PLAUNCH_ACTION_SEQ_ATNETWORKDOWN    "PLaunchAutoActionAtNetworkDown"
+#define PLAUNCH_ACTION_ENABLE_ATSTOP	    "PLaunchAutoActionAtStopEnable"
+#define PLAUNCH_ACTION_SEQ_ATSTOP	    "PLaunchAutoActionAtStop"
 
 #define	LIMIT_SEARCHFOR_LAST		0
 #define	LIMIT_SEARCHFOR_FIRST		1

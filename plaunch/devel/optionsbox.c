@@ -7,7 +7,6 @@
 #include "registry.h"
 #include "resource.h"
 #include "dlgtmpl.h"
-#include "resrc1.h"
 
 #define PLAUNCH_AUTO_STARTUP	"Software\\Microsoft\\Windows\\CurrentVersion\\Run"
 

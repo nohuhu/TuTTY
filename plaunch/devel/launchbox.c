@@ -6,18 +6,17 @@
 #include "registry.h"
 #include "resource.h"
 #include "dlgtmpl.h"
-#include "resrc1.h"
 #include "session.h"
 
-#define IDM_CTXM_COPY		0x0100
-#define IDM_CTXM_CUT		0x0101
-#define IDM_CTXM_PASTE		0x0102
-#define IDM_CTXM_DELETE		0x0103
-#define IDM_CTXM_UNDO		0x0104
-#define IDM_CTXM_CRTFLD		0x0105
-#define IDM_CTXM_CRTSES		0x0106
-#define IDM_CTXM_RENAME		0x0107
-#define	IDM_CTXM_CANCEL		0x0108
+#define IDM_CTXM_COPY			0x0400
+#define IDM_CTXM_CUT			0x0401
+#define IDM_CTXM_PASTE			0x0402
+#define IDM_CTXM_DELETE			0x0403
+#define IDM_CTXM_UNDO			0x0404
+#define IDM_CTXM_CRTFLD			0x0405
+#define IDM_CTXM_CRTSES			0x0406
+#define IDM_CTXM_RENAME			0x0407
+#define	IDM_CTXM_CANCEL			0x0408
 
 #define NEWFOLDER			"New Folder"
 #define NEWSESSION			"New Session"
@@ -67,6 +66,7 @@ typedef struct tag_dlghdr {
     HWND treeview;		    // tree view control
     HWND kidwnd;		    // current child dialog box 
     UINT kidtype;		    // current child dialog box type
+    void *kiddata;		    // any data for child dialog
     UINT level;			    // depth
     CHILDDIALOG kids[TAB_CHILDDIALOGS];
 } DLGHDR;
@@ -171,76 +171,8 @@ static unsigned int treeview_find_unused_name(HWND treeview,
 };
 
 /*
- * Helper function for emptying child dialog's fields.
- */
-
-/*
-static void empty_fields(HWND hwnd, UINT type, BOOL enable) {
-    HWND control;
-
-    switch (type) {
-	case TAB_HOTKEYS:
-	    {
-		control = GetDlgItem(hwnd, );
-		SendMessage(control, WM_SETTEXT, 0, 0);
-		EnableWindow(control, enable);
-
-		control = GetDlgItem(hwnd, );
-		SendMessage(control, WM_SETTEXT, 0, 0);
-		EnableWindow(control, enable);
-
-		control = GetDlgItem(hwnd, );
-		SendMessage(control, WM_SETTEXT, 0, 0);
-		EnableWindow(control, enable);
-
-		control = GetDlgItem(hwnd, );
-		EnableWindow(control, FALSE);
-
-		control = GetDlgItem(hwnd, );
-		EnableWindow(control, FALSE);
-
-		control = GetDlgItem(hwnd, IDC_LAUNCHBOX_TAB0_BUTTON_HOTKEY_KILL);
-		EnableWindow(control, FALSE);
-	    };
-	    break;
-	case TAB_AUTOPROCESS:
-	    {
-		CheckDlgButton(hwnd, IDC_LAUNCHBOX_TAB1_CHECKBOX_AUTORUN_ATSTART,
-		    BST_UNCHECKED);
-		CheckDlgButton(hwnd, IDC_LAUNCHBOX_TAB1_CHECKBOX_AUTORUN_ATNETWORKUP,
-		    BST_UNCHECKED);
-		CheckDlgButton(hwnd, IDC_LAUNCHBOX_TAB1_CHECKBOX_AUTORUN_ATNETWORKDOWN,
-		    BST_UNCHECKED);
-		CheckDlgButton(hwnd, IDC_LAUNCHBOX_TAB1_CHECKBOX_AUTORUN_ATSTOP,
-		    BST_UNCHECKED);
-		control = GetDlgItem(hwnd, IDC_LAUNCHBOX_TAB1_BUTTON_AUTORUN_ATSTART);
-		EnableWindow(control, FALSE);
-		control = GetDlgItem(hwnd, IDC_LAUNCHBOX_TAB1_BUTTON_AUTORUN_ATNETWORKUP);
-		EnableWindow(control, FALSE);
-		control = GetDlgItem(hwnd, IDC_LAUNCHBOX_TAB1_BUTTON_AUTORUN_ATNETWORKDOWN);
-		EnableWindow(control, FALSE);
-		control = GetDlgItem(hwnd, IDC_LAUNCHBOX_TAB1_BUTTON_AUTORUN_ATSTOP);
-		EnableWindow(control, FALSE);
-	    };
-	    break;
-	case TAB_LIMITS:
-	    {
-	    };
-	    break;
-	case TAB_ACTIONS:
-	    {
-	    };
-	    break;
-	case TAB_MOREACTIONS:
-	    {
-	    };
-	    break;
-    };
-};
-*/
-
-/*
  * Launch Box: child dialog window function.
+ * Hot Keys panel.
  */
 
 static int CALLBACK LaunchBoxChildDialogProc0(HWND hwnd, UINT msg, 
@@ -249,8 +181,12 @@ static int CALLBACK LaunchBoxChildDialogProc0(HWND hwnd, UINT msg,
     static HBRUSH background;
     static DLGHDR *hdr = NULL;
     static HWND treeview = NULL;
-    static HWND launch_hotkey = NULL, edit_hotkey = NULL, kill_hotkey = NULL,
-	launch_button = NULL, edit_button = NULL, kill_button = NULL;
+    static HWND launch_hotkey = NULL, 
+		launch_button = NULL, 
+		edit_hotkey = NULL, 
+		edit_button = NULL, 
+		kill_hotkey = NULL,
+		kill_button = NULL;
     HTREEITEM item;
 
     switch (msg) {
@@ -283,22 +219,22 @@ static int CALLBACK LaunchBoxChildDialogProc0(HWND hwnd, UINT msg,
 	     * custom hotkey controls.
 	     */
 
-	    launch_hotkey = GetDlgItem(hwnd, IDC_LAUNCHBOX_TAB0_EDITBOX_HOTKEY_LAUNCH);
+	    launch_hotkey = GetDlgItem(hwnd, IDC_LAUNCHBOX_TAB0_EDITBOX_LAUNCH);
 	    make_hotkey(launch_hotkey, 0);
 
-	    edit_hotkey = GetDlgItem(hwnd, IDC_LAUNCHBOX_TAB0_EDITBOX_HOTKEY_EDIT);
+	    edit_hotkey = GetDlgItem(hwnd, IDC_LAUNCHBOX_TAB0_EDITBOX_EDIT);
 	    make_hotkey(edit_hotkey, 0);
 
-	    kill_hotkey = GetDlgItem(hwnd, IDC_LAUNCHBOX_TAB0_EDITBOX_HOTKEY_KILL);
+	    kill_hotkey = GetDlgItem(hwnd, IDC_LAUNCHBOX_TAB0_EDITBOX_KILL);
 	    make_hotkey(kill_hotkey, 0);
 
 	    /*
 	     * pull button controls into local variables, for faster access
 	     */
 
-	    launch_button = GetDlgItem(hwnd, IDC_LAUNCHBOX_TAB0_BUTTON_HOTKEY_LAUNCH);
-	    edit_button = GetDlgItem(hwnd, IDC_LAUNCHBOX_TAB0_BUTTON_HOTKEY_EDIT);
-	    kill_button = GetDlgItem(hwnd, IDC_LAUNCHBOX_TAB0_BUTTON_HOTKEY_KILL);
+	    launch_button = GetDlgItem(hwnd, IDC_LAUNCHBOX_TAB0_BUTTON_LAUNCH);
+	    edit_button = GetDlgItem(hwnd, IDC_LAUNCHBOX_TAB0_BUTTON_EDIT);
+	    kill_button = GetDlgItem(hwnd, IDC_LAUNCHBOX_TAB0_BUTTON_KILL);
 
 	    /*
 	     * ... and refresh item states.
@@ -326,22 +262,23 @@ static int CALLBACK LaunchBoxChildDialogProc0(HWND hwnd, UINT msg,
 	break;
     case WM_EMPTYITEMS:
 	{
-	    BOOL enable = (BOOL)wParam;
-
 	    set_hotkey(launch_hotkey, 0);
-	    EnableWindow(launch_hotkey, enable);
-
 	    EnableWindow(launch_button, FALSE);
 
 	    set_hotkey(edit_hotkey, 0);
-	    EnableWindow(edit_hotkey, enable);
-
 	    EnableWindow(edit_button, FALSE);
 
 	    set_hotkey(kill_hotkey, 0);
-	    EnableWindow(kill_hotkey, enable);
-
 	    EnableWindow(kill_button, FALSE);
+	};
+	break;
+    case WM_ENABLEITEMS:
+	{
+	    BOOL enable = (BOOL) wParam;
+
+	    EnableWindow(launch_hotkey, enable);
+	    EnableWindow(edit_hotkey, enable);
+	    EnableWindow(kill_hotkey, enable);
 	};
 	break;
     case WM_REFRESHITEMS:
@@ -360,7 +297,8 @@ static int CALLBACK LaunchBoxChildDialogProc0(HWND hwnd, UINT msg,
 		item = TreeView_GetSelection(treeview);
 
 	    if (!item) {
-		SendMessage(hwnd, WM_EMPTYITEMS, (WPARAM)FALSE, 0);
+		SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
+		SendMessage(hwnd, WM_ENABLEITEMS, (WPARAM) FALSE, 0);
 		break;
 	    };
 
@@ -386,7 +324,8 @@ static int CALLBACK LaunchBoxChildDialogProc0(HWND hwnd, UINT msg,
 	    else
 		enable = TRUE;
 
-	    SendMessage(hwnd, WM_EMPTYITEMS, (WPARAM)enable, 0);
+	    SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
+	    SendMessage(hwnd, WM_ENABLEITEMS, (WPARAM) enable, 0);
 
 	    /*
 	     * if it is a folder, return. a folder can't have any hot keys.
@@ -412,6 +351,9 @@ static int CALLBACK LaunchBoxChildDialogProc0(HWND hwnd, UINT msg,
 	    sprintf(buf, "%s%d", HOTKEY, 2);
 	    ses_read_i(&config->sessionroot, path, buf, 0, &hotkey);
 	    set_hotkey(kill_hotkey, hotkey);
+
+	    if (config->sessionroot.readonly)
+		SendMessage(hwnd, WM_ENABLEITEMS, (WPARAM) FALSE, 0);
 	};
 	break;
     case WM_COMMAND:
@@ -426,113 +368,28 @@ static int CALLBACK LaunchBoxChildDialogProc0(HWND hwnd, UINT msg,
 		    EnableWindow(kill_button, TRUE);
 	    };
 	    break;
-/*
-	case CBN_SELCHANGE:
-	    {
-		HTREEITEM item;
-		char buf[BUFSIZE], path[BUFSIZE], *valname;
-		int index;
-
-		item = TreeView_GetSelection(treeview);
-
-		if (!item)
-		    break;
-
-		treeview_getitempath(treeview, item, path);
-		reg_make_path(NULL, path, buf);
-
-		if (LOWORD(wParam) == IDC_LAUNCHBOX_COMBOBOX_LIMIT1)
-		    valname = PLAUNCH_LIMIT_SEARCHFOR;
-		else if (LOWORD(wParam) == IDC_LAUNCHBOX_COMBOBOX_LIMIT2)
-		    valname = PLAUNCH_LIMIT_ACTION1;
-		else if (LOWORD(wParam) == IDC_LAUNCHBOX_COMBOBOX_LIMIT3)
-		    valname = PLAUNCH_LIMIT_ACTION2;
-		else if (LOWORD(wParam) == IDC_LAUNCHBOX_COMBOBOX_RUN1)
-		    valname = PLAUNCH_AUTORUN_WHEN;
-		else if (LOWORD(wParam) == IDC_LAUNCHBOX_COMBOBOX_RUN2)
-		    valname = PLAUNCH_AUTORUN_ACTION;
-
-		index = SendMessage((HWND) lParam, CB_GETCURSEL, 0, 0);
-		if (index)
-		    reg_write_i(buf, valname, index);
-		else
-		    reg_delete_v(buf, valname);
-
-		SendMessage(hwnd, WM_REFRESHBUTTONS, 0, 0);
-	    };
-	    break;
-/*
-	case EN_CHANGE:
-	    if (LOWORD(wParam) == IDC_LAUNCHBOX_EDITBOX_LIMIT1) {
-		HTREEITEM item;
-		char buf[BUFSIZE], path[BUFSIZE], str[BUFSIZE];
-		int value;
-
-		item = TreeView_GetSelection(treeview);
-
-		if (!item)
-		    break;
-
-		treeview_getitempath(treeview, item, path);
-		reg_make_path(NULL, path, buf);
-
-		GetWindowText(limit_edit, str, BUFSIZE);
-		value = small_atoi(str);
-		if (value)
-		    reg_write_i(buf, PLAUNCH_LIMIT_NUMBER, value);
-		else
-		    reg_delete_v(buf, PLAUNCH_LIMIT_NUMBER);
-
-		SendMessage(hwnd, WM_REFRESHBUTTONS, 0, (LPARAM) item);
-	    };
-	    break;
-	case BN_CLICKED:
-	    if (LOWORD(wParam) == IDC_LAUNCHBOX_CHECKBOX_LIMIT ||
-		LOWORD(wParam) == IDC_LAUNCHBOX_CHECKBOX_RUN) {
-		HTREEITEM item;
-		char buf[BUFSIZE], path[BUFSIZE], *valname;
-		int check;
-
-		item = TreeView_GetSelection(treeview);
-
-		if (!item)
-		    break;
-
-		treeview_getitempath(treeview, item, path);
-		reg_make_path(NULL, path, buf);
-		check = IsDlgButtonChecked(hwnd, LOWORD(wParam));
-		valname = LOWORD(wParam) == IDC_LAUNCHBOX_CHECKBOX_LIMIT ?
-		    PLAUNCH_LIMIT_ENABLE : PLAUNCH_AUTORUN_ENABLE;
-		if (check == BST_CHECKED)
-		    reg_write_i(buf, valname, 1);
-		else
-		    reg_delete_v(buf, valname);
-
-		SendMessage(hwnd, WM_REFRESHBUTTONS, 0, (LPARAM) item);
-	    };
-*/
 	};
 	switch (wParam) {
-	case IDC_LAUNCHBOX_TAB0_BUTTON_HOTKEY_LAUNCH:
-	case IDC_LAUNCHBOX_TAB0_BUTTON_HOTKEY_EDIT:
-	case IDC_LAUNCHBOX_TAB0_BUTTON_HOTKEY_KILL:
+	case IDC_LAUNCHBOX_TAB0_BUTTON_LAUNCH:
+	case IDC_LAUNCHBOX_TAB0_BUTTON_EDIT:
+	case IDC_LAUNCHBOX_TAB0_BUTTON_KILL:
 	    {
 		char path[BUFSIZE], valname[BUFSIZE];
 		unsigned int i, found, htype, hotkey;
 		HWND editbox = NULL, button = NULL;
 
 		switch (wParam) {
-		case IDC_LAUNCHBOX_TAB0_BUTTON_HOTKEY_LAUNCH:
+		case IDC_LAUNCHBOX_TAB0_BUTTON_LAUNCH:
 		    editbox = launch_hotkey;
 		    button = launch_button;
 		    htype = 0;
 		    break;
-		case IDC_LAUNCHBOX_TAB0_BUTTON_HOTKEY_EDIT:
+		case IDC_LAUNCHBOX_TAB0_BUTTON_EDIT:
 		    editbox = edit_hotkey;
 		    button = edit_button;
 		    htype = 1;
 		    break;
-		case IDC_LAUNCHBOX_TAB0_BUTTON_HOTKEY_KILL:
+		case IDC_LAUNCHBOX_TAB0_BUTTON_KILL:
 		    editbox = kill_hotkey;
 		    button = kill_button;
 		    htype = 2;
@@ -586,27 +443,509 @@ static int CALLBACK LaunchBoxChildDialogProc0(HWND hwnd, UINT msg,
     return FALSE;
 };
 
+/*
+ * Launch Box: child dialog window function.
+ * Auto Processing panel.
+ */
+
 static int CALLBACK LaunchBoxChildDialogProc1(HWND hwnd, UINT msg,
 					      WPARAM wParam, LPARAM lParam) 
 {
+    static HBRUSH background;
+    static DLGHDR *hdr = NULL;
+    static HWND treeview = NULL;
+    static HWND cb_atstart = NULL,
+		btn_atstart = NULL,
+		cb_atnetworkup = NULL,
+		btn_atnetworkup = NULL,
+		cb_atnetworkdown = NULL,
+		btn_atnetworkdown = NULL,
+		cb_atstop = NULL,
+		btn_atstop = NULL;
+
+    switch (msg) {
+    case WM_INITDIALOG:
+	{
+	    HWND parent;
+
+	    /*
+	     * get DLGHDR structure pointer...
+	     */
+
+	    parent = GetParent(hwnd);
+	    hdr = (DLGHDR *) GetWindowLong(parent, GWL_USERDATA);
+	    treeview = hdr->treeview;
+
+	    /*
+	     * ... adjust window position...
+	     */
+
+	    SetWindowPos(hwnd, HWND_TOP, hdr->rect.left,
+			 hdr->rect.top,
+			 hdr->rect.right - hdr->rect.left,
+			 hdr->rect.bottom - hdr->rect.top,
+			 SWP_SHOWWINDOW);
+
+	    background = GetStockObject(HOLLOW_BRUSH);
+
+	    /*
+	     * pull controls into local variables for faster access.
+	     */
+
+	    cb_atstart = GetDlgItem(hwnd, 
+		IDC_LAUNCHBOX_TAB1_CHECKBOX_ATSTART);
+	    btn_atstart = GetDlgItem(hwnd, 
+		IDC_LAUNCHBOX_TAB1_BUTTON_ATSTART);
+
+	    cb_atnetworkup = GetDlgItem(hwnd, 
+		IDC_LAUNCHBOX_TAB1_CHECKBOX_ATNETWORKUP);
+	    btn_atnetworkup = GetDlgItem(hwnd, 
+		IDC_LAUNCHBOX_TAB1_BUTTON_ATNETWORKUP);
+
+	    cb_atnetworkdown = GetDlgItem(hwnd, 
+		IDC_LAUNCHBOX_TAB1_CHECKBOX_ATNETWORKDOWN);
+	    btn_atnetworkdown = GetDlgItem(hwnd, 
+		IDC_LAUNCHBOX_TAB1_BUTTON_ATNETWORKDOWN);
+
+	    cb_atstop = GetDlgItem(hwnd, 
+		IDC_LAUNCHBOX_TAB1_CHECKBOX_ATSTOP);
+	    btn_atstop = GetDlgItem(hwnd, 
+		IDC_LAUNCHBOX_TAB1_BUTTON_ATSTOP);
+
+	    SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
+	    SendMessage(hwnd, WM_ENABLEITEMS, (WPARAM) FALSE, 0);
+	};
+	break;
+    case WM_CTLCOLORDLG:
+	return (INT_PTR) background;
+    case WM_CTLCOLORSTATIC:
+    case WM_CTLCOLOREDIT:
+    case WM_CTLCOLORBTN:
+    case WM_CTLCOLORLISTBOX:
+	if (COMPAT_WINDOWSXP(config->version_major, config->version_minor)) {
+	    SetBkMode((HDC) wParam, TRANSPARENT);
+	    return (INT_PTR) wParam;
+	} else
+	    return FALSE;
+	break;
+    case WM_EMPTYITEMS:
+	{
+	    CheckDlgButton(hwnd, 
+		IDC_LAUNCHBOX_TAB1_CHECKBOX_ATSTART, 
+		BST_UNCHECKED);
+	    EnableWindow(btn_atstart, FALSE);
+	    CheckDlgButton(hwnd, 
+    		IDC_LAUNCHBOX_TAB1_CHECKBOX_ATNETWORKUP, 
+		BST_UNCHECKED);
+	    EnableWindow(btn_atnetworkup, FALSE);
+	    CheckDlgButton(hwnd, 
+		IDC_LAUNCHBOX_TAB1_CHECKBOX_ATNETWORKDOWN, 
+		BST_UNCHECKED);
+	    EnableWindow(btn_atnetworkdown, FALSE);
+	    CheckDlgButton(hwnd, 
+		IDC_LAUNCHBOX_TAB1_CHECKBOX_ATSTOP, 
+		BST_UNCHECKED);
+	    EnableWindow(btn_atstop, FALSE);
+	};
+	break;
+    case WM_ENABLEITEMS:
+	{
+	    BOOL enable = (BOOL) wParam;
+
+	    EnableWindow(cb_atstart, enable);
+	    EnableWindow(cb_atnetworkup, enable);
+	    EnableWindow(cb_atnetworkdown, enable);
+	    EnableWindow(cb_atstop, enable);
+	};
+	break;
+    case WM_REFRESHITEMS:
+	{
+	    HTREEITEM item;
+	    BOOL isfolder, enable;
+	    char name[BUFSIZE], path[BUFSIZE], buf[BUFSIZE];
+
+	    /*
+	     * first we get the current selected item in tree view
+	     */
+
+	    item = (HTREEITEM)lParam;
+
+	    if (!item && TreeView_GetCount(treeview))
+		item = TreeView_GetSelection(treeview);
+
+	    if (!item) {
+		SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
+		SendMessage(hwnd, WM_ENABLEITEMS, (WPARAM) FALSE, 0);
+		break;
+	    };
+
+	    memset(name, 0, BUFSIZE);
+	    memset(path, 0, BUFSIZE);
+	    memset(buf, 0, BUFSIZE);
+
+	    /*
+	     * then we get its name, full path and type (session/folder)
+	     */
+
+	    treeview_getitemname(treeview, item, name, BUFSIZE);
+	    treeview_getitempath(treeview, item, path);
+	    isfolder = ses_is_folder(&config->sessionroot, path);
+
+	    /*
+	     * empty all controls first, in case it's a folder or a session
+	     * without any auto actions set
+	     */
+
+	    if (isfolder || !strcmp(name, DEFAULTSETTINGS))
+		enable = FALSE;
+	    else
+		enable = TRUE;
+
+	    SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
+	    SendMessage(hwnd, WM_ENABLEITEMS, (WPARAM) enable, 0);
+
+	    /*
+	     * if it is a folder, return. a folder can't have any auto actions.
+	     * if it is a "Default Settings" session, it cannot have any auto actions too.
+	     */
+
+	    if (!enable)
+		break;
+
+	    /*
+	     * pull all auto action settings from the registry and fill them in the
+	     * check boxes
+	     */
+	    ses_read_i(&config->sessionroot, path,
+		PLAUNCH_ACTION_ENABLE_ATSTART, 0, &enable);
+	    CheckDlgButton(hwnd, IDC_LAUNCHBOX_TAB1_CHECKBOX_ATSTART,
+		enable ? BST_CHECKED : BST_UNCHECKED);
+	    EnableWindow(btn_atstart, enable);
+
+	    ses_read_i(&config->sessionroot, path,
+		PLAUNCH_ACTION_ENABLE_ATNETWORKUP, 0, &enable);
+	    CheckDlgButton(hwnd, IDC_LAUNCHBOX_TAB1_CHECKBOX_ATNETWORKUP,
+		enable ? BST_CHECKED : BST_UNCHECKED);
+	    EnableWindow(btn_atnetworkup, enable);
+
+	    ses_read_i(&config->sessionroot, path,
+		PLAUNCH_ACTION_ENABLE_ATNETWORKDOWN, 0, &enable);
+	    CheckDlgButton(hwnd, IDC_LAUNCHBOX_TAB1_CHECKBOX_ATNETWORKDOWN,
+		enable ? BST_CHECKED : BST_UNCHECKED);
+	    EnableWindow(btn_atnetworkdown, enable);
+
+	    ses_read_i(&config->sessionroot, path,
+		PLAUNCH_ACTION_ENABLE_ATSTOP, 0, &enable);
+	    CheckDlgButton(hwnd, IDC_LAUNCHBOX_TAB1_CHECKBOX_ATSTOP,
+		enable ? BST_CHECKED : BST_UNCHECKED);
+	    EnableWindow(btn_atstop, enable);
+
+	    if (config->sessionroot.readonly)
+		SendMessage(hwnd, WM_ENABLEITEMS, (WPARAM) FALSE, 0);
+	};
+	break;
+    case WM_COMMAND:
+	switch (HIWORD(wParam)) {
+	case BN_CLICKED:
+	    switch (LOWORD(wParam)) {
+	    case IDC_LAUNCHBOX_TAB1_CHECKBOX_ATSTART:
+	    case IDC_LAUNCHBOX_TAB1_CHECKBOX_ATNETWORKUP:
+	    case IDC_LAUNCHBOX_TAB1_CHECKBOX_ATNETWORKDOWN:
+	    case IDC_LAUNCHBOX_TAB1_CHECKBOX_ATSTOP:
+		{
+		    HTREEITEM item = NULL;
+		    HWND button;
+		    char name[BUFSIZE], path[BUFSIZE], *valname = NULL;
+		    int value;
+
+		    if (!item && TreeView_GetCount(treeview))
+			item = TreeView_GetSelection(treeview);
+
+		    if (!item) {
+			SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
+			SendMessage(hwnd, WM_ENABLEITEMS, (WPARAM) FALSE, 0);
+			break;
+		    };
+
+		    memset(name, 0, BUFSIZE);
+		    memset(path, 0, BUFSIZE);
+
+		    treeview_getitemname(treeview, item, name, BUFSIZE);
+		    treeview_getitempath(treeview, item, path);
+
+		    switch (LOWORD(wParam)) {
+		    case IDC_LAUNCHBOX_TAB1_CHECKBOX_ATSTART:
+			valname = PLAUNCH_ACTION_ENABLE_ATSTART;
+			button = btn_atstart;
+			break;
+		    case IDC_LAUNCHBOX_TAB1_CHECKBOX_ATNETWORKUP:
+			valname = PLAUNCH_ACTION_ENABLE_ATNETWORKUP;
+			button = btn_atnetworkup;
+			break;
+		    case IDC_LAUNCHBOX_TAB1_CHECKBOX_ATNETWORKDOWN:
+			valname = PLAUNCH_ACTION_ENABLE_ATNETWORKDOWN;
+			button = btn_atnetworkdown;
+			break;
+		    case IDC_LAUNCHBOX_TAB1_CHECKBOX_ATSTOP:
+			valname = PLAUNCH_ACTION_ENABLE_ATSTOP;
+			button = btn_atstop;
+			break;
+		    };
+
+		    if (!valname)
+			break;
+
+		    value = (IsDlgButtonChecked(hwnd, LOWORD(wParam)) == BST_CHECKED);
+
+		    ses_write_i(&config->sessionroot, path, valname, value);
+		    EnableWindow(button, value);
+		};
+	    };
+	    break;
+	};
+	switch (wParam) {
+	case IDC_LAUNCHBOX_TAB1_BUTTON_ATSTART:
+	case IDC_LAUNCHBOX_TAB1_BUTTON_ATNETWORKUP:
+	case IDC_LAUNCHBOX_TAB1_BUTTON_ATNETWORKDOWN:
+	case IDC_LAUNCHBOX_TAB1_BUTTON_ATSTOP:
+	    ShowWindow(hdr->kidwnd, SW_HIDE);
+	    hdr->kidwnd = hdr->kids[TAB_ACTIONS].hwnd;
+	    hdr->kidtype = hdr->kids[TAB_ACTIONS].type;
+	    switch (wParam) {
+	    case IDC_LAUNCHBOX_TAB1_BUTTON_ATSTART:
+		hdr->kiddata = (void *) PLAUNCH_ACTION_SEQ_ATSTART;
+		break;
+	    case IDC_LAUNCHBOX_TAB1_BUTTON_ATNETWORKUP:
+		hdr->kiddata = (void *) PLAUNCH_ACTION_SEQ_ATNETWORKUP;
+		break;
+	    case IDC_LAUNCHBOX_TAB1_BUTTON_ATNETWORKDOWN:
+		hdr->kiddata = (void *) PLAUNCH_ACTION_SEQ_ATNETWORKDOWN;
+		break;
+	    case IDC_LAUNCHBOX_TAB1_BUTTON_ATSTOP:
+		hdr->kiddata = (void *) PLAUNCH_ACTION_SEQ_ATSTOP;
+		break;
+	    };
+	    hdr->level = 1;
+
+	    SendMessage(hdr->kidwnd, WM_REFRESHITEMS, 0, 0);
+	    ShowWindow(hdr->kidwnd, SW_SHOW);
+	};
+	break;
+    };
+
     return FALSE;
 };
 
 static int CALLBACK LaunchBoxChildDialogProc2(HWND hwnd, UINT msg,
 					      WPARAM wParam, LPARAM lParam) 
 {
+    static HBRUSH background;
+    static DLGHDR *hdr = NULL;
+    static HWND treeview = NULL;
+
+    switch (msg) {
+    case WM_INITDIALOG:
+	{
+	    HWND parent;
+
+	    /*
+	     * get DLGHDR structure pointer...
+	     */
+
+	    parent = GetParent(hwnd);
+	    hdr = (DLGHDR *) GetWindowLong(parent, GWL_USERDATA);
+	    treeview = hdr->treeview;
+
+	    /*
+	     * ... adjust window position...
+	     */
+
+	    SetWindowPos(hwnd, HWND_TOP, hdr->rect.left,
+			 hdr->rect.top,
+			 hdr->rect.right - hdr->rect.left,
+			 hdr->rect.bottom - hdr->rect.top,
+			 SWP_SHOWWINDOW);
+
+	    background = GetStockObject(HOLLOW_BRUSH);
+
+	};
+	break;
+    case WM_CTLCOLORDLG:
+	return (INT_PTR) background;
+    case WM_CTLCOLORSTATIC:
+    case WM_CTLCOLOREDIT:
+    case WM_CTLCOLORBTN:
+    case WM_CTLCOLORLISTBOX:
+	if (COMPAT_WINDOWSXP(config->version_major, config->version_minor)) {
+	    SetBkMode((HDC) wParam, TRANSPARENT);
+	    return (INT_PTR) wParam;
+	} else
+	    return FALSE;
+	break;
+    case WM_REFRESHITEMS:
+	{
+	    HTREEITEM item;
+	    BOOL isfolder, enable;
+	    char name[BUFSIZE], path[BUFSIZE], buf[BUFSIZE];
+
+	    /*
+	     * first we get the current selected item in tree view
+	     */
+
+	    item = (HTREEITEM) lParam;
+
+	    if (!item && TreeView_GetCount(treeview))
+		item = TreeView_GetSelection(treeview);
+
+	    if (!item) {
+		SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
+		SendMessage(hwnd, WM_ENABLEITEMS, (WPARAM) FALSE, 0);
+		break;
+	    };
+
+	    memset(name, 0, BUFSIZE);
+	    memset(path, 0, BUFSIZE);
+	    memset(buf, 0, BUFSIZE);
+
+	    /*
+	     * then we get its name and full path. we don't check for
+	     * session or folder because we can't possibly reach here for
+	     * a folder.
+	     */
+
+	    treeview_getitemname(treeview, item, name, BUFSIZE);
+	    treeview_getitempath(treeview, item, path);
+
+	    /*
+	     * empty all controls first, in case it's a folder or a session
+	     * without any auto actions set
+	     */
+
+	    if (!strcmp(name, DEFAULTSETTINGS))
+		enable = FALSE;
+	    else
+		enable = TRUE;
+
+	    SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
+	    SendMessage(hwnd, WM_ENABLEITEMS, (WPARAM) enable, 0);
+
+	    /*
+	     * if it is a folder, return. a folder can't have any auto actions.
+	     * if it is a "Default Settings" session, it cannot have any auto actions too.
+	     */
+
+	    if (!enable)
+		break;
+
+	    /*
+	     * pull all auto action settings from the registry and fill them in the
+	     * check boxes
+	     */
+	};
+    };
+
     return FALSE;
 };
 
 static int CALLBACK LaunchBoxChildDialogProc3(HWND hwnd, UINT msg,
 					      WPARAM wParam, LPARAM lParam) 
 {
+    static HBRUSH background;
+    static DLGHDR *hdr = NULL;
+    static HWND treeview = NULL;
+
+    switch (msg) {
+    case WM_INITDIALOG:
+	{
+	    HWND parent;
+
+	    /*
+	     * get DLGHDR structure pointer...
+	     */
+
+	    parent = GetParent(hwnd);
+	    hdr = (DLGHDR *) GetWindowLong(parent, GWL_USERDATA);
+	    treeview = hdr->treeview;
+
+	    /*
+	     * ... adjust window position...
+	     */
+
+	    SetWindowPos(hwnd, HWND_TOP, hdr->rect.left,
+			 hdr->rect.top,
+			 hdr->rect.right - hdr->rect.left,
+			 hdr->rect.bottom - hdr->rect.top,
+			 SWP_SHOWWINDOW);
+
+	    background = GetStockObject(HOLLOW_BRUSH);
+
+	};
+	break;
+    case WM_CTLCOLORDLG:
+	return (INT_PTR) background;
+    case WM_CTLCOLORSTATIC:
+    case WM_CTLCOLOREDIT:
+    case WM_CTLCOLORBTN:
+    case WM_CTLCOLORLISTBOX:
+	if (COMPAT_WINDOWSXP(config->version_major, config->version_minor)) {
+	    SetBkMode((HDC) wParam, TRANSPARENT);
+	    return (INT_PTR) wParam;
+	} else
+	    return FALSE;
+	break;
+    };
+
     return FALSE;
 };
 
 static int CALLBACK LaunchBoxChildDialogProc4(HWND hwnd, UINT msg,
 					      WPARAM wParam, LPARAM lParam) 
 {
+    static HBRUSH background;
+    static DLGHDR *hdr = NULL;
+    static HWND treeview = NULL;
+
+    switch (msg) {
+    case WM_INITDIALOG:
+	{
+	    HWND parent;
+
+	    /*
+	     * get DLGHDR structure pointer...
+	     */
+
+	    parent = GetParent(hwnd);
+	    hdr = (DLGHDR *) GetWindowLong(parent, GWL_USERDATA);
+	    treeview = hdr->treeview;
+
+	    /*
+	     * ... adjust window position...
+	     */
+
+	    SetWindowPos(hwnd, HWND_TOP, hdr->rect.left,
+			 hdr->rect.top,
+			 hdr->rect.right - hdr->rect.left,
+			 hdr->rect.bottom - hdr->rect.top,
+			 SWP_SHOWWINDOW);
+
+	    background = GetStockObject(HOLLOW_BRUSH);
+
+	};
+	break;
+    case WM_CTLCOLORDLG:
+	return (INT_PTR) background;
+    case WM_CTLCOLORSTATIC:
+    case WM_CTLCOLOREDIT:
+    case WM_CTLCOLORBTN:
+    case WM_CTLCOLORLISTBOX:
+	if (COMPAT_WINDOWSXP(config->version_major, config->version_minor)) {
+	    SetBkMode((HDC) wParam, TRANSPARENT);
+	    return (INT_PTR) wParam;
+	} else
+	    return FALSE;
+	break;
+    };
+
     return FALSE;
 };
 
@@ -661,11 +1000,15 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 #endif	/* WINDOWS_NT351_COMPATIBLE */
 				      WS_VISIBLE |
 				      WS_TABSTOP | TVS_HASLINES |
-				      (config->
-				       options & OPTION_ENABLEDRAGDROP ? 0
-				       : TVS_DISABLEDRAGDROP) |
+				      (((config->options & OPTION_ENABLEDRAGDROP) &&
+				       !config->sessionroot.readonly) ? 
+					    0
+					    : TVS_DISABLEDRAGDROP) |
 				      TVS_HASBUTTONS | TVS_LINESATROOT |
-				      TVS_SHOWSELALWAYS | TVS_EDITLABELS,
+				      TVS_SHOWSELALWAYS | 
+				      (config->sessionroot.readonly ? 
+					    0 :
+					    TVS_EDITLABELS),
 				      pt.x, pt.y, r.right - r.left,
 				      r.bottom - r.top, hwnd, NULL,
 				      config->hinst, NULL);
@@ -724,7 +1067,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 	    item.mask = TCIF_TEXT | TCIF_IMAGE;
 	    item.iImage = -1;
 
-	    for (i = 0; i < 1 /*TAB_CHILDDIALOGS*/; i++) {
+	    for (i = 0; i < TAB_CHILDDIALOGS; i++) {
 		HRSRC hrsrc;
 		HGLOBAL hglobal;
 
@@ -877,6 +1220,15 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 
 		EnableWindow(GetDlgItem(hwnd, IDOK), FALSE);
 		EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_EDIT), FALSE);
+	    } else if (config->sessionroot.readonly) {
+		EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_NEW_FOLDER), FALSE);
+		EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_NEW_SESSION), FALSE);
+		EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_EDIT), FALSE);
+		EnableMenuItem(context_menu, IDM_CTXM_CRTFLD, MF_GRAYED);
+		EnableMenuItem(context_menu, IDM_CTXM_CRTSES, MF_GRAYED);
+
+		rendel = FALSE;
+		menuflag = MF_GRAYED;
 	    } else {
 		memset(name, 0, BUFSIZE);
 
@@ -891,6 +1243,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		};
 	    };
 
+	    EnableWindow(GetDlgItem(hwnd, IDOK), TRUE);
 	    EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_DELETE),
 			 rendel);
 	    EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_RENAME),
@@ -903,7 +1256,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 	    if (morestate) {
 		ShowWindow(tabview, SW_SHOW);
 		EnableWindow(tabview, TRUE);
-		SendMessage(dlghdr->kidwnd, WM_REFRESHITEMS, (WPARAM)TRUE, 0);
+		SendMessage(dlghdr->kidwnd, WM_REFRESHITEMS, (WPARAM) TRUE, 0);
 	    };
 	};
 	break;
@@ -1484,8 +1837,9 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			treeview_getitempath(treeview, tv->itemNew.hItem,
 					     path);
 
-			ses_write_i(&config->sessionroot, path, 
-			    ISEXPANDED, isexpanded);
+			if (!config->sessionroot.readonly)
+			    ses_write_i(&config->sessionroot, path, 
+					ISEXPANDED, isexpanded);
 		    };
 		};
 		break;
@@ -1587,8 +1941,10 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 
 		    dlghdr->kidwnd = dlghdr->kids[selected].hwnd;
 		    dlghdr->kidtype = dlghdr->kids[selected].type;
+		    dlghdr->kiddata = NULL;
 		    dlghdr->level = 0;
 
+		    SendMessage(dlghdr->kidwnd, WM_REFRESHITEMS, 0, 0);
 		    ShowWindow(dlghdr->kidwnd, SW_SHOW);
 		};
 	    };

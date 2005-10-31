@@ -156,6 +156,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 
 	    path = (char *)lParam;
 
+/*
 	    ses_read_i(&config->sessionroot, path, PLAUNCH_LIMIT_ENABLE, 
 		0, &limit);
 
@@ -221,7 +222,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 		    };
 		};
 	    };
-
+*/
 	    pwin =
 		launch_putty(wParam - HOTKEY_ACTION_LAUNCH,
 			     (char *) lParam);
@@ -499,7 +500,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
     {
 	char errmsg[BUFSIZE];
 
-	if (!ses_init_session_root(&config->sessionroot, cmdline, errmsg)) {
+	if (!ses_init_session_root(&config->sessionroot, cmdline, errmsg, BUFSIZE)) {
 	    MessageBox(NULL, errmsg, "PuTTY Launcher Error", MB_OK | MB_ICONERROR);
 	    return 0;
 	};

@@ -484,6 +484,7 @@ static void launching_callback(session_callback_t *scb)
     if (scb->mode == SES_MODE_POSTPROCESS)
 	return;
 
+/*
     ses_read_i(&scb->session->root, scb->session->path, 
 	PLAUNCH_AUTORUN_ENABLE, 0, &i);
 
@@ -525,7 +526,7 @@ static void launching_callback(session_callback_t *scb)
 	center_window(pwin);
 	break;
     };
-
+*/
     return;
 };
 
