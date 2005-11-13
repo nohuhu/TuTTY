@@ -29,28 +29,49 @@
 #define	TAB_MOREACTIONS			4
 #define	TAB_CHILDDIALOGS		5
 
-/*
-const char *const LIMIT_SEARCHFOR_STRINGS[] = {
-    "last", "first", "second", "third", "fourth", "fifth",
-    "sixth", "seventh", "eighth", "ninth", "tenth", "eleventh",
-    "twelfth", "%dth"
+#define SEARCHFOR_ITEMS			10
+
+static char *SEARCHFOR_STRINGS[] = {
+    "none", "last", "first", "second", "third", 
+    "fourth", "fifth", "sixth", "seventh", "n-th"
 };
 
-const char *const LIMIT_ACTION_STRINGS[] = {
+#define ACTION_ITEMS			9
+
+static char *ACTION_STRINGS[] = {
     "do nothing with", "hide", "show", "minimize", "maximize", "center",
     "kill", "murder", "run another"
 };
 
-const char *const AUTORUN_WHEN_STRINGS[] = {
-    "start", "network start", "quit"
+#define	ACTION_ENABLE			0
+#define	ACTION_FIND			1
+#define	ACTION_ACTION			2
+
+static char *ATSTART_STRINGS[3] = {
+    PLAUNCH_ACTION_ENABLE_ATSTART,
+    PLAUNCH_ACTION_FIND_ATSTART,
+    PLAUNCH_ACTION_SEQ_ATSTART
 };
 
-const char *const AUTORUN_ACTION_STRINGS[] = {
-    "do nothing with", "hide", "show", "minimize", "maximize", "center"
+static char *ATNETWORKUP_STRINGS[3] = {
+    PLAUNCH_ACTION_ENABLE_ATNETWORKUP,
+    PLAUNCH_ACTION_FIND_ATNETWORKUP,
+    PLAUNCH_ACTION_SEQ_ATNETWORKUP
 };
-*/
 
-char *TAB_NAMES[] =
+static char *ATNETWORKDOWN_STRINGS[3] = {
+    PLAUNCH_ACTION_ENABLE_ATNETWORKDOWN,
+    PLAUNCH_ACTION_FIND_ATNETWORKDOWN,
+    PLAUNCH_ACTION_SEQ_ATNETWORKDOWN
+};
+
+static char *ATSTOP_STRINGS[3] = {
+    PLAUNCH_ACTION_ENABLE_ATSTOP,
+    PLAUNCH_ACTION_FIND_ATSTOP,
+    PLAUNCH_ACTION_SEQ_ATSTOP
+};
+
+static char *TAB_NAMES[] =
     { "Hot Keys", "Auto Processing", "Instance Limits" };
 
 typedef struct tag_childdialog {
@@ -66,6 +87,9 @@ typedef struct tag_dlghdr {
     HWND treeview;		    // tree view control
     HWND kidwnd;		    // current child dialog box 
     UINT kidtype;		    // current child dialog box type
+    UINT toptype;		    // top level child dialog box type
+    UINT subtype;		    // sub level child dialog box type
+    UINT prevtype;		    // previous child dialog box type
     void *kiddata;		    // any data for child dialog
     UINT level;			    // depth
     CHILDDIALOG kids[TAB_CHILDDIALOGS];
@@ -240,7 +264,7 @@ static int CALLBACK LaunchBoxChildDialogProc0(HWND hwnd, UINT msg,
 	     * ... and refresh item states.
 	     */
 
-	    SendMessage(hwnd, WM_REFRESHITEMS, 0, 0);
+//	    SendMessage(hwnd, WM_REFRESHITEMS, 0, 0);
 	};
 	break;
     case WM_DESTROY:
@@ -697,7 +721,11 @@ static int CALLBACK LaunchBoxChildDialogProc1(HWND hwnd, UINT msg,
 
 		    value = (IsDlgButtonChecked(hwnd, LOWORD(wParam)) == BST_CHECKED);
 
-		    ses_write_i(&config->sessionroot, path, valname, value);
+		    if (value)
+			ses_write_i(&config->sessionroot, path, valname, value);
+		    else
+			ses_delete_value(&config->sessionroot, path, valname);
+
 		    EnableWindow(button, value);
 		};
 	    };
@@ -711,18 +739,19 @@ static int CALLBACK LaunchBoxChildDialogProc1(HWND hwnd, UINT msg,
 	    ShowWindow(hdr->kidwnd, SW_HIDE);
 	    hdr->kidwnd = hdr->kids[TAB_ACTIONS].hwnd;
 	    hdr->kidtype = hdr->kids[TAB_ACTIONS].type;
+	    hdr->prevtype = hdr->kids[TAB_AUTOPROCESS].type;
 	    switch (wParam) {
 	    case IDC_LAUNCHBOX_TAB1_BUTTON_ATSTART:
-		hdr->kiddata = (void *) PLAUNCH_ACTION_SEQ_ATSTART;
+		hdr->kiddata = (void *) ATSTART_STRINGS;
 		break;
 	    case IDC_LAUNCHBOX_TAB1_BUTTON_ATNETWORKUP:
-		hdr->kiddata = (void *) PLAUNCH_ACTION_SEQ_ATNETWORKUP;
+		hdr->kiddata = (void *) ATNETWORKUP_STRINGS;
 		break;
 	    case IDC_LAUNCHBOX_TAB1_BUTTON_ATNETWORKDOWN:
-		hdr->kiddata = (void *) PLAUNCH_ACTION_SEQ_ATNETWORKDOWN;
+		hdr->kiddata = (void *) ATNETWORKDOWN_STRINGS;
 		break;
 	    case IDC_LAUNCHBOX_TAB1_BUTTON_ATSTOP:
-		hdr->kiddata = (void *) PLAUNCH_ACTION_SEQ_ATSTOP;
+		hdr->kiddata = (void *) ATSTOP_STRINGS;
 		break;
 	    };
 	    hdr->level = 1;
@@ -782,11 +811,153 @@ static int CALLBACK LaunchBoxChildDialogProc2(HWND hwnd, UINT msg,
 	} else
 	    return FALSE;
 	break;
+    };
+
+    return FALSE;
+};
+
+static int CALLBACK LaunchBoxChildDialogProc3(HWND hwnd, UINT msg,
+					      WPARAM wParam, LPARAM lParam) 
+{
+    static HBRUSH background;
+    static DLGHDR *hdr = NULL;
+    static HWND treeview = NULL;
+    static HWND cb_find = NULL,
+		eb_find = NULL,
+		spin_find = NULL,
+		btn_back = NULL,
+		btn_moreact = NULL,
+		btn_next = NULL,
+		cb_actions[6] = 
+		    { NULL, NULL, NULL,
+		      NULL, NULL, NULL };
+
+    switch (msg) {
+    case WM_INITDIALOG:
+	{
+	    HWND parent;
+
+	    /*
+	     * get DLGHDR structure pointer...
+	     */
+
+	    parent = GetParent(hwnd);
+	    hdr = (DLGHDR *) GetWindowLong(parent, GWL_USERDATA);
+	    treeview = hdr->treeview;
+
+	    /*
+	     * ... adjust window position...
+	     */
+
+	    SetWindowPos(hwnd, HWND_TOP, hdr->rect.left,
+			 hdr->rect.top,
+			 hdr->rect.right - hdr->rect.left,
+			 hdr->rect.bottom - hdr->rect.top,
+			 SWP_SHOWWINDOW);
+
+	    background = GetStockObject(HOLLOW_BRUSH);
+
+//	    SendMessage(hwnd, WM_REFRESHITEMS, 0, 0);
+	};
+	break;
+    case WM_CTLCOLORDLG:
+	return (INT_PTR) background;
+    case WM_CTLCOLORSTATIC:
+    case WM_CTLCOLOREDIT:
+    case WM_CTLCOLORBTN:
+    case WM_CTLCOLORLISTBOX:
+	if (COMPAT_WINDOWSXP(config->version_major, config->version_minor)) {
+	    SetBkMode((HDC) wParam, TRANSPARENT);
+	    return (INT_PTR) wParam;
+	} else
+	    return FALSE;
+	break;
+    case WM_EMPTYITEMS:
+	{
+	    int i, j;
+
+	    cb_find = GetDlgItem(hwnd, IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_FIND);
+	    SendMessage(cb_find, CB_RESETCONTENT, 0, 0);
+	    for (i = 0; i < SEARCHFOR_ITEMS; i++)
+		SendMessage(cb_find, CB_ADDSTRING, 0, (LPARAM) SEARCHFOR_STRINGS[i]);
+	    EnableWindow(cb_find, TRUE);
+
+	    eb_find = GetDlgItem(hwnd, IDC_LAUNCHBOX_TABGENERIC1_EDITBOX_FIND);
+	    SetWindowText(eb_find, "");
+	    EnableWindow(eb_find, FALSE);
+
+	    spin_find = GetDlgItem(hwnd, IDC_LAUNCHBOX_TABGENERIC1_SPIN_FIND);
+	    SendMessage(spin_find, UDM_SETRANGE, 0, MAKELONG(0, UD_MAXVAL));
+	    EnableWindow(spin_find, FALSE);
+
+	    btn_moreact = GetDlgItem(hwnd, IDC_LAUNCHBOX_TABGENERIC1_BUTTON_MOREACTIONS);
+	    EnableWindow(btn_moreact, FALSE);
+
+	    btn_back = GetDlgItem(hwnd, IDC_LAUNCHBOX_TABGENERIC1_BUTTON_BACK);
+	    EnableWindow(btn_back, TRUE);
+
+	    btn_next = GetDlgItem(hwnd, IDC_LAUNCHBOX_TABGENERIC1_BUTTON_NEXT);
+	    EnableWindow(btn_next, FALSE);
+
+	    for (i = 0;	i < 6; i++) {
+		    cb_actions[i] = 
+			GetDlgItem(hwnd, 
+			    IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_ACTION1 + i);
+		    SendMessage(cb_actions[i], CB_RESETCONTENT, 0, 0);
+		    for (j = 0; j < ACTION_ITEMS; j++)
+			SendMessage(cb_actions[i], CB_ADDSTRING, 0, (LPARAM) ACTION_STRINGS[j]);
+		    EnableWindow(cb_actions[i], FALSE);
+		};
+	};
+	break;
+    case WM_RESETITEMS:
+	{
+	    HTREEITEM item = NULL;
+	    char name[BUFSIZE], path[BUFSIZE], buf[BUFSIZE];
+	    char **data = (char **) hdr->kiddata;
+	    int i, start;
+
+	    item = (HTREEITEM) lParam;
+
+	    if (!item && TreeView_GetCount(treeview))
+		item = TreeView_GetSelection(treeview);
+
+	    if (!item) {
+		SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
+		break;
+	    };
+
+	    memset(name, 0, BUFSIZE);
+	    memset(path, 0, BUFSIZE);
+	    memset(buf, 0, BUFSIZE);
+
+	    treeview_getitemname(treeview, item, name, BUFSIZE);
+	    treeview_getitempath(treeview, item, path);
+
+	    start = (int) wParam;
+
+	    for (i = start; i < 255; i++) {
+		sprintf(buf, data[ACTION_ACTION], i);
+		ses_delete_value(&config->sessionroot, path, buf);
+	    };
+
+	    for (i = start; i < 6; i++) {
+		SendMessage(cb_actions[i], CB_SETCURSEL, 0, 0);
+	    };
+
+	    for (i = start + 1; i < 6; i++) {
+		EnableWindow(cb_actions[i], FALSE);
+	    };
+
+	    EnableWindow(btn_moreact, FALSE);
+	};
+	break;
     case WM_REFRESHITEMS:
 	{
 	    HTREEITEM item;
-	    BOOL isfolder, enable;
+	    int value, i;
 	    char name[BUFSIZE], path[BUFSIZE], buf[BUFSIZE];
+	    char **data = (char **) hdr->kiddata;
 
 	    /*
 	     * first we get the current selected item in tree view
@@ -799,7 +970,6 @@ static int CALLBACK LaunchBoxChildDialogProc2(HWND hwnd, UINT msg,
 
 	    if (!item) {
 		SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
-		SendMessage(hwnd, WM_ENABLEITEMS, (WPARAM) FALSE, 0);
 		break;
 	    };
 
@@ -816,82 +986,145 @@ static int CALLBACK LaunchBoxChildDialogProc2(HWND hwnd, UINT msg,
 	    treeview_getitemname(treeview, item, name, BUFSIZE);
 	    treeview_getitempath(treeview, item, path);
 
-	    /*
-	     * empty all controls first, in case it's a folder or a session
-	     * without any auto actions set
-	     */
-
-	    if (!strcmp(name, DEFAULTSETTINGS))
-		enable = FALSE;
-	    else
-		enable = TRUE;
-
 	    SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
-	    SendMessage(hwnd, WM_ENABLEITEMS, (WPARAM) enable, 0);
 
 	    /*
-	     * if it is a folder, return. a folder can't have any auto actions.
-	     * if it is a "Default Settings" session, it cannot have any auto actions too.
+	     * pull all settings from the registry and fill them in the
+	     * combo boxes
 	     */
 
-	    if (!enable)
-		break;
+	    for (i = 0; i < 6; i++) {
+		sprintf(buf, data[ACTION_ACTION], i);
+		ses_read_i(&config->sessionroot, path, buf, 0, &value);
+		SendMessage(cb_actions[i], CB_SETCURSEL, (WPARAM) value, 0);
+		if (value) {
+		    EnableWindow(cb_actions[i], TRUE);
+		    if (i < 5)
+			EnableWindow(cb_actions[i + 1], TRUE);
+		    else
+			EnableWindow(btn_moreact, TRUE);
+		};
+	    };
 
-	    /*
-	     * pull all auto action settings from the registry and fill them in the
-	     * check boxes
-	     */
-	};
-    };
-
-    return FALSE;
-};
-
-static int CALLBACK LaunchBoxChildDialogProc3(HWND hwnd, UINT msg,
-					      WPARAM wParam, LPARAM lParam) 
-{
-    static HBRUSH background;
-    static DLGHDR *hdr = NULL;
-    static HWND treeview = NULL;
-
-    switch (msg) {
-    case WM_INITDIALOG:
-	{
-	    HWND parent;
-
-	    /*
-	     * get DLGHDR structure pointer...
-	     */
-
-	    parent = GetParent(hwnd);
-	    hdr = (DLGHDR *) GetWindowLong(parent, GWL_USERDATA);
-	    treeview = hdr->treeview;
-
-	    /*
-	     * ... adjust window position...
-	     */
-
-	    SetWindowPos(hwnd, HWND_TOP, hdr->rect.left,
-			 hdr->rect.top,
-			 hdr->rect.right - hdr->rect.left,
-			 hdr->rect.bottom - hdr->rect.top,
-			 SWP_SHOWWINDOW);
-
-	    background = GetStockObject(HOLLOW_BRUSH);
-
+	    ses_read_i(&config->sessionroot, path, data[ACTION_FIND], -1, &value);
+	    if (value < 8)
+		SendMessage(cb_find, CB_SETCURSEL, (WPARAM) (value + 1), 0);
+	    else {
+		SendMessage(cb_find, CB_SETCURSEL, (WPARAM) SEARCHFOR_ITEMS - 1, 0);
+		SendMessage(spin_find, UDM_SETPOS, 0, MAKELONG((short) value, 0));
+		EnableWindow(eb_find, TRUE);
+		EnableWindow(spin_find, TRUE);
+	    };
+	    if (value >= 0)
+		EnableWindow(cb_actions[0], TRUE);
 	};
 	break;
-    case WM_CTLCOLORDLG:
-	return (INT_PTR) background;
-    case WM_CTLCOLORSTATIC:
-    case WM_CTLCOLOREDIT:
-    case WM_CTLCOLORBTN:
-    case WM_CTLCOLORLISTBOX:
-	if (COMPAT_WINDOWSXP(config->version_major, config->version_minor)) {
-	    SetBkMode((HDC) wParam, TRANSPARENT);
-	    return (INT_PTR) wParam;
-	} else
-	    return FALSE;
+    case WM_COMMAND:
+	switch (HIWORD(wParam)) {
+	case CBN_SELCHANGE:
+	    {
+		HTREEITEM item = NULL;
+		char name[BUFSIZE], path[BUFSIZE], buf[BUFSIZE];
+		char **data = (char **) hdr->kiddata;
+		int i;
+
+		if (!item && TreeView_GetCount(treeview))
+		    item = TreeView_GetSelection(treeview);
+
+		if (!item) {
+		    SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
+		    break;
+		};
+
+		memset(name, 0, BUFSIZE);
+		memset(path, 0, BUFSIZE);
+		memset(buf, 0, BUFSIZE);
+
+		treeview_getitemname(treeview, item, name, BUFSIZE);
+		treeview_getitempath(treeview, item, path);
+
+		switch (LOWORD(wParam)) {
+		case IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_FIND:
+		    {
+			i = SendMessage(cb_find, CB_GETCURSEL, 0, 0);
+
+			if (!i) {
+			    ses_delete_value(&config->sessionroot, path, data[ACTION_FIND]);
+			    SendMessage(hwnd, WM_RESETITEMS, 0, (LPARAM) item);
+			} else if (i < 9) {
+			    i--;
+			    ses_write_i(&config->sessionroot, path, data[ACTION_FIND], i);
+			    EnableWindow(cb_actions[0], TRUE);
+			} else {
+			    SendMessage(spin_find, UDM_SETPOS, 0, 0);
+			    EnableWindow(eb_find, TRUE);
+			    EnableWindow(spin_find, TRUE);
+			    EnableWindow(cb_actions[0], TRUE);
+			};
+		    };
+		    break;
+		case IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_ACTION1:
+		case IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_ACTION2:
+		case IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_ACTION3:
+		case IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_ACTION4:
+		case IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_ACTION5:
+		case IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_ACTION6:
+		    {
+			int act = 
+			    LOWORD(wParam) - IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_ACTION1;
+
+			i = SendMessage(cb_actions[act], CB_GETCURSEL, 0, 0);
+			sprintf(buf, data[ACTION_ACTION], act);
+
+			if (!i)
+			    SendMessage(hwnd, WM_RESETITEMS, (WPARAM) act, (LPARAM) item);
+			else {
+			    ses_write_i(&config->sessionroot, path, buf, i);
+			    if (act < 5)
+				EnableWindow(cb_actions[act + 1], TRUE);
+			    else
+				EnableWindow(btn_moreact, TRUE);
+			};
+		    };
+		    break;
+		};
+	    };
+	    break;
+	};
+	switch (wParam) {
+	case IDC_LAUNCHBOX_TABGENERIC1_BUTTON_BACK:
+	    {
+		ShowWindow(hdr->kidwnd, SW_HIDE);
+		hdr->kidwnd = hdr->kids[hdr->prevtype].hwnd;
+		hdr->kidtype = hdr->kids[hdr->prevtype].type;
+		hdr->prevtype = 0;
+		hdr->kiddata = NULL;
+		hdr->level = 0;
+
+		SendMessage(hdr->kidwnd, WM_REFRESHITEMS, 0, 0);
+		ShowWindow(hdr->kidwnd, SW_SHOW);
+	    };
+	    break;
+	case IDC_LAUNCHBOX_TABGENERIC1_BUTTON_MOREACTIONS:
+	    {
+		char **data = (char **) hdr->kiddata;
+
+		ShowWindow(hdr->kidwnd, SW_HIDE);
+		hdr->kidwnd = hdr->kids[TAB_MOREACTIONS].hwnd;
+		hdr->kidtype = hdr->kids[TAB_MOREACTIONS].type;
+		hdr->kiddata = (void *) data[ACTION_ACTION];
+		hdr->level++;
+
+		SendMessage(hdr->kidwnd, WM_REFRESHITEMS, 0, 0);
+		ShowWindow(hdr->kidwnd, SW_SHOW);
+	    };
+	    break;
+	case IDC_LAUNCHBOX_TABGENERIC1_BUTTON_NEXT:
+	    {
+		/* nothing here yet */
+	    };
+	    break;
+	};
 	break;
     };
 
@@ -904,11 +1137,18 @@ static int CALLBACK LaunchBoxChildDialogProc4(HWND hwnd, UINT msg,
     static HBRUSH background;
     static DLGHDR *hdr = NULL;
     static HWND treeview = NULL;
+    static HWND btn_back = NULL,
+		btn_next = NULL,
+		cb_action[10] = {
+		    NULL, NULL, NULL, NULL, NULL,
+		    NULL, NULL, NULL, NULL, NULL };
+    static int base_action = 0;
 
     switch (msg) {
     case WM_INITDIALOG:
 	{
 	    HWND parent;
+	    int i;
 
 	    /*
 	     * get DLGHDR structure pointer...
@@ -930,6 +1170,17 @@ static int CALLBACK LaunchBoxChildDialogProc4(HWND hwnd, UINT msg,
 
 	    background = GetStockObject(HOLLOW_BRUSH);
 
+	    base_action = (hdr->level - 2) * 10 + 6;
+
+	    btn_back = GetDlgItem(hwnd, IDC_LAUNCHBOX_TABGENERIC2_BUTTON_BACK);
+
+	    btn_next = GetDlgItem(hwnd, IDC_LAUNCHBOX_TABGENERIC2_BUTTON_NEXT);
+
+	    for (i = 0; i < 10; i++)
+		cb_action[i] = GetDlgItem(hwnd,
+		    IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION1 + i);
+
+	    SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
 	};
 	break;
     case WM_CTLCOLORDLG:
@@ -943,6 +1194,212 @@ static int CALLBACK LaunchBoxChildDialogProc4(HWND hwnd, UINT msg,
 	    return (INT_PTR) wParam;
 	} else
 	    return FALSE;
+	break;
+    case WM_EMPTYITEMS:
+	{
+	    int i, j;
+
+	    for (i = 0;	i < 10; i++) {
+		SendMessage(cb_actions[i], CB_RESETCONTENT, 0, 0);
+		for (j = 0; j < ACTION_ITEMS; j++)
+		    SendMessage(cb_actions[i], CB_ADDSTRING, 0, (LPARAM) ACTION_STRINGS[j]);
+		SendMessage(cb_actions[i], CB_SETCURSEL, 0, 0);
+		EnableWindow(cb_actions[i], FALSE);
+	    };
+
+	    EnableWindow(btn_next, FALSE);
+	};
+	break;
+    case WM_RESETITEMS:
+	{
+	    HTREEITEM item = NULL;
+	    char name[BUFSIZE], path[BUFSIZE], buf[BUFSIZE];
+	    char *data = (char *) hdr->kiddata;
+	    int i, start;
+
+	    item = (HTREEITEM) lParam;
+
+	    if (!item && TreeView_GetCount(treeview))
+		item = TreeView_GetSelection(treeview);
+
+	    if (!item) {
+		SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
+		break;
+	    };
+
+	    memset(name, 0, BUFSIZE);
+	    memset(path, 0, BUFSIZE);
+	    memset(buf, 0, BUFSIZE);
+
+	    treeview_getitemname(treeview, item, name, BUFSIZE);
+	    treeview_getitempath(treeview, item, path);
+
+	    start = (int) wParam;
+
+	    for (i = base_action + start; i < 255; i++) {
+		sprintf(buf, data, i);
+		ses_delete_value(&config->sessionroot, path, buf);
+	    };
+
+	    for (i = start; i < 10; i++) {
+		SendMessage(cb_actions[i], CB_SETCURSEL, 0, 0);
+	    };
+
+	    for (i = start + 1; i < 10; i++) {
+		EnableWindow(cb_actions[i], FALSE);
+	    };
+
+	    EnableWindow(btn_next, FALSE);
+	};
+	break;
+    case WM_REFRESHITEMS:
+	{
+	    HTREEITEM item;
+	    int value, i;
+	    char name[BUFSIZE], path[BUFSIZE], buf[BUFSIZE];
+	    char *data = (char *) hdr->kiddata;
+
+	    /*
+	     * first we get the current selected item in tree view
+	     */
+
+	    item = (HTREEITEM) lParam;
+
+	    if (!item && TreeView_GetCount(treeview))
+		item = TreeView_GetSelection(treeview);
+
+	    if (!item) {
+		SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
+		break;
+	    };
+
+	    memset(name, 0, BUFSIZE);
+	    memset(path, 0, BUFSIZE);
+	    memset(buf, 0, BUFSIZE);
+
+	    /*
+	     * then we get its name and full path. we don't check for
+	     * session or folder because we can't possibly reach here for
+	     * a folder.
+	     */
+
+	    treeview_getitemname(treeview, item, name, BUFSIZE);
+	    treeview_getitempath(treeview, item, path);
+
+	    SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
+
+	    /*
+	     * pull all settings from the registry and fill them in the
+	     * combo boxes
+	     */
+
+	    for (i = 0; i < 10; i++) {
+		sprintf(buf, data, base_action + i);
+		ses_read_i(&config->sessionroot, path, buf, 0, &value);
+		SendMessage(cb_actions[i], CB_SETCURSEL, (WPARAM) value, 0);
+		if (value) {
+		    EnableWindow(cb_actions[i], TRUE);
+		    if (i < 9)
+			EnableWindow(cb_actions[i + 1], TRUE);
+		    else
+			EnableWindow(btn_next, TRUE);
+		};
+	    };
+
+	    EnableWindow(cb_actions[0], TRUE);
+	};
+	break;
+    case WM_COMMAND:
+	switch (HIWORD(wParam)) {
+	case CBN_SELCHANGE:
+	    {
+		HTREEITEM item = NULL;
+		char name[BUFSIZE], path[BUFSIZE], buf[BUFSIZE];
+		char *data = (char *) hdr->kiddata;
+		int i;
+
+		if (!item && TreeView_GetCount(treeview))
+		    item = TreeView_GetSelection(treeview);
+
+		if (!item) {
+		    SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
+		    break;
+		};
+
+		memset(name, 0, BUFSIZE);
+		memset(path, 0, BUFSIZE);
+		memset(buf, 0, BUFSIZE);
+
+		treeview_getitemname(treeview, item, name, BUFSIZE);
+		treeview_getitempath(treeview, item, path);
+
+		switch (LOWORD(wParam)) {
+		case IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION1:
+		case IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION2:
+		case IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION3:
+		case IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION4:
+		case IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION5:
+		case IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION6:
+		case IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION7:
+		case IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION8:
+		case IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION9:
+		case IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION10:
+		    {
+			int act = 
+			    LOWORD(wParam) - IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION1;
+
+			i = SendMessage(cb_actions[act], CB_GETCURSEL, 0, 0);
+			sprintf(buf, data, base_action + act);
+
+			if (!i)
+			    SendMessage(hwnd, WM_RESETITEMS, (WPARAM) act, (LPARAM) item);
+			else {
+			    ses_write_i(&config->sessionroot, path, buf, i);
+			    if (act < 9)
+				EnableWindow(cb_actions[act + 1], TRUE);
+			    else
+				EnableWindow(btn_next, TRUE);
+			};
+		    };
+		    break;
+		};
+	    };
+	    break;
+	};
+	switch (wParam) {
+	case IDC_LAUNCHBOX_TABGENERIC1_BUTTON_BACK:
+	    {
+		ShowWindow(hdr->kidwnd, SW_HIDE);
+		hdr->kidwnd = hdr->kids[hdr->prevtype].hwnd;
+		hdr->kidtype = hdr->kids[hdr->prevtype].type;
+		hdr->prevtype = 0;
+		hdr->kiddata = NULL;
+		hdr->level = 0;
+
+		SendMessage(hdr->kidwnd, WM_REFRESHITEMS, 0, 0);
+		ShowWindow(hdr->kidwnd, SW_SHOW);
+	    };
+	    break;
+	case IDC_LAUNCHBOX_TABGENERIC1_BUTTON_MOREACTIONS:
+	    {
+		char **data = (char **) hdr->kiddata;
+
+		ShowWindow(hdr->kidwnd, SW_HIDE);
+		hdr->kidwnd = hdr->kids[TAB_MOREACTIONS].hwnd;
+		hdr->kidtype = hdr->kids[TAB_MOREACTIONS].type;
+		hdr->kiddata = (void *) data[ACTION_ACTION];
+		hdr->level++;
+
+		SendMessage(hdr->kidwnd, WM_REFRESHITEMS, 0, 0);
+		ShowWindow(hdr->kidwnd, SW_SHOW);
+	    };
+	    break;
+	case IDC_LAUNCHBOX_TABGENERIC1_BUTTON_NEXT:
+	    {
+		/* nothing here yet */
+	    };
+	    break;
+	};
 	break;
     };
 
@@ -1205,8 +1662,8 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 	 */
 	{
 	    HTREEITEM item;
-	    char name[BUFSIZE];
-	    BOOL rendel;
+	    char name[BUFSIZE], path[BUFSIZE];
+	    BOOL rendel, edit, isfolder;
 	    UINT menuflag;
 
 	    item = (HTREEITEM)lParam;
@@ -1216,34 +1673,43 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 
 	    if (!item) {
 		rendel = FALSE;
+		edit = FALSE;
 		menuflag = MF_GRAYED;
 
 		EnableWindow(GetDlgItem(hwnd, IDOK), FALSE);
-		EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_EDIT), FALSE);
 	    } else if (config->sessionroot.readonly) {
 		EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_NEW_FOLDER), FALSE);
 		EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_NEW_SESSION), FALSE);
-		EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_EDIT), FALSE);
 		EnableMenuItem(context_menu, IDM_CTXM_CRTFLD, MF_GRAYED);
 		EnableMenuItem(context_menu, IDM_CTXM_CRTSES, MF_GRAYED);
 
 		rendel = FALSE;
+		edit = FALSE;
 		menuflag = MF_GRAYED;
 	    } else {
 		memset(name, 0, BUFSIZE);
 
 		treeview_getitemname(treeview, item, name, BUFSIZE);
+		treeview_getitempath(treeview, item, path);
+		isfolder = ses_is_folder(&config->sessionroot, path);
 
-		if (!name || !strcmp(name, DEFAULTSETTINGS)) {
+		if (!name) {
 		    rendel = FALSE;
+		    edit = FALSE;
+		    menuflag = MF_GRAYED;
+		} else if (!strcmp(name, DEFAULTSETTINGS)) {
+		    rendel = FALSE;
+		    edit = TRUE;
 		    menuflag = MF_GRAYED;
 		} else {
 		    rendel = TRUE;
+		    edit = isfolder ? FALSE : TRUE;
 		    menuflag = MF_ENABLED;
 		};
 	    };
 
 	    EnableWindow(GetDlgItem(hwnd, IDOK), TRUE);
+	    EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_EDIT), edit);
 	    EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_DELETE),
 			 rendel);
 	    EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_BUTTON_RENAME),

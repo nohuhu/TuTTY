@@ -47,13 +47,17 @@ extern const char *const HOTKEY_STRINGS[];
 #define HOTKEY				"PLaunchHotKey"
 
 #define PLAUNCH_ACTION_ENABLE_ATSTART	    "PLaunchAutoActionAtStartEnable"
-#define PLAUNCH_ACTION_SEQ_ATSTART	    "PLaunchAutoActionAtStart"
+#define	PLAUNCH_ACTION_FIND_ATSTART	    "PLaunchAutoActionAtStartFind"
+#define PLAUNCH_ACTION_SEQ_ATSTART	    "PLaunchAutoActionAtStart%d"
 #define PLAUNCH_ACTION_ENABLE_ATNETWORKUP   "PLaunchAutoActionAtNetworkUpEnable"
-#define PLAUNCH_ACTION_SEQ_ATNETWORKUP	    "PLaunchAutoActionAtNetworkUp"
+#define PLAUNCH_ACTION_FIND_ATNETWORKUP	    "PLaunchAutoActionAtNetworkUpFind"
+#define PLAUNCH_ACTION_SEQ_ATNETWORKUP	    "PLaunchAutoActionAtNetworkUp%d"
 #define PLAUNCH_ACTION_ENABLE_ATNETWORKDOWN "PLaunchAutoActionAtNetworkDownEnable"
-#define PLAUNCH_ACTION_SEQ_ATNETWORKDOWN    "PLaunchAutoActionAtNetworkDown"
+#define PLAUNCH_ACTION_FIND_ATNETWORKDOWN   "PLaunchAutoActionAtNetworkDownFind"
+#define PLAUNCH_ACTION_SEQ_ATNETWORKDOWN    "PLaunchAutoActionAtNetworkDown%d"
 #define PLAUNCH_ACTION_ENABLE_ATSTOP	    "PLaunchAutoActionAtStopEnable"
-#define PLAUNCH_ACTION_SEQ_ATSTOP	    "PLaunchAutoActionAtStop"
+#define PLAUNCH_ACTION_FIND_ATSTOP	    "PLaunchAutoActionAtStopFind"
+#define PLAUNCH_ACTION_SEQ_ATSTOP	    "PLaunchAutoActionAtStop%d"
 
 #define	LIMIT_SEARCHFOR_LAST		0
 #define	LIMIT_SEARCHFOR_FIRST		1
