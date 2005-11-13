@@ -566,7 +566,10 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 
 		len = strlen(ssd->currentpath) + strlen(savedsession) + 2;
 		tmp = smalloc(len);
-		sprintf(tmp, "%s\\%s", ssd->currentpath, savedsession);
+		if (strlen(ssd->currentpath))
+		    sprintf(tmp, "%s\\%s", ssd->currentpath, savedsession);
+		else
+		    sprintf(tmp, "%s", savedsession);
 		strncpy(savedsession, tmp, SAVEDSESSION_LEN);
 		savedsession[SAVEDSESSION_LEN - 1] = '\0';
 	    };
