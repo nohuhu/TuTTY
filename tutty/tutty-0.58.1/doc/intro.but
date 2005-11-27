@@ -1,9 +1,39 @@
-\versionid $Id: intro.but 4787 2004-11-16 15:27:00Z simon $
+\define{versionidintro} \versionid $Id$
 
-\C{intro} Introduction to PuTTY
+\C{intro} Introduction to TuTTY
 
-PuTTY is a free SSH, Telnet and Rlogin client for 32-bit Windows
-systems.
+TuTTY is a free SSH, Telnet, Rlogin and Serial client for 32-bit 
+Windows systems. TuTTY is based on PuTTY (c) Simon Tatham.
+
+Before you go any further, I'd like to mention that the word \e{based}
+should be taken literally. Essentially, TuTTY is no more than a pack
+of patches and additions to PuTTY, and not a large pack at all: about
+90% of the code is genuine written by Simon Tatham and his colleagues.
+I'm always trying to update TuTTY to latest released PuTTY code to provide
+all new features and fixes made by Simon & Co. The vice versa situation
+does not exist so all features that differentiate TuTTY from PuTTY are
+available in TuTTY only. In fact, TuTTY was renamed recently, before that
+it was "my version of PuTTY" or "PuTTY with my patches" or something
+like that. I got tired of this so I had to invent a new name and new
+versioning scheme. The name is now "TuTTY" and versions are clear to
+understand: for example, TuTTY 0.58.1.2 is based on the PuTTY 0.58
+release code, TuTTY's own major version is 1 and minor version is 2.
+If you have a development snapshot then you may take a look at the
+build number as well, it may be helpful for reporting any bugs and
+describing problems.
+
+In short: TuTTY is the latest released PuTTY with extra features.
+
+Have said all this, I must add that this manual is also mostly contains
+descriptions of PuTTY features. TuTTY ones are also described but
+not always completely. Since TuTTY is heavily based on PuTTY, I didn't
+change \e{all} occurences of the name \q{PuTTY} in this manual. Wherever
+you find it, know that all descriptions are applied equally to TuTTY.
+Some sections I decided to leave as is: for example, the FAQ. It does
+not mention TuTTY at all but can be applied to it. That's because I think
+that answering any questions before they're even asked is a bit stupid, 
+and also it lessens the burden of proofreading and changing about 400 
+kilobytes of complete documentation set.
 
 \H{you-what} What are SSH, Telnet and Rlogin?
 
@@ -15,7 +45,7 @@ logging in to a multi-user computer from another computer, over a
 network.
 
 Multi-user operating systems, such as Unix and VMS, usually present
-a command-line interface to the user, much like the \q{\i{Command
+a \i{command-line interface} to the user, much like the \q{\i{Command
 Prompt}} or \q{\i{MS-DOS Prompt}} in Windows. The system prints a
 prompt, and you type commands which the system will obey.
 
@@ -33,7 +63,7 @@ you.
 
 These protocols can also be used for other types of keyboard-based
 interactive session. In particular, there are a lot of bulletin
-boards, talker systems and MUDs (Multi-User Dungeons) which support
+boards, \i{talker systems} and \i{MUDs} (Multi-User Dungeons) which support
 access using Telnet. There are even a few that support SSH.
 
 You might want to use SSH, Telnet or Rlogin if:
@@ -42,11 +72,11 @@ You might want to use SSH, Telnet or Rlogin if:
 able to access from somewhere else
 
 \b your Internet Service Provider provides you with a login account
-on a web server. (This might also be known as a \i\e{shell account}.
+on a \i{web server}. (This might also be known as a \i\e{shell account}.
 A \e{shell} is the program that runs on the server and interprets
 your commands for you.)
 
-\b you want to use a bulletin board system, talker or MUD which can
+\b you want to use a \i{bulletin board system}, talker or MUD which can
 be accessed using Telnet.
 
 You probably do \e{not} want to use SSH, Telnet or Rlogin if:
@@ -66,8 +96,8 @@ high-security protocol. It uses strong cryptography to protect your
 connection against eavesdropping, hijacking and other attacks. Telnet
 and Rlogin are both older protocols offering minimal security.
 
-\b SSH and Rlogin both allow you to log in to the server without
-having to type a password. (Rlogin's method of doing this is
+\b SSH and Rlogin both allow you to \I{passwordless login}log in to the
+server without having to type a password. (Rlogin's method of doing this is
 insecure, and can allow an attacker to access your account on the
 server. SSH's method is much more secure, and typically breaking the
 security requires the attacker to have gained access to your actual
@@ -86,3 +116,34 @@ administrator to install it.
 If your client and server are both behind the same (good) firewall,
 it is more likely to be safe to use Telnet or Rlogin, but we still
 recommend you use SSH.
+
+\H{serial-what} What is Serial protocol?
+
+A serial port communication protocol is the most used of the legacy
+communication protocols. Almost all hardware devices related to
+computing world and many of the others support \i{serial communication}.
+Many older devices do not support any other protocols. Therefore it is
+very beneficial for a terminal client to have support for this protocol.
+
+Unlike the protocols described above, Serial does not have any relation
+to TCP/IP networking. It is used in combination with specific hardware
+chip called \i{UART} (Universal Asynchronous Receiver Transmitter) or a 
+software emulation of this chip. This chip provides an \i{asynchronous mode}
+of serial communication. Some devices support \i{synchronous serial mode} but
+it is not available in TuTTY.
+
+There are two mostly used scenarios involved with serial ports: either
+a computer serial port is used to connect to a serial port of another
+device directly with a straight cable, or a serial port is used to connect 
+to a piece of hardware called \i{modem} (MOdulator DEModulator) that is 
+used to connect to another modem over the phone line. In either case, 
+first the serial port is opened with specified settings: \i{Port speed}, 
+\i{Parity}, number of \i{Data bits}, number of \i{Stop bits} and \i{Flow 
+control} mode. You should know the settings supported by the other side of 
+serial connection (either modem or directly connected device), otherwise 
+connection wouldn't function. If you don't know these settings, try to 
+leave them to default: 9600 bits per second, 8 data bits, none parity, 
+1 stop bit and no flow control. Chances are, these settings are also 
+default on the other side as well.
+
+See \k{using-serial} for more detailed explanations of serial communication.

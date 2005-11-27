@@ -1,30 +1,37 @@
-\title PuTTY User Manual
+\define{versionidblurb} \versionid $Id$
+
+\title TuTTY User Manual
 
 \cfg{xhtml-leaf-level}{1}
 \cfg{xhtml-leaf-smallest-contents}{2}
 \cfg{xhtml-leaf-contains-contents}{true}
 \cfg{xhtml-body-end}{<p>If you want to provide feedback on this manual
-or on the PuTTY tools themselves, see the
-<a href="http://www.chiark.greenend.org.uk/~sgtatham/putty/feedback.html">Feedback
-page</a>.</p>}
+or on the TuTTY tools themselves, see the
+<a href="http://putty.dwalin.ru">TuTTY page</a>.</p>}
+
+\cfg{html-template-fragment}{%k}{%b}
+
+\cfg{info-max-file-size}{0}
 
 \cfg{xhtml-contents-filename}{index.html}
-\cfg{text-filename}{puttydoc.txt}
-\cfg{winhelp-filename}{putty.hlp}
+\cfg{text-filename}{tuttydoc.txt}
+\cfg{winhelp-filename}{tutty.hlp}
+\cfg{info-filename}{tutty.info}
+\cfg{pdf-filename}{tutty.pdf}
 
-PuTTY is a free (MIT-licensed) Win32 Telnet and SSH client. This
-manual documents PuTTY, and its companion utilities PSCP, PSFTP,
-Plink, Pageant and PuTTYgen.
+TuTTY is a free (MIT-licensed) Win32 Telnet and SSH client, based on
+PuTTY (c) Simon Tatham. This manual documents TuTTY, and its companion 
+utilities PSCP, PSFTP, Plink, Pageant and PuTTYgen.
 
-\e{Note to Unix users:} this manual currently primarily documents the
-Windows versions of the PuTTY utilities. Some options are therefore
-mentioned that are absent from the Unix version; the Unix version has
-features not described here; and the \cw{pterm} and command-line
-\cw{puttygen} utilities are not described at all. The only
-Unix-specific documentation that currently exists is the man pages.
+\e{Note to Unix users:} this manual is describing TuTTY which is a fork
+project based on PuTTY. Though genuine PuTTY written by Simon Tatham &
+his colleagues supports Linux and other operating systems, TuTTY works
+only on the Win32 platform. Therefore, non-Windows utilities available
+with PuTTY are not available with TuTTY and are not covered in this
+manual.
 
-\copyright This manual is copyright 2001-2004 Simon Tatham. All
+\copyright This manual is copyright 2005 dwalin@dwalin.ru.
+
+\copyright This manual is copyright 2001-2005 Simon Tatham. All
 rights reserved. You may distribute this documentation under the MIT
 licence. See \k{licence} for the licence text in full.
-
-\versionid $Id: blurb.but 4787 2004-11-16 15:27:00Z simon $

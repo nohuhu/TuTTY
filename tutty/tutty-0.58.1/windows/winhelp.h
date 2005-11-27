@@ -39,6 +39,7 @@
 #define WINHELP_CTX_features_charset "features.charset"
 #define WINHELP_CTX_features_arabicshaping "features.arabicshaping"
 #define WINHELP_CTX_features_bidi "features.bidi"
+#define WINHELP_CTX_features_bottombuttons "features.bottombuttons"
 #define WINHELP_CTX_terminal_autowrap "terminal.autowrap"
 #define WINHELP_CTX_terminal_decom "terminal.decom"
 #define WINHELP_CTX_terminal_lfhascr "terminal.lfhascr"
@@ -73,6 +74,7 @@
 #define WINHELP_CTX_connection_nodelay "connection.nodelay"
 #define WINHELP_CTX_connection_ipversion "connection.ipversion"
 #define WINHELP_CTX_connection_tcpkeepalive "connection.tcpkeepalive"
+#define WINHELP_CTX_connection_script "connection.script"
 #define WINHELP_CTX_proxy_type "proxy.type"
 #define WINHELP_CTX_proxy_main "proxy.main"
 #define WINHELP_CTX_proxy_exclude "proxy.exclude"
@@ -108,6 +110,8 @@
 #define WINHELP_CTX_colours_ansi "colours.ansi"
 #define WINHELP_CTX_colours_xterm256 "colours.xterm256"
 #define WINHELP_CTX_colours_bold "colours.bold"
+#define WINHELP_CTX_colours_underline "colours.underline"
+#define WINHELP_CTX_colours_selected "colours.selected"
 #define WINHELP_CTX_colours_system "colours.system"
 #define WINHELP_CTX_colours_logpal "colours.logpal"
 #define WINHELP_CTX_colours_config "colours.config"
@@ -128,6 +132,10 @@
 #define WINHELP_CTX_ssh_bugs_rsapad2 "ssh.bugs.rsapad2"
 #define WINHELP_CTX_ssh_bugs_pksessid2 "ssh.bugs.pksessid2"
 #define WINHELP_CTX_ssh_bugs_rekey2 "ssh.bugs.rekey2"
+#define WINHELP_CTX_serial_portsettings "serial.portsettings"
+#define WINHELP_CTX_serial_dialing "serial.dialing"
+#define WINHELP_CTX_serial_modemcommands "serial.modemcommands"
+#define WINHELP_CTX_serial_modemresponses "serial.modemresponses"
 
 /* These are used in Windows-specific bits of the frontend.
  * We (ab)use "help context identifiers" (dwContextId) to identify them. */
