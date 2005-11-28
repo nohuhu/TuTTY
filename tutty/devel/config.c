@@ -2354,11 +2354,11 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
 		     HELPCTX(serial_modemcommands), dlg_stdeditbox_handler,
 		     I(offsetof(Config, ser_modem_dial_pulse)),
 		     I(sizeof(((Config *) 0)->ser_modem_dial_pulse)));
-	ctrl_editbox(s, "Hang up", 'h', 50,
+	ctrl_editbox(s, "Hang up", 'u', 50,
 		     HELPCTX(serial_modemcommands), dlg_stdeditbox_handler,
 		     I(offsetof(Config, ser_modem_hangup)),
 		     I(sizeof(((Config *) 0)->ser_modem_hangup)));
-	ctrl_editbox(s, "Return to Command mode", 'u', 50,
+	ctrl_editbox(s, "Return to Command mode", 'm', 50,
 		     HELPCTX(serial_modemcommands), dlg_stdeditbox_handler,
 		     I(offsetof(Config, ser_modem_commandmode)),
 		     I(sizeof(((Config *) 0)->ser_modem_commandmode)));
