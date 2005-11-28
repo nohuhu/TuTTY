@@ -777,9 +777,21 @@ static void serial_special(void *handle, Telnet_Special code)
 {
     Serial sp = (Serial) handle;
 
-    if (code == TS_NOP && sp->s->state == SERIAL_STATE_NOT_CONNECTED) {
-	sp->s->protstate.dialing.state = DIAL_STATE_INIT;
-	process_dialing(s, '\0');
+    if (sp == NULL)
+	return;
+
+    switch (code) {
+    case TS_NOP:
+	if (sp->s->state == SERIAL_STATE_NOT_CONNECTED) {
+	    sp->s->protstate.dialing.state = DIAL_STATE_INIT;
+	    process_dialing(s, '\0');
+	};
+	break;
+    case TS_BRK:
+	SetCommBreak(sp->s->port);
+	Sleep(100);
+	ClearCommBreak(sp->s->port);
+	break;
     };
 
     return;

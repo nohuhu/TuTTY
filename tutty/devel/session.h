@@ -28,8 +28,11 @@
 #define	SES_ROOT_DISKXML	3   /*
 				     * windows/unix: xml disk file
 				     */
-#define	SES_ROOT_URLXML		4    /*
-				     * windows/unix: xml file on remote server
+#define	SES_ROOT_HTTPXML	4   /*
+				     * windows/unix: xml file on remote http server
+				     */
+#define SES_ROOT_FTPXML		5   /*
+				     * windows/unix: xml file on remote ftp server
 				     */
 
 typedef struct _session_root_t {
@@ -37,6 +40,9 @@ typedef struct _session_root_t {
     char *root_location;	    /* 
 				     * session root location: valid only for
 				     * non-default root types
+				     */
+    int readonly;		    /*
+				     * is the root read only?
 				     */
 } session_root_t;
 
@@ -179,7 +185,10 @@ char *ses_enum_settings_next(session_root_t *root, void *handle,
 			     char *buffer, int buflen);
 void ses_enum_settings_finish(session_root_t *root, void *handle);
 
-int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg);
+int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg, 
+			  int bufsize);
+int ses_cmdline_from_session_root(session_root_t *root, char *cmdline, 
+				  int bufsize);
 int ses_finish_session_root(session_root_t *root);
 
 #endif				/* SESSION_H */

@@ -399,6 +399,8 @@ extern const char *const appname;
  * enum comes out as a different size from int.
  */
 struct config_tag {
+    /* Session root structure */
+    session_root_t sessionroot;
     /* Basic options */
     char host[512];
     int port;
@@ -599,7 +601,6 @@ struct config_tag {
     FontSpec widefont;
     FontSpec wideboldfont;
     int shadowboldoffset;
-    session_root_t sessionroot;
 };
 
 /*

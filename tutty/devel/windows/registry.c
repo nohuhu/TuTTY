@@ -1,6 +1,8 @@
 #include <windows.h>
 #include <stdio.h>
+#if !defined(_DEBUG) && defined(MINIRTL)
 #include "entry.h"
+#endif
 #include "registry.h"
 
 #define BUFSIZE			512

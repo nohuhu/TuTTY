@@ -566,7 +566,10 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 
 		len = strlen(ssd->currentpath) + strlen(savedsession) + 2;
 		tmp = smalloc(len);
-		sprintf(tmp, "%s\\%s", ssd->currentpath, savedsession);
+		if (strlen(ssd->currentpath))
+		    sprintf(tmp, "%s\\%s", ssd->currentpath, savedsession);
+		else
+		    sprintf(tmp, "%s", savedsession);
 		strncpy(savedsession, tmp, SAVEDSESSION_LEN);
 		savedsession[SAVEDSESSION_LEN - 1] = '\0';
 	    };
@@ -1834,8 +1837,8 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
     ctrl_checkbox(s, "Disable bidirectional text display", 'd',
 		  HELPCTX(features_bidi), dlg_stdcheckbox_handler,
 		  I(offsetof(Config, bidi)));
-    ctrl_checkbox(s, "Show bottom buttons (AT&T 513 terminal only)", 'h',
-		  HELPCTX(no_help), dlg_stdcheckbox_handler,
+    ctrl_checkbox(s, "Show bottom buttons (AT&T 513 terminal only)", NO_SHORTCUT,
+		  HELPCTX(features_bottombuttons), dlg_stdcheckbox_handler,
 		  I(offsetof(Config, bottom_buttons)));
 
     /*
@@ -1937,7 +1940,7 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
     c = ctrl_icon(s, HELPCTX(appearance_title),
 		  I(offsetof(Config, win_icon)));
     c->generic.column = 1;
-    c = ctrl_pushbutton(s, "Change...", 'h', HELPCTX(appearance_title),
+    c = ctrl_pushbutton(s, "Change...", 'n', HELPCTX(appearance_title),
 			window_icon_handler, P(c));
     c->generic.column = 2;
     ctrl_columns(s, 1, 100);
@@ -2052,10 +2055,10 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
 		      HELPCTX(colours_bold), colour_handler, P(cd));
     cd->underline_checkbox =
 	ctrl_checkbox(s, "Underlined text is a different colour", 'd',
-		      HELPCTX(no_help), colour_handler, P(cd));
+		      HELPCTX(colours_underline), colour_handler, P(cd));
     cd->selected_checkbox =
 	ctrl_checkbox(s, "Selected text is a different colour", 't',
-		      HELPCTX(no_help), colour_handler, P(cd));
+		      HELPCTX(colours_selected), colour_handler, P(cd));
 
     str = dupprintf("Adjust the precise colours %s displays", appname);
     s = ctrl_getset(b, "Window/Colours", "adjust", str);
@@ -2064,7 +2067,6 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
 	      " Modify button to change its appearance.",
 	      HELPCTX(colours_config));
     ctrl_columns(s, 2, 67, 33);
-    cd = (struct colour_data *) ctrl_alloc(b, sizeof(struct colour_data));
     cd->listbox = ctrl_listbox(s, "Select a colour to adjust:", 'u',
 			       HELPCTX(colours_config), colour_handler,
 			       P(cd));
@@ -2134,12 +2136,12 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
 			    "Login script options");
 	    ctrl_columns(s, 2, 20, 80);
 	    c = ctrl_checkbox(s, "Enable", 'e',
-			      HELPCTX(no_help),
+			      HELPCTX(connection_script),
 			      dlg_stdcheckbox_handler,
 			      I(offsetof(Config, secondary)));
 	    c->generic.column = 0;
 	    c = ctrl_editbox(s, "Script:", 'i', 84,
-			     HELPCTX(no_help),
+			     HELPCTX(connection_script),
 			     dlg_stdeditbox_handler,
 			     I(offsetof(Config, secondaryscript)),
 			     I(sizeof(((Config *) 0)->secondaryscript)));
@@ -2283,19 +2285,19 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
 	spd = (struct serialpanel_data *)
 	    ctrl_alloc(b, sizeof(struct serialpanel_data));
 	spd->baud = ctrl_droplist(s, "Baud rate:", 'b', 40,
-				  HELPCTX(no_help),
+				  HELPCTX(serial_portsettings),
 				  serialpanel_handler, P(spd));
 	spd->datab = ctrl_droplist(s, "Data bits:", 'd', 40,
-				   HELPCTX(no_help),
+				   HELPCTX(serial_portsettings),
 				   serialpanel_handler, P(spd));
 	spd->parity = ctrl_droplist(s, "Parity:", 'p', 40,
-				    HELPCTX(no_help),
+				    HELPCTX(serial_portsettings),
 				    serialpanel_handler, P(spd));
 	spd->stopb = ctrl_droplist(s, "Stop bits:", 's', 40,
-				   HELPCTX(no_help),
+				   HELPCTX(serial_portsettings),
 				   serialpanel_handler, P(spd));
 	spd->flowctrl = ctrl_droplist(s, "Flow control:", 'f', 40,
-				      HELPCTX(no_help),
+				      HELPCTX(serial_portsettings),
 				      serialpanel_handler, P(spd));
 
 	s = ctrl_getset(b, "Connection/Serial", "dialing",
@@ -2305,35 +2307,35 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
 
 	dod->winloc =
 	    ctrl_checkbox(s, "Use Windows Dialing Rules", 'w',
-			  HELPCTX(no_help), dialingoptions_handler,
+			  HELPCTX(serial_dialing), dialingoptions_handler,
 			  P(dod));
 	dod->mode =
-	    ctrl_radiobuttons(s, "Dialing Mode", 'm', 2, HELPCTX(no_help),
+	    ctrl_radiobuttons(s, "Dialing Mode", 'm', 2, HELPCTX(serial_dialing),
 			      dlg_stdradiobutton_handler,
 			      I(offsetof(Config, ser_dialmode)),
 			      "Tone", I(0), "Pulse", I(1), NULL);
 	dod->prefix =
 	    ctrl_editbox(s, "Prefix to get access to outside line", 'x',
-			 30, HELPCTX(no_help), dlg_stdeditbox_handler,
+			 30, HELPCTX(serial_dialing), dlg_stdeditbox_handler,
 			 I(offsetof(Config, ser_dialprefix)),
 			 I(sizeof(((Config *) 0)->ser_dialprefix)));
 
 	ctrl_editbox(s, "Connect timeout (seconds)", 't', 30,
-		     HELPCTX(no_help), dlg_stdeditbox_handler,
+		     HELPCTX(serial_dialing), dlg_stdeditbox_handler,
 		     I(offsetof(Config, ser_dialtimeout)), I(-1));
 	ctrl_columns(s, 2, 50, 50);
 	c = ctrl_editbox(s, "Redial attempts", 'r', 30,
-			 HELPCTX(no_help), dlg_stdeditbox_handler,
+			 HELPCTX(serial_dialing), dlg_stdeditbox_handler,
 			 I(offsetof(Config, ser_redials)), I(-1));
 	c->generic.column = 0;
 	c = ctrl_editbox(s, "Redial delay (sec)", 'e', 30,
-			 HELPCTX(no_help), dlg_stdeditbox_handler,
+			 HELPCTX(serial_dialing), dlg_stdeditbox_handler,
 			 I(offsetof(Config, ser_redialtimeout)), I(-1));
 	c->generic.column = 1;
 
 	ctrl_columns(s, 1, 100);
 	ctrl_checkbox(s, "Print modem input/output when dialing", 'i',
-		      HELPCTX(no_help), dlg_stdcheckbox_handler,
+		      HELPCTX(serial_dialing), dlg_stdcheckbox_handler,
 		      I(offsetof(Config, ser_print_when_dialing)));
 
 	ctrl_settitle(b, "Connection/Serial/Modem",
@@ -2341,49 +2343,49 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
 	s = ctrl_getset(b, "Connection/Serial/Modem", "modemcommands",
 			"Modem command strings");
 	ctrl_editbox(s, "Initialization string", 'i', 50,
-		     HELPCTX(no_help), dlg_stdeditbox_handler,
+		     HELPCTX(serial_modemcommands), dlg_stdeditbox_handler,
 		     I(offsetof(Config, ser_modem_init)),
 		     I(sizeof(((Config *) 0)->ser_modem_init)));
 	ctrl_editbox(s, "Dial in Tone mode", 't', 50,
-		     HELPCTX(no_help), dlg_stdeditbox_handler,
+		     HELPCTX(serial_modemcommands), dlg_stdeditbox_handler,
 		     I(offsetof(Config, ser_modem_dial_tone)),
 		     I(sizeof(((Config *) 0)->ser_modem_dial_tone)));
 	ctrl_editbox(s, "Dial in Pulse mode", 'p', 50,
-		     HELPCTX(no_help), dlg_stdeditbox_handler,
+		     HELPCTX(serial_modemcommands), dlg_stdeditbox_handler,
 		     I(offsetof(Config, ser_modem_dial_pulse)),
 		     I(sizeof(((Config *) 0)->ser_modem_dial_pulse)));
 	ctrl_editbox(s, "Hang up", 'h', 50,
-		     HELPCTX(no_help), dlg_stdeditbox_handler,
+		     HELPCTX(serial_modemcommands), dlg_stdeditbox_handler,
 		     I(offsetof(Config, ser_modem_hangup)),
 		     I(sizeof(((Config *) 0)->ser_modem_hangup)));
 	ctrl_editbox(s, "Return to Command mode", 'u', 50,
-		     HELPCTX(no_help), dlg_stdeditbox_handler,
+		     HELPCTX(serial_modemcommands), dlg_stdeditbox_handler,
 		     I(offsetof(Config, ser_modem_commandmode)),
 		     I(sizeof(((Config *) 0)->ser_modem_commandmode)));
 	s = ctrl_getset(b, "Connection/Serial/Modem", "modemresponses",
 			"Modem response strings");
 	ctrl_editbox(s, "OK response", 'k', 50,
-		     HELPCTX(no_help), dlg_stdeditbox_handler,
+		     HELPCTX(serial_modemresponses), dlg_stdeditbox_handler,
 		     I(offsetof(Config, ser_modem_ok)),
 		     I(sizeof(((Config *) 0)->ser_modem_ok)));
 	ctrl_editbox(s, "ERROR response", 'e', 50,
-		     HELPCTX(no_help), dlg_stdeditbox_handler,
+		     HELPCTX(serial_modemresponses), dlg_stdeditbox_handler,
 		     I(offsetof(Config, ser_modem_error)),
 		     I(sizeof(((Config *) 0)->ser_modem_error)));
 	ctrl_editbox(s, "BUSY response", 'b', 50,
-		     HELPCTX(no_help), dlg_stdeditbox_handler,
+		     HELPCTX(serial_modemresponses), dlg_stdeditbox_handler,
 		     I(offsetof(Config, ser_modem_busy)),
 		     I(sizeof(((Config *) 0)->ser_modem_busy)));
 	ctrl_editbox(s, "NO DIALTONE response", 'd', 50,
-		     HELPCTX(no_help), dlg_stdeditbox_handler,
+		     HELPCTX(serial_modemresponses), dlg_stdeditbox_handler,
 		     I(offsetof(Config, ser_modem_no_dialtone)),
 		     I(sizeof(((Config *) 0)->ser_modem_no_dialtone)));
 	ctrl_editbox(s, "NO CARRIER response", 'r', 50,
-		     HELPCTX(no_help), dlg_stdeditbox_handler,
+		     HELPCTX(serial_modemresponses), dlg_stdeditbox_handler,
 		     I(offsetof(Config, ser_modem_no_carrier)),
 		     I(sizeof(((Config *) 0)->ser_modem_no_carrier)));
 	ctrl_editbox(s, "CONNECT response", 'n', 50,
-		     HELPCTX(no_help), dlg_stdeditbox_handler,
+		     HELPCTX(serial_modemresponses), dlg_stdeditbox_handler,
 		     I(offsetof(Config, ser_modem_connect)),
 		     I(sizeof(((Config *) 0)->ser_modem_connect)));
     };
