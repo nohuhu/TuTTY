@@ -803,7 +803,11 @@ static void serial_special(void *handle, Telnet_Special code)
  */
 static const struct telnet_special *serial_get_specials(void *handle)
 {
-    return NULL;
+    static const struct telnet_special specials[] = {
+	{"Break", TS_BRK},
+	{NULL, TS_EXITMENU}
+    };
+    return specials;
 };
 
 static Socket serial_socket(void *handle)
