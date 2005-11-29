@@ -731,7 +731,8 @@ char *save_settings(char *section, int do_host, Config * cfg);
 void save_open_settings(void *sesskey, int do_host, Config * cfg);
 void load_settings(char *section, int do_host, Config * cfg);
 void load_open_settings(void *sesskey, int do_host, Config * cfg);
-void get_sesslist(struct sesslist *, char *path, int allocate);
+void get_sesslist(session_root_t *root, struct sesslist *, 
+		  char *path, int allocate);
 void do_defaults(char *, Config *);
 void registry_cleanup(void);
 

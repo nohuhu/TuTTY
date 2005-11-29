@@ -674,11 +674,11 @@ int do_config(void)
     dp.data = &cfg;
     dp.shortcuts['g'] = TRUE;	/* the treeview: `Cate&gory' */
 
-    get_sesslist(&sesslist, "", TRUE);
+    get_sesslist(&cfg.sessionroot, &sesslist, "", TRUE);
     ret =
 	SaneDialogBox(hinst, MAKEINTRESOURCE(IDD_MAINBOX), NULL,
 		      GenericMainDlgProc);
-    get_sesslist(&sesslist, "", FALSE);
+    get_sesslist(&cfg.sessionroot, &sesslist, "", FALSE);
 
     ctrl_free_box(ctrlbox);
     winctrl_cleanup(&ctrls_panel);
@@ -696,7 +696,7 @@ int do_reconfig(HWND hwnd, int protcfginfo)
     backup_cfg = cfg;		/* structure copy */
 
     ctrlbox = ctrl_new_box();
-    get_sesslist(&sesslist, "", TRUE);
+    get_sesslist(&cfg.sessionroot, &sesslist, "", TRUE);
     setup_config_box(ctrlbox, &sesslist, TRUE, cfg.protocol, protcfginfo);
     win_setup_config_box(ctrlbox, &dp.hwnd, (help_path != NULL), TRUE);
     dp_init(&dp);
@@ -713,7 +713,7 @@ int do_reconfig(HWND hwnd, int protcfginfo)
 			GenericMainDlgProc);
 
     ctrl_free_box(ctrlbox);
-    get_sesslist(&sesslist, "", FALSE);
+    get_sesslist(&cfg.sessionroot, &sesslist, "", FALSE);
     winctrl_cleanup(&ctrls_base);
     winctrl_cleanup(&ctrls_panel);
     dp_cleanup(&dp);

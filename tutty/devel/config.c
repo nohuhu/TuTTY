@@ -406,16 +406,16 @@ static int load_selected_session(struct sessionsaver_data *ssd,
     }
     if (!strcmp(ssd->sesslist->sessions[i], "..")) {
 	ses_pathname(ssd->currentpath, path, BUFSIZE);
-	get_sesslist(ssd->sesslist, path, FALSE);
-	get_sesslist(ssd->sesslist, path, TRUE);
+	get_sesslist(&cfg->sessionroot, ssd->sesslist, path, FALSE);
+	get_sesslist(&cfg->sessionroot, ssd->sesslist, path, TRUE);
 	savedsession[0] = '\0';
 	strcpy(ssd->currentpath, path);
 	dlg_setcontroltext(ssd->pathview, dlg, savedsession);
 	return 0;
     } else if (ses_is_folder(&cfg->sessionroot, ssd->sesslist->sessions[i])) {
 	strncpy(path, ssd->sesslist->sessions[i], BUFSIZE);
-	get_sesslist(ssd->sesslist, path, FALSE);
-	get_sesslist(ssd->sesslist, path, TRUE);
+	get_sesslist(&cfg->sessionroot, ssd->sesslist, path, FALSE);
+	get_sesslist(&cfg->sessionroot, ssd->sesslist, path, TRUE);
 	savedsession[0] = '\0';
 	strcpy(ssd->currentpath, path);
 	dlg_setcontroltext(ssd->pathview, dlg, savedsession);
@@ -463,8 +463,8 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 	    tmp = ses_lastname(loaded_session_name);
 	    strcpy(savedsession, tmp);
 	    dlg_setcontroltext(ssd->pathview, dlg, loaded_session_name);
-	    get_sesslist(ssd->sesslist, "", FALSE);
-	    get_sesslist(ssd->sesslist, ssd->currentpath, TRUE);
+	    get_sesslist(&cfg->sessionroot,  ssd->sesslist, "", FALSE);
+	    get_sesslist(&cfg->sessionroot,  ssd->sesslist, ssd->currentpath, TRUE);
 	} else
 	    savedsession[0] = '\0';
     } else {
@@ -521,7 +521,7 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 	     */
 	    int i, isfolder;
 
-	    i = dlg_listbox_index(ctrl, dlg);
+	    i = dlg_listbox_index(ssd->listbox, dlg);
 	    isfolder = !strcmp(ssd->sesslist->sessions[i], "..") ||
 		ses_is_folder(&cfg->sessionroot, ssd->sesslist->sessions[i]);
 	    
@@ -580,8 +580,8 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 		    sfree(errmsg);
 		}
 	    }
-	    get_sesslist(ssd->sesslist, ssd->currentpath, FALSE);
-	    get_sesslist(ssd->sesslist, ssd->currentpath, TRUE);
+	    get_sesslist(&cfg->sessionroot,  ssd->sesslist, ssd->currentpath, FALSE);
+	    get_sesslist(&cfg->sessionroot,  ssd->sesslist, ssd->currentpath, TRUE);
 	    {
 		int i, selected = -1;
 		char *name;
@@ -605,8 +605,8 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 	    else
 		strcpy(tmp, savedsession[0] ? savedsession : "New folder");
 	    ses_make_folder(&cfg->sessionroot, tmp);
-	    get_sesslist(ssd->sesslist, ssd->currentpath, FALSE);
-	    get_sesslist(ssd->sesslist, ssd->currentpath, TRUE);
+	    get_sesslist(&cfg->sessionroot,  ssd->sesslist, ssd->currentpath, FALSE);
+	    get_sesslist(&cfg->sessionroot,  ssd->sesslist, ssd->currentpath, TRUE);
 	    savedsession[0] = '\0';
 	    dlg_refresh(ssd->editbox, dlg);
 	    dlg_refresh(ssd->listbox, dlg);
@@ -624,9 +624,9 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 		    if (!dlg_yesnobox(dlg, msg))
 			return;
 		};
-		del_settings(ssd->sesslist->sessions[i]);
-		get_sesslist(ssd->sesslist, ssd->currentpath, FALSE);
-		get_sesslist(ssd->sesslist, ssd->currentpath, TRUE);
+		del_settings(&cfg->sessionroot, ssd->sesslist->sessions[i]);
+		get_sesslist(&cfg->sessionroot,  ssd->sesslist, ssd->currentpath, FALSE);
+		get_sesslist(&cfg->sessionroot,  ssd->sesslist, ssd->currentpath, TRUE);
 		dlg_refresh(ssd->listbox, dlg);
 	    }
 	} else if (ctrl == ssd->okbutton) {

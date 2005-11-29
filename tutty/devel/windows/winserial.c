@@ -651,6 +651,11 @@ static char *serial_init(void *frontend_handle, void **backend_handle,
 	process_dialing(s, '\0');
     };
 
+    /*
+     * Now we have some specials, let's update the list.
+     */
+    update_specials_menu(sp->frontend);
+
     return NULL;
 };
 

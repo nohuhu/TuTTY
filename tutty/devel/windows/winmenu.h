@@ -4,6 +4,10 @@
 #include <windows.h>
 #endif
 
+#ifndef SESSIONICON
+#define SESSIONICON "WindowIcon"
+#endif /* SESSIONICON */
+
 HMENU menu_addsession(HMENU menu, char *root);
 HMENU menu_refresh(HMENU menu, char *root);
 

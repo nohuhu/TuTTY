@@ -2005,8 +2005,8 @@ int winctrl_handle_command(struct dlgparam *dp, UINT msg,
 
 		    buf[0] = '\0';
 		    ipath[0] = '\0';
-		    reg_make_path("", path, buf, 2048);
-		    reg_read_s(buf, SESSIONICON, "", ipath, 2048);
+		    ses_make_path("", path, buf, 2048);
+		    ses_read_s(&cfg.sessionroot, buf, SESSIONICON, "", ipath, 2048);
 		    icon = extract_icon(ipath);
 		    DrawIconEx(di->hDC, x, y, icon, iconx, icony, 0, NULL,
 			       DI_NORMAL);

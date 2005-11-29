@@ -160,7 +160,7 @@ char *save_settings(char *section, int do_host, Config * cfg)
     void *sesskey;
     char *errmsg;
 
-    sesskey = open_settings_w(section, &errmsg);
+    sesskey = open_settings_w(&cfg->sessionroot, section, &errmsg);
     if (!sesskey)
 	return errmsg;
     save_open_settings(sesskey, do_host, cfg);
@@ -447,7 +447,7 @@ void load_settings(char *section, int do_host, Config * cfg)
 {
     void *sesskey;
 
-    sesskey = open_settings_r(section);
+    sesskey = open_settings_r(&cfg->sessionroot, section);
     load_open_settings(sesskey, do_host, cfg);
     close_settings_r(sesskey);
 }
@@ -883,7 +883,8 @@ static int sessioncmp(const void *av, const void *bv)
     return strcmp(a, b);	/* otherwise, compare normally */
 }
 
-void get_sesslist(struct sesslist *list, char *path, int allocate)
+void get_sesslist(session_root_t *root, struct sesslist *list, 
+		  char *path, int allocate)
 {
     char otherbuf[2048];
     int buflen, bufsize, i;
@@ -895,7 +896,7 @@ void get_sesslist(struct sesslist *list, char *path, int allocate)
 
 	buflen = bufsize = 0;
 	list->buffer = NULL;
-	if ((handle = enum_settings_start(path)) != NULL) {
+	if ((handle = enum_settings_start(root, path)) != NULL) {
 	    do {
 		ret =
 		    enum_settings_next(handle, otherbuf, sizeof(otherbuf));

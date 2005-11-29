@@ -6,6 +6,11 @@
 #ifndef PUTTY_STORAGE_H
 #define PUTTY_STORAGE_H
 
+/*
+ * Needed for a new session abstraction layer.
+ */
+#include "session.h"
+
 /* ----------------------------------------------------------------------
  * Functions to save and restore PuTTY sessions. Note that this is
  * only the low-level code to do the reading and writing. The
@@ -28,7 +33,7 @@
  * 
  * Any returned error message must be freed after use.
  */
-void *open_settings_w(const char *sessionname, char **errmsg);
+void *open_settings_w(session_root_t *root, const char *sessionname, char **errmsg);
 void write_setting_s(void *handle, const char *key, const char *value);
 void write_setting_i(void *handle, const char *key, int value);
 void write_setting_filename(void *handle, const char *key, Filename value);
@@ -52,7 +57,7 @@ void close_settings_w(void *handle);
  * read_setting_filename() and read_setting_fontspec() each read into
  * the provided buffer, and return zero if they failed to.
  */
-void *open_settings_r(const char *sessionname);
+void *open_settings_r(session_root_t *root, const char *sessionname);
 char *read_setting_s(void *handle, const char *key, char *buffer,
 		     int buflen);
 int read_setting_i(void *handle, const char *key, int defvalue);
@@ -63,12 +68,12 @@ void close_settings_r(void *handle);
 /*
  * Delete a whole saved session.
  */
-void del_settings(const char *sessionname);
+void del_settings(session_root_t *root, const char *sessionname);
 
 /*
  * Enumerate all saved sessions.
  */
-void *enum_settings_start(char *path);
+void *enum_settings_start(session_root_t *root, char *path);
 char *enum_settings_next(void *handle, char *buffer, int buflen);
 void enum_settings_finish(void *handle);
 

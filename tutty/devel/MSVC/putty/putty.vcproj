@@ -1032,9 +1032,6 @@
 				RelativePath="..\..\puttyps.h">
 			</File>
 			<File
-				RelativePath="..\..\..\plaunch\registry.h">
-			</File>
-			<File
 				RelativePath="..\..\session.h">
 			</File>
 			<File
