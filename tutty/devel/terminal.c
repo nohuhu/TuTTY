@@ -2977,9 +2977,9 @@ static void term_out(Terminal * term)
 			if ((unsigned char) c == p[term->sec_pos]) {
 			    term->sec_pos++;
 			    if (term->sec_pos == term->sec_len) {	/* gotcha */
-				p = dupprintf("%s\r\n",
-					      term->sec_buf[term->
-							    sec_item + 1]);
+				p = dupprintf("%s%s\n",
+					      term->sec_buf[term->sec_item + 1],
+					      (term->cfg.lfhascr ? "\r" : ""));
 //                                ldisc_send(term->ldisc, p, strlen(p), FALSE);
 //                                ldisc_send(term->ldisc, "\r", 1, 0);
 				ld->back->send(ld->backhandle, p,
