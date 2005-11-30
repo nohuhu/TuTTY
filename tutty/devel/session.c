@@ -1071,34 +1071,19 @@ void ses_enum_settings_finish(session_root_t *root, void *handle)
 int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg,
 			  int bufsize)
 {
-    char *command, *url = NULL, *path;
+    char *command, *url = NULL, *urlend = NULL, *cmdbegin = NULL, *path;
+    int i, env = FALSE;
 
     memset(root, 0, sizeof(session_root_t));
 
     if (cmdline) {
-	/*
-	 * check for shorter 'read-only' key
-	 */
-	command = strstr(cmdline, "-ro");
-
-	if (command)
-	    root->readonly = TRUE;
-	else {
-	    /*
-	     * check for longer 'read-only' key
-	     */
-    	    command = strstr(cmdline, "--read-only");
-
-	    if (command)
-		root->readonly = TRUE;
-	};
-
 	/*
 	 * check for shorter 'session root' key
 	 */
 	command = strstr(cmdline, "-sr");
 
 	if (command) {
+	    cmdbegin = command;
 	    command += 3;
 
 	    while ((*command == ' ' ||
@@ -1114,6 +1099,7 @@ int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg,
 	    command = strstr(cmdline, "--session-root");
 
 	    if (command) {
+		cmdbegin = command;
 		command += 15;
 
 		url = command;
@@ -1121,8 +1107,14 @@ int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg,
 	};
     };
 
-    if (!url)
+    if (!url) {
         url = getenv(PUTTY_SESSION_ROOT);
+
+	if (!url)
+	    url = getenv(PUTTY_SESSION_ROOT_RO);
+
+	env = TRUE;
+    };
 
     /*
      * if url is not null, parse it
@@ -1165,6 +1157,12 @@ int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg,
 	} else if (strstr(url, "ftp://")) {
 	    root->root_type = SES_ROOT_FTPXML;
 	    url += 6;
+	/*
+	 * remote xml file type root, located on https server.
+	 */
+	} else if (strstr(url, "https://")) {
+	    root->root_type = SES_ROOT_HTTPSXML;
+	    url += 8;
 	};
 
 	path = url;
@@ -1182,6 +1180,38 @@ int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg,
 	root->root_location = (char *) malloc(url - path + 1);
 	memset(root->root_location, 0, url - path + 1);
 	strncpy(root->root_location, path, url - path);
+
+	if (!env) {
+	    for (i = 0; i < (url - cmdbegin); i++)
+		cmdbegin[i] = ' ';
+	};
+    };
+
+    if (cmdline) {
+	/*
+	 * check for shorter 'read-only' key
+	 */
+	command = strstr(cmdline, "-ro");
+
+	if (command) {
+	    root->readonly = TRUE;
+
+	    for (i = 0; i < 3; i++)
+		command[i] = ' ';
+	} else {
+	    /*
+	     * check for longer 'read-only' key
+	     */
+    	    command = strstr(cmdline, "--read-only");
+
+
+	    if (command) {
+		root->readonly = TRUE;
+
+		for (i = 0; i < 11; i++)
+		    command[i] = ' ';
+	    };
+	};
     };
 
     return TRUE;

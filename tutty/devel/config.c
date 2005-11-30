@@ -467,6 +467,14 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 	    get_sesslist(&cfg->sessionroot,  ssd->sesslist, ssd->currentpath, TRUE);
 	} else
 	    savedsession[0] = '\0';
+
+	/*
+	 * Check the session root properties, and if it's read only,
+	 * disable the "Save", "Delete" and "New folder" buttons.
+	 */
+	dlg_control_enable(ssd->savebutton, dlg, !cfg->sessionroot.readonly);
+//	dlg_control_enable(ssd->delbutton, dlg, !cfg->sessionroot.readonly);
+//	dlg_control_enable(ssd->mkfolderbutton, dlg, !cfg->sessionroot.readonly);
     } else {
 	savedsession = dlg_get_privdata(ssd->editbox, dlg);
     }

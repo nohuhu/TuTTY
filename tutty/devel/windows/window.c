@@ -447,6 +447,13 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
     /*
      * Process the command line.
      */
+    /*
+     * First feed it into ses_init_session_root to process the options
+     * that are available in every tool (since every of them depend on the
+     * session root location) and remove 'em from command line, easing the
+     * life a bit.
+     */
+    ses_init_session_root(&cfg.sessionroot, cmdline, NULL, 0);
     {
 	char *p;
 	int got_host = 0;
