@@ -1109,10 +1109,6 @@ int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg,
 
     if (!url) {
         url = getenv(PUTTY_SESSION_ROOT);
-
-	if (!url)
-	    url = getenv(PUTTY_SESSION_ROOT_RO);
-
 	env = TRUE;
     };
 
@@ -1187,30 +1183,52 @@ int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg,
 	};
     };
 
+    command = getenv(PUTTY_SR_ACCESS);
+
+    if (command) {
+	if (strstr(command, "ro") ||
+	    strstr(command, "read-only") ||
+	    strstr(command, "1"))
+	    root->readonly = TRUE;
+	else if (strstr(command, "rw") ||
+	    strstr(command, "read-write") ||
+	    strstr(command, "0"))
+	    root->readonly = FALSE;
+    };
+
     if (cmdline) {
 	/*
 	 * check for shorter 'read-only' key
 	 */
-	command = strstr(cmdline, "-ro");
-
-	if (command) {
+	if (command = strstr(cmdline, "-ro")) {
 	    root->readonly = TRUE;
 
 	    for (i = 0; i < 3; i++)
 		command[i] = ' ';
-	} else {
-	    /*
-	     * check for longer 'read-only' key
-	     */
-    	    command = strstr(cmdline, "--read-only");
+	/*
+	 * check for longer 'read-only' key
+	 */
+	} else if (command = strstr(cmdline, "--read-only")) {
+	    root->readonly = TRUE;
 
+	    for (i = 0; i < 11; i++)
+		command[i] = ' ';
+	/*
+	 * check for shorter 'read-write' key
+	 */
+	} else if (command = strstr(cmdline, "-rw")) {
+	    root->readonly = FALSE;
 
-	    if (command) {
-		root->readonly = TRUE;
+	    for (i = 0; i < 3; i++)
+		command[i] = ' ';
+	/*
+	 * check for longer 'read-write' key
+	 */
+	} else if (command = strstr(cmdline, "--read-write")) {
+	    root->readonly = FALSE;
 
-		for (i = 0; i < 11; i++)
-		    command[i] = ' ';
-	    };
+	    for (i = 0; i < 12; i++)
+		command[i] = ' ';
 	};
     };
 

@@ -1510,11 +1510,11 @@ Terminal *term_init(Config * mycfg, struct unicode_data *ucsdata,
 			    &term->sec_buf, NULL);
 	    term->sec_len = strlen(term->sec_buf[0]);
 #ifdef DEBUG
-	    dprintf("script: statements ");
+	    printf("script: statements ");
 	    for (i = 0; i < term->sec_count; i++) {
-		dprintf("\"%s\", ", term->sec_buf[i]);
+		printf("\"%s\", ", term->sec_buf[i]);
 	    };
-	    dprintf("\n");
+	    printf("\n");
 #endif				/* DEBUG */
 	};
     };
