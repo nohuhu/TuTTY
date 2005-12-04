@@ -1796,7 +1796,25 @@ establishing the connection. It is a very simple script containing
 one or more \q{expect-send} pairs. \q{Expect} word is a filter of
 a sort, it is a word that server side should send to client side
 (TuTTY, in this case). If TuTTY receives this word, it will send
-back the \q{Send} word and proceed to the next pair.
+back the \q{Send} word and proceed to the next pair. If you need to
+define a word with spaces, use double quotes ("), for example
+"this is an expect string". Be warned that spaces are matched just like
+any other characters so if the host would send you two spaces instead
+of one, TuTTY will not match the string. As an opposite side, "" string
+defines a null word that is always matched. Be warned though that
+this expect-send script mechanism is \e{event driven} and TuTTY only
+\e{reacts} on the input. This means that if you define an expect-send
+string like \q{"first expect" "first send" "" "second send"}, it does 
+not mean that TuTTY will send the second \q{send} string \e{right after} 
+the first one. It will be sent \e{after} the first one is sent \e{and} 
+at least one character is received from the input. The only exception
+here is that if TuTTY sees a null word as the firstmost \q{expect}, it
+will send the matching \q{send} without waiting for any input, right
+after the socket/port initialization. Since not all protocols supported
+by TuTTY implement some kind of state machine and it is not always
+possible to know whether the socket/port is connected or not, using
+the null \q{expect} word as firstmost may lead to unpredictable
+behaviour.
 
 For example, this option can be used for automating login procedure
 on a hosts that do not support SSH non-interactive login methods,

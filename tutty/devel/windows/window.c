@@ -11,6 +11,7 @@
 #include "win_res.h"
 #include "winmenu.h"
 #include "session.h"
+#include "ldisc.h"
 
 #ifndef NO_MULTIMON
 #if WINVER < 0x0500
@@ -768,63 +769,17 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	    exwinmode |= WS_EX_TOPMOST;
 	if (cfg.sunken_edge)
 	    exwinmode |= WS_EX_CLIENTEDGE;
-	if (cfg.bottom_buttons && cfg.funky_type == FUNKY_ATT513) {
-	    int i, j = 0;
-	    char *names[10] =
-		{ "F1 Cancel", "F2 Refresh", "F3 Enter", "F4 Clear",
-		"F5 Help", "F6 Edit", "F7 Next", "F8 Prev", "F9", "F10"
-	    };
-
+	if (cfg.bottom_buttons && cfg.funky_type == FUNKY_ATT513)
 	    hwnd = CreateWindowEx(exwinmode, appname, appname,
 				  winmode, CW_USEDEFAULT, CW_USEDEFAULT,
 				  guess_width,
 				  guess_height + BOTTOM_BUTTON_HEIGHT,
 				  NULL, NULL, inst, NULL);
-	    for (i = 0; i < 10; i++) {
-		term->bottom_buttons[i] = CreateWindow("BUTTON",
-						       names[i],
-						       WS_VISIBLE |
-						       WS_CHILD |
-						       BS_PUSHBUTTON,
-						       (guess_width / 10) *
-						       i,
-						       guess_height -
-						       BOTTOM_BUTTON_HEIGHT,
-						       (guess_width / 10),
-						       BOTTOM_BUTTON_HEIGHT,
-						       hwnd, NULL, hinst,
-						       NULL);
-		EnableWindow(term->bottom_buttons[i], TRUE);
-		ShowWindow(term->bottom_buttons[i], SW_SHOW);
-	    };
-	} else {
-//            int i, j = 0;
-//            char *names[10] = { "F1 Cancel", "F2 Refresh", "F3 Enter", "F4 Clear",
-//                "F5 Help", "F6 Edit", "F7 Next", "F8 Prev", "F9", "F10" };
-
+	else
 	    hwnd = CreateWindowEx(exwinmode, appname, appname,
 				  winmode, CW_USEDEFAULT, CW_USEDEFAULT,
 				  guess_width, guess_height,
 				  NULL, NULL, inst, NULL);
-/*
-            for (i = 0; i < 10; i++) {
-                term->bottom_buttons[i] = CreateWindow(
-                    "BUTTON",
-                    names[i],
-                    WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
-                    (guess_width / 10) * i,
-                    guess_height - BOTTOM_BUTTON_HEIGHT,
-                    (guess_width / 10),
-                    BOTTOM_BUTTON_HEIGHT,
-                    hwnd,
-                    NULL,
-                    hinst,
-                    NULL);
-                EnableWindow(term->bottom_buttons[i], FALSE);
-                ShowWindow(term->bottom_buttons[i], SW_HIDE);
-            };
-*/
-	};
     }
 
     /*
@@ -837,6 +792,28 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
     logctx = log_init(NULL, &cfg);
     term_provide_logctx(term, logctx);
     term_size(term, cfg.height, cfg.width, cfg.savelines);
+
+    if (cfg.bottom_buttons && cfg.funky_type == FUNKY_ATT513) {
+	int i, j = 0;
+	char *names[10] =
+	    { "F1 Cancel", "F2 Refresh", "F3 Enter", "F4 Clear",
+	      "F5 Help", "F6 Edit", "F7 Next", "F8 Prev", "F9", "F10" };
+	for (i = 0; i < 10; i++) {
+	    term->bottom_buttons[i] = CreateWindow("BUTTON",
+						   names[i],
+						   WS_VISIBLE |
+						   WS_CHILD |
+						   BS_PUSHBUTTON,
+						   (guess_width / 10) * i,
+						   guess_height -
+						   BOTTOM_BUTTON_HEIGHT,
+						   (guess_width / 10),
+						   BOTTOM_BUTTON_HEIGHT,
+						   hwnd, NULL, hinst, NULL);
+	    EnableWindow(term->bottom_buttons[i], TRUE);
+	    ShowWindow(term->bottom_buttons[i], SW_SHOW);
+	};
+    };
 
     /*
      * Initialise the fonts, simultaneously correcting the guesses
@@ -994,6 +971,31 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 
     term_set_focus(term, GetForegroundWindow() == hwnd);
     UpdateWindow(hwnd);
+
+    /*
+     * Check if our secondary script is active and the firstmost "expect"
+     * word is empty. If so, send the matching "send" word without waiting.
+     * This is a kludgy hack but I have no better idea right now.
+     */
+
+    if (term->sec_proceed && cfg.secondary &&
+	term->sec_buf[0][0] == '\0') {
+	Ldisc ld = term->ldisc;
+	char *p;
+
+	p = dupprintf("%s%s\n", 
+		term->sec_buf[1],
+		(cfg.lfhascr ? "\r" : ""));
+	ld->back->send(ld->backhandle, p, strlen(p));
+	sfree(p);
+	term->sec_item += 2;
+	if (term->sec_item < term->sec_count) {
+	    term->sec_len = strlen(term->sec_buf[term->sec_item]);
+	    term->sec_pos = 0;
+	} else {
+	    term->sec_proceed = FALSE;
+	};
+    };
 
     if (GetMessage(&msg, NULL, 0, 0) == 1) {
 	while (msg.message != WM_QUIT) {
