@@ -3,11 +3,11 @@
  * Building with PLaunch.
  */
 #include "plaunch.h"
-#endif
+#include "misc.h"
+#else
 #include "putty.h"
+#endif
 #include "winmenu.h"
-//#include "misc.h"
-//#include "session.h"
 
 #ifndef PLAUNCH
 #define IDM_SAVED_MIN 0x1000
