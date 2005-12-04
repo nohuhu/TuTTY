@@ -488,6 +488,7 @@
 						PreprocessorDefinitions=""
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"
+						WarningLevel="0"
 						DebugInformationFormat="3"/>
 				</FileConfiguration>
 			</File>
@@ -982,7 +983,8 @@
 						Optimization="0"
 						PreprocessorDefinitions=""
 						BasicRuntimeChecks="3"
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+						WarningLevel="0"/>
 				</FileConfiguration>
 			</File>
 		</Filter>

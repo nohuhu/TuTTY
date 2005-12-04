@@ -101,7 +101,7 @@
 				FavorSizeOrSpeed="2"
 				OptimizeForWindowsApplication="TRUE"
 				AdditionalIncludeDirectories="c:\home\tutty,c:\home\tutty\windows"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;RELEASE=0.58"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;RELEASE=0.58.2.0;SNAPSHOT=0.58.2.0"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="4"
@@ -471,25 +471,6 @@
 			</File>
 			<File
 				RelativePath="..\..\terminal.c">
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						PreprocessorDefinitions=""
-						BasicRuntimeChecks="3"
-						BrowseInformation="1"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="1"
-						PreprocessorDefinitions=""/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\testback.c">
 				<FileConfiguration
 					Name="Debug|Win32">
 					<Tool
