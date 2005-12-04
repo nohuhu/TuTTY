@@ -7,6 +7,7 @@
 
 #ifndef PUTTY_SESSION_ROOT
 #define	PUTTY_SESSION_ROOT	"PUTTY_SESSION_ROOT"
+#define PUTTY_SR_ACCESS		"PUTTY_SR_ACCESS"
 #endif /* PUTTY_SESSION_ROOT */
 
 #define SES_MODE_PREPROCESS	1
@@ -33,6 +34,9 @@
 				     */
 #define SES_ROOT_FTPXML		5   /*
 				     * windows/unix: xml file on remote ftp server
+				     */
+#define SES_ROOT_HTTPSXML	6   /*
+				     * windows/unix: xml file on remote https server
 				     */
 
 typedef struct _session_root_t {

@@ -89,8 +89,11 @@ typedef struct tag_dlghdr {
     UINT kidtype;		    // current child dialog box type
     UINT toptype;		    // top level child dialog box type
     UINT subtype;		    // sub level child dialog box type
-    UINT prevtype;		    // previous child dialog box type
-    void *kiddata;		    // any data for child dialog
+    UINT subsubtype;		    // sub sub level child dialog box type
+    void *kiddata;		    // current child data
+    void *topdata;		    // top level child data
+    void *subdata;		    // sub level child data
+    void *subsubdata;		    // sub sub level child data
     UINT level;			    // depth
     CHILDDIALOG kids[TAB_CHILDDIALOGS];
 } DLGHDR;
@@ -738,8 +741,9 @@ static int CALLBACK LaunchBoxChildDialogProc1(HWND hwnd, UINT msg,
 	case IDC_LAUNCHBOX_TAB1_BUTTON_ATSTOP:
 	    ShowWindow(hdr->kidwnd, SW_HIDE);
 	    hdr->kidwnd = hdr->kids[TAB_ACTIONS].hwnd;
+	    hdr->toptype = hdr->kidtype;
 	    hdr->kidtype = hdr->kids[TAB_ACTIONS].type;
-	    hdr->prevtype = hdr->kids[TAB_AUTOPROCESS].type;
+	    hdr->subtype = 0;
 	    switch (wParam) {
 	    case IDC_LAUNCHBOX_TAB1_BUTTON_ATSTART:
 		hdr->kiddata = (void *) ATSTART_STRINGS;
@@ -1095,9 +1099,8 @@ static int CALLBACK LaunchBoxChildDialogProc3(HWND hwnd, UINT msg,
 	case IDC_LAUNCHBOX_TABGENERIC1_BUTTON_BACK:
 	    {
 		ShowWindow(hdr->kidwnd, SW_HIDE);
-		hdr->kidwnd = hdr->kids[hdr->prevtype].hwnd;
-		hdr->kidtype = hdr->kids[hdr->prevtype].type;
-		hdr->prevtype = 0;
+		hdr->kidwnd = hdr->kids[hdr->toptype].hwnd;
+		hdr->kidtype = hdr->kids[hdr->toptype].type;
 		hdr->kiddata = NULL;
 		hdr->level = 0;
 
@@ -1139,7 +1142,7 @@ static int CALLBACK LaunchBoxChildDialogProc4(HWND hwnd, UINT msg,
     static HWND treeview = NULL;
     static HWND btn_back = NULL,
 		btn_next = NULL,
-		cb_action[10] = {
+		cb_actions[10] = {
 		    NULL, NULL, NULL, NULL, NULL,
 		    NULL, NULL, NULL, NULL, NULL };
     static int base_action = 0;
@@ -1177,7 +1180,7 @@ static int CALLBACK LaunchBoxChildDialogProc4(HWND hwnd, UINT msg,
 	    btn_next = GetDlgItem(hwnd, IDC_LAUNCHBOX_TABGENERIC2_BUTTON_NEXT);
 
 	    for (i = 0; i < 10; i++)
-		cb_action[i] = GetDlgItem(hwnd,
+		cb_actions[i] = GetDlgItem(hwnd,
 		    IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION1 + i);
 
 	    SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
@@ -1370,9 +1373,9 @@ static int CALLBACK LaunchBoxChildDialogProc4(HWND hwnd, UINT msg,
 	case IDC_LAUNCHBOX_TABGENERIC1_BUTTON_BACK:
 	    {
 		ShowWindow(hdr->kidwnd, SW_HIDE);
-		hdr->kidwnd = hdr->kids[hdr->prevtype].hwnd;
-		hdr->kidtype = hdr->kids[hdr->prevtype].type;
-		hdr->prevtype = 0;
+		hdr->kidwnd = hdr->kids[hdr->toptype].hwnd;
+		hdr->kidtype = hdr->kids[hdr->toptype].type;
+		hdr->subtype = 0;
 		hdr->kiddata = NULL;
 		hdr->level = 0;
 
@@ -1386,6 +1389,7 @@ static int CALLBACK LaunchBoxChildDialogProc4(HWND hwnd, UINT msg,
 
 		ShowWindow(hdr->kidwnd, SW_HIDE);
 		hdr->kidwnd = hdr->kids[TAB_MOREACTIONS].hwnd;
+		hdr->subtype = hdr->kids[TAB_MOREACTIONS].type;
 		hdr->kidtype = hdr->kids[TAB_MOREACTIONS].type;
 		hdr->kiddata = (void *) data[ACTION_ACTION];
 		hdr->level++;
@@ -1507,6 +1511,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 	    SendMessage(tabview, WM_SETFONT, font, MAKELPARAM(TRUE, 0));
 
 	    dlghdr = (DLGHDR *)LocalAlloc(LPTR, sizeof(DLGHDR));
+	    memset(dlghdr, 0, sizeof(DLGHDR));
 	    dlghdr->tab = tabview;
 	    dlghdr->treeview = treeview;
 	    dlghdr->rect.left = pt.x;

@@ -1,12 +1,13 @@
-#include "winmenu.h"
 #ifdef PLAUNCH
 /*
  * Building with PLaunch.
  */
 #include "plaunch.h"
-#endif
 #include "misc.h"
-#include "session.h"
+#else
+#include "putty.h"
+#endif
+#include "winmenu.h"
 
 #ifndef PLAUNCH
 #define IDM_SAVED_MIN 0x1000
@@ -16,6 +17,7 @@
 #define MENU_SAVED_MAX ((IDM_SAVED_MAX-IDM_SAVED_MIN) / MENU_SAVED_STEP)
 #define	IDM_EMPTY		0x0200
 #define BUFSIZE		2048
+extern Config cfg;
 #endif
 
 static void menu_callback(session_callback_t *scb)
@@ -62,7 +64,11 @@ HMENU menu_addsession(HMENU menu, char *root)
     session_walk_t sw;
 
     memset(&sw, 0, sizeof(sw));
+#ifdef PLAUNCH
     sw.root = config->sessionroot;
+#else
+    sw.root = cfg.sessionroot;
+#endif /* PLAUNCH */
     sw.root_path = root;
     sw.depth = SES_MAX_DEPTH;
     sw.callback = menu_callback;
