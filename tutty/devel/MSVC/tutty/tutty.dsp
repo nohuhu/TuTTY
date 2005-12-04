@@ -1,35 +1,35 @@
-# Microsoft Developer Studio Project File - Name="puttytel" - Package Owner=<4>
+# Microsoft Developer Studio Project File - Name="tutty" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Application" 0x0101
 
-CFG=puttytel - Win32 Debug
+CFG=tutty - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
-!MESSAGE NMAKE /f "puttytel.mak".
+!MESSAGE NMAKE /f "tutty.mak".
 !MESSAGE 
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "puttytel.mak" CFG="puttytel - Win32 Debug"
+!MESSAGE NMAKE /f "tutty.mak" CFG="tutty - Win32 Debug"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "puttytel - Win32 Release" (based on "Win32 (x86) Application")
-!MESSAGE "puttytel - Win32 Debug" (based on "Win32 (x86) Application")
+!MESSAGE "tutty - Win32 Release" (based on "Win32 (x86) Application")
+!MESSAGE "tutty - Win32 Debug" (based on "Win32 (x86) Application")
 !MESSAGE 
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
-# PROP Scc_ProjName ""//depot/putty/MSVC/puttytel""
+# PROP Scc_ProjName ""//depot/tutty/MSVC/tutty""
 # PROP Scc_LocalPath "."
 CPP=cl.exe
 MTL=midl.exe
 RSC=rc.exe
 
-!IF  "$(CFG)" == "puttytel - Win32 Release"
+!IF  "$(CFG)" == "tutty - Win32 Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -43,8 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /Zp4 /W3 /GX /O1 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "UNDERLINE_COLOUR" /D "SECONDARY_SCRIPT" /D "ATT513_TERMINAL" /D "SERIAL_BACKEND" /D "SESSION_FOLDERS" /FD /c
-# SUBTRACT CPP /YX /Yc /Yu
+# ADD CPP /nologo /Zp4 /W3 /GX /O1 /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "DWALIN" /D RELEASE=0.56 /D "UNDERLINE_COLOUR" /D "SECONDARY_SCRIPT" /D "ATT513_TERMINAL" /D "SERIAL_BACKEND" /D "SESSION_FOLDERS" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x809 /d "NDEBUG"
@@ -57,7 +56,7 @@ LINK32=link.exe
 # ADD LINK32 advapi32.lib comctl32.lib comdlg32.lib gdi32.lib imm32.lib shell32.lib user32.lib winmm.lib winspool.lib /nologo /subsystem:windows /machine:I386
 # SUBTRACT LINK32 /pdb:none
 
-!ELSEIF  "$(CFG)" == "puttytel - Win32 Debug"
+!ELSEIF  "$(CFG)" == "tutty - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -71,7 +70,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /Zp4 /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "UNDERLINE_COLOUR" /D "SECONDARY_SCRIPT" /D "ATT513_TERMINAL" /D "SERIAL_BACKEND" /D "SESSION_FOLDERS" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /Zp4 /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "SESSION_FOLDERS" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "DWALIN" /D RELEASE=0.56 /D "UNDERLINE_COLOUR" /D "SECONDARY_SCRIPT" /D "ATT513_TERMINAL" /D "SERIAL_BACKEND" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x809 /d "_DEBUG"
@@ -88,23 +87,14 @@ LINK32=link.exe
 
 # Begin Target
 
-# Name "puttytel - Win32 Release"
-# Name "puttytel - Win32 Debug"
+# Name "tutty - Win32 Release"
+# Name "tutty - Win32 Debug"
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\..\.\be_nossh.c
-
-!IF  "$(CFG)" == "puttytel - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "puttytel - Win32 Debug"
-
-# ADD CPP /Zi
-
-!ENDIF 
-
+SOURCE=..\..\.\be_all.c
 # End Source File
 # Begin Source File
 
@@ -113,6 +103,10 @@ SOURCE=..\..\.\cmdline.c
 # Begin Source File
 
 SOURCE=..\..\.\config.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\cproxy.c
 # End Source File
 # Begin Source File
 
@@ -136,7 +130,15 @@ SOURCE=..\..\.\misc.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\nocproxy.c
+SOURCE=..\..\.\noise.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\pageantc.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\portfwd.c
 # End Source File
 # Begin Source File
 
@@ -164,15 +166,84 @@ SOURCE=..\..\serial.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\plaunch\session.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\.\settings.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\.\sizetip.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\ssh.c
+
+!IF  "$(CFG)" == "tutty - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "tutty - Win32 Debug"
+
+# ADD CPP /Zi
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\sshaes.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\sshblowf.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\sshbn.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\sshcrc.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\sshcrcda.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\sshdes.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\sshdh.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\sshdss.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\sshmd5.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\sshpubk.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\sshrand.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\sshrsa.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\sshsh512.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\sshsha.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\sshzlib.c
 # End Source File
 # Begin Source File
 
@@ -197,6 +268,10 @@ SOURCE=..\..\.\version.c
 # Begin Source File
 
 SOURCE=..\..\.\wcwidth.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\wildcard.c
 # End Source File
 # Begin Source File
 
@@ -234,6 +309,10 @@ SOURCE=..\..\.\winstore.c
 
 SOURCE=..\..\.\winutils.c
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\.\x11fwd.c
+# End Source File
 # End Group
 # Begin Group "Header Files"
 
@@ -260,6 +339,10 @@ SOURCE=..\..\mac\macstuff.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\.\minibidi.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\.\misc.h
 # End Source File
 # Begin Source File
@@ -281,10 +364,6 @@ SOURCE=..\..\.\puttymem.h
 # Begin Source File
 
 SOURCE=..\..\.\puttyps.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\plaunch\session.h
 # End Source File
 # Begin Source File
 

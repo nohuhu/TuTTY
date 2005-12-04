@@ -3,14 +3,10 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
-Project: "plaunch"=..\..\plaunch\plaunch.dsp - Package Owner=<4>
+Project: "tutty"=.\tutty\tutty.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
-    begin source code control
-    "//depot/plaunch"
-    ..\..\plaunch
-    end source code control
 }}}
 
 Package=<4>
@@ -19,23 +15,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "putty"=.\putty\putty.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-    begin source code control
-    "//depot/putty/MSVC/putty"
-    .\putty
-    end source code control
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
-
-Project: "puttytel"=.\puttytel\puttytel.dsp - Package Owner=<4>
+Project: "tuttytel"=.\tuttytel\tuttytel.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
