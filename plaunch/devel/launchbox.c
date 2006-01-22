@@ -744,20 +744,24 @@ static int CALLBACK LaunchBoxChildDialogProc1(HWND hwnd, UINT msg,
 	    hdr->toptype = hdr->kidtype;
 	    hdr->kidtype = hdr->kids[TAB_ACTIONS].type;
 	    hdr->subtype = 0;
+	    hdr->subsubtype = 0;
+	    hdr->subdata = NULL;
+	    hdr->subsubdata = NULL;
 	    switch (wParam) {
 	    case IDC_LAUNCHBOX_TAB1_BUTTON_ATSTART:
-		hdr->kiddata = (void *) ATSTART_STRINGS;
+		hdr->topdata = (void *) ATSTART_STRINGS;
 		break;
 	    case IDC_LAUNCHBOX_TAB1_BUTTON_ATNETWORKUP:
-		hdr->kiddata = (void *) ATNETWORKUP_STRINGS;
+		hdr->topdata = (void *) ATNETWORKUP_STRINGS;
 		break;
 	    case IDC_LAUNCHBOX_TAB1_BUTTON_ATNETWORKDOWN:
-		hdr->kiddata = (void *) ATNETWORKDOWN_STRINGS;
+		hdr->topdata = (void *) ATNETWORKDOWN_STRINGS;
 		break;
 	    case IDC_LAUNCHBOX_TAB1_BUTTON_ATSTOP:
-		hdr->kiddata = (void *) ATSTOP_STRINGS;
+		hdr->topdata = (void *) ATSTOP_STRINGS;
 		break;
 	    };
+	    hdr->kiddata = hdr->topdata;
 	    hdr->level = 1;
 
 	    SendMessage(hdr->kidwnd, WM_REFRESHITEMS, 0, 0);
@@ -891,7 +895,7 @@ static int CALLBACK LaunchBoxChildDialogProc3(HWND hwnd, UINT msg,
 	    EnableWindow(eb_find, FALSE);
 
 	    spin_find = GetDlgItem(hwnd, IDC_LAUNCHBOX_TABGENERIC1_SPIN_FIND);
-	    SendMessage(spin_find, UDM_SETRANGE, 0, MAKELONG(0, UD_MAXVAL));
+	    SendMessage(spin_find, UDM_SETRANGE, 0, MAKELONG(255, 8));
 	    EnableWindow(spin_find, FALSE);
 
 	    btn_moreact = GetDlgItem(hwnd, IDC_LAUNCHBOX_TABGENERIC1_BUTTON_MOREACTIONS);
@@ -1055,12 +1059,14 @@ static int CALLBACK LaunchBoxChildDialogProc3(HWND hwnd, UINT msg,
 			if (!i) {
 			    ses_delete_value(&config->sessionroot, path, data[ACTION_FIND]);
 			    SendMessage(hwnd, WM_RESETITEMS, 0, (LPARAM) item);
+			    EnableWindow(cb_actions[0], FALSE);
 			} else if (i < 9) {
 			    i--;
 			    ses_write_i(&config->sessionroot, path, data[ACTION_FIND], i);
 			    EnableWindow(cb_actions[0], TRUE);
 			} else {
-			    SendMessage(spin_find, UDM_SETPOS, 0, 0);
+			    SendMessage(spin_find, UDM_SETPOS, 0, MAKELONG(8, 0));
+			    SetWindowText(spin_find, "8");
 			    EnableWindow(eb_find, TRUE);
 			    EnableWindow(spin_find, TRUE);
 			    EnableWindow(cb_actions[0], TRUE);
@@ -1102,7 +1108,7 @@ static int CALLBACK LaunchBoxChildDialogProc3(HWND hwnd, UINT msg,
 		hdr->kidwnd = hdr->kids[hdr->toptype].hwnd;
 		hdr->kidtype = hdr->kids[hdr->toptype].type;
 		hdr->kiddata = NULL;
-		hdr->level = 0;
+		hdr->level--;
 
 		SendMessage(hdr->kidwnd, WM_REFRESHITEMS, 0, 0);
 		ShowWindow(hdr->kidwnd, SW_SHOW);
@@ -1113,9 +1119,15 @@ static int CALLBACK LaunchBoxChildDialogProc3(HWND hwnd, UINT msg,
 		char **data = (char **) hdr->kiddata;
 
 		ShowWindow(hdr->kidwnd, SW_HIDE);
+		hdr->subtype = hdr->kidtype;
+		hdr->subdata = hdr->kiddata;
 		hdr->kidwnd = hdr->kids[TAB_MOREACTIONS].hwnd;
 		hdr->kidtype = hdr->kids[TAB_MOREACTIONS].type;
+//		hdr->subtype = hdr->subtype;
+		hdr->subsubtype = 0;
+//		hdr->subdata = (void *) data[ACTION_ACTION];
 		hdr->kiddata = (void *) data[ACTION_ACTION];
+		hdr->subsubdata = NULL;
 		hdr->level++;
 
 		SendMessage(hdr->kidwnd, WM_REFRESHITEMS, 0, 0);
@@ -1172,8 +1184,6 @@ static int CALLBACK LaunchBoxChildDialogProc4(HWND hwnd, UINT msg,
 			 SWP_SHOWWINDOW);
 
 	    background = GetStockObject(HOLLOW_BRUSH);
-
-	    base_action = (hdr->level - 2) * 10 + 6;
 
 	    btn_back = GetDlgItem(hwnd, IDC_LAUNCHBOX_TABGENERIC2_BUTTON_BACK);
 
@@ -1291,6 +1301,8 @@ static int CALLBACK LaunchBoxChildDialogProc4(HWND hwnd, UINT msg,
 
 	    SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
 
+	    base_action = (hdr->level - 2) * 10 + 6;
+
 	    /*
 	     * pull all settings from the registry and fill them in the
 	     * combo boxes
@@ -1370,37 +1382,50 @@ static int CALLBACK LaunchBoxChildDialogProc4(HWND hwnd, UINT msg,
 	    break;
 	};
 	switch (wParam) {
-	case IDC_LAUNCHBOX_TABGENERIC1_BUTTON_BACK:
+	case IDC_LAUNCHBOX_TABGENERIC2_BUTTON_BACK:
 	    {
-		ShowWindow(hdr->kidwnd, SW_HIDE);
-		hdr->kidwnd = hdr->kids[hdr->toptype].hwnd;
-		hdr->kidtype = hdr->kids[hdr->toptype].type;
-		hdr->subtype = 0;
-		hdr->kiddata = NULL;
-		hdr->level = 0;
+		if (hdr->level > 2) {
+		    hdr->level--;
+		} else {
+		    ShowWindow(hdr->kidwnd, SW_HIDE);
+		    hdr->kidwnd = hdr->kids[hdr->subtype].hwnd;
+		    hdr->kidtype = hdr->kids[hdr->subtype].type;
+		    hdr->subsubtype = 0;
+		    hdr->kiddata = hdr->subdata;
+		    hdr->subsubdata = NULL;
+		    hdr->level--;
+		    base_action = 0;
+		};
 
+		ShowWindow(hdr->kidwnd, SW_HIDE);
 		SendMessage(hdr->kidwnd, WM_REFRESHITEMS, 0, 0);
 		ShowWindow(hdr->kidwnd, SW_SHOW);
 	    };
 	    break;
-	case IDC_LAUNCHBOX_TABGENERIC1_BUTTON_MOREACTIONS:
+/*
+	case IDC_LAUNCHBOX_TABGENERIC2_BUTTON_MOREACTIONS:
 	    {
 		char **data = (char **) hdr->kiddata;
 
 		ShowWindow(hdr->kidwnd, SW_HIDE);
-		hdr->kidwnd = hdr->kids[TAB_MOREACTIONS].hwnd;
-		hdr->subtype = hdr->kids[TAB_MOREACTIONS].type;
-		hdr->kidtype = hdr->kids[TAB_MOREACTIONS].type;
-		hdr->kiddata = (void *) data[ACTION_ACTION];
+//		hdr->kidwnd = hdr->kids[TAB_MOREACTIONS].hwnd;
+//		hdr->subsubtype = hdr->kids[TAB_MOREACTIONS].type;
+//		hdr->kidtype = hdr->kids[TAB_MOREACTIONS].type;
+//		hdr->kiddata = (void *) data[ACTION_ACTION];
 		hdr->level++;
 
 		SendMessage(hdr->kidwnd, WM_REFRESHITEMS, 0, 0);
 		ShowWindow(hdr->kidwnd, SW_SHOW);
 	    };
 	    break;
-	case IDC_LAUNCHBOX_TABGENERIC1_BUTTON_NEXT:
+*/
+	case IDC_LAUNCHBOX_TABGENERIC2_BUTTON_NEXT:
 	    {
-		/* nothing here yet */
+		hdr->level++;
+
+		ShowWindow(hdr->kidwnd, SW_HIDE);
+		SendMessage(hdr->kidwnd, WM_REFRESHITEMS, 0, 0);
+		ShowWindow(hdr->kidwnd, SW_SHOW);
 	    };
 	    break;
 	};
