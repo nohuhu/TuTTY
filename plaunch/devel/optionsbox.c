@@ -1,3 +1,12 @@
+/*
+ * PLaunch: a convenient PuTTY launching and session-management utility.
+ * Distributed under MIT license, same as PuTTY itself.
+ * (c) 2004-2006 dwalin <dwalin@dwalin.ru>
+ * Portions (c) Simon Tatham.
+ *
+ * Options Dialog Box implementation file.
+ */
+
 #include <windows.h>
 #include <stdio.h>
 #include "entry.h"
@@ -20,6 +29,7 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
     static DWORD lb_key, wl_key;
     int check;
     char buf[256];
+    void *handle;
 
     switch (msg) {
     case WM_INITDIALOG:
@@ -42,41 +52,40 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 	cycledit = GetDlgItem(hwnd, IDC_OPTIONSBOX_EDITBOX_HOTKEY_CYCLEWINDOW);
 	make_hotkey(cycledit, config->hotkeys[HOTKEY_CYCLEWINDOW].hotkey);
 
-	if (reg_read_s(PLAUNCH_AUTO_STARTUP, APPNAME, NULL, buf, BUFSIZE))
-	    check = BST_CHECKED;
-	else
-	    check = BST_UNCHECKED;
+	/*
+	 * !!! TEMPORARILY BLOCKED !!!
+	 */
+	EnableWindow(cycledit, FALSE);
+
+	handle = reg_open_key_r(PLAUNCH_AUTO_STARTUP);
+	check = reg_read_s(handle, APPNAME, NULL, buf, BUFSIZE) ?
+		BST_CHECKED : BST_UNCHECKED;
+	reg_close_key(handle);
 
 	CheckDlgButton(hwnd, IDC_OPTIONSBOX_CHECKBOX_STARTUP, check);
 
-	check =
-	    config->
-	    options & OPTION_ENABLEDRAGDROP ? BST_CHECKED : BST_UNCHECKED;
+	check = config->options & OPTION_ENABLEDRAGDROP ? 
+		BST_CHECKED : BST_UNCHECKED;
 
 	CheckDlgButton(hwnd, IDC_OPTIONSBOX_CHECKBOX_DRAGDROP, check);
 
-	check =
-	    config->
-	    options & OPTION_ENABLESAVECURSOR ? BST_CHECKED :
-	    BST_UNCHECKED;
+	check = config->options & OPTION_ENABLESAVECURSOR ? 
+		BST_CHECKED : BST_UNCHECKED;
 
 	CheckDlgButton(hwnd, IDC_OPTIONSBOX_CHECKBOX_SAVECUR, check);
 
-	check =
-	    config->
-	    options & OPTION_SHOWONQUIT ? BST_CHECKED : BST_UNCHECKED;
+	check = config->options & OPTION_SHOWONQUIT ? 
+		BST_CHECKED : BST_UNCHECKED;
 
 	CheckDlgButton(hwnd, IDC_OPTIONSBOX_CHECKBOX_SHOWONQUIT, check);
 
-	check =
-	    config->
-	    options & OPTION_MENUSESSIONS ? BST_CHECKED : BST_UNCHECKED;
+	check = config->options & OPTION_MENUSESSIONS ? 
+		BST_CHECKED : BST_UNCHECKED;
 
 	CheckDlgButton(hwnd, IDC_OPTIONSBOX_CHECKBOX_MENUSESSIONS, check);
 
-	check =
-	    config->
-	    options & OPTION_MENURUNNING ? BST_CHECKED : BST_UNCHECKED;
+	check = config->options & OPTION_MENURUNNING ? 
+		BST_CHECKED : BST_UNCHECKED;
 
 	CheckDlgButton(hwnd, IDC_OPTIONSBOX_CHECKBOX_MENURUNNING, check);
 
@@ -153,10 +162,18 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 
 #ifndef _DEBUG
 		if (check == BST_CHECKED) {
+		    void *handle;
+
 		    GetModuleFileName(NULL, buf, 256);
-		    reg_write_s(PLAUNCH_AUTO_STARTUP, APPNAME, buf);
-		} else if (check == BST_UNCHECKED)
-		    reg_delete_v(PLAUNCH_AUTO_STARTUP, APPNAME);
+		    handle = reg_open_key_w(PLAUNCH_AUTO_STARTUP);
+		    reg_write_s(handle, APPNAME, buf);
+		    reg_close_key(handle);
+		} else if (check == BST_UNCHECKED) {
+		    void *handle;
+
+		    handle = reg_open_key_w(PLAUNCH_AUTO_STARTUP);
+		    reg_delete_v(handle, APPNAME);
+		    reg_close_key(handle);
 #endif				/* _DEBUG */
 
 		check =

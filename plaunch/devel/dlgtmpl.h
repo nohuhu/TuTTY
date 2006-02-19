@@ -1,7 +1,7 @@
 /*
  * Run-time dialog box template manipulation routines.
  *
- * (c) 2004 dwalin <dwalin@dwalin.ru>
+ * (c) 2004, 2005 dwalin <dwalin@dwalin.ru>
  */
 
 #ifndef DLGTMPL_H

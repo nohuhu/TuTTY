@@ -1,3 +1,12 @@
+/*
+ * PLaunch: a convenient PuTTY launching and session-management utility.
+ * Distributed under MIT license, same as PuTTY itself.
+ * (c) 2004-2006 dwalin <dwalin@dwalin.ru>
+ * Portions (c) Simon Tatham.
+ *
+ * About Dialog Box implementation file.
+ */
+
 #include "plaunch.h"
 #include "resource.h"
 #include "dlgtmpl.h"
@@ -6,7 +15,7 @@
 #define STR1(x) #x
 #define STR(x) STR1(x)
 
-#define HOMEPAGE	"http://putty.dwalin.ru/plaunch"
+#define HOMEPAGE	"http://tutty.dwalin.ru/plaunch"
 
 /*
  * About Box: dialog function.

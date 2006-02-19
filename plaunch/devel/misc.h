@@ -1,3 +1,12 @@
+/*
+ * PLaunch: a convenient PuTTY launching and session-management utility.
+ * Distributed under MIT license, same as PuTTY itself.
+ * (c) 2004-2006 dwalin <dwalin@dwalin.ru>
+ * Portions (c) Simon Tatham.
+ *
+ * Miscellaneous functions header file.
+ */
+
 #ifndef MISC_H
 #define MISC_H
 
@@ -49,16 +58,30 @@ extern const char *const HOTKEY_STRINGS[];
 #define PLAUNCH_ACTION_ENABLE_ATSTART	    "PLaunchAutoActionAtStartEnable"
 #define	PLAUNCH_ACTION_FIND_ATSTART	    "PLaunchAutoActionAtStartFind"
 #define PLAUNCH_ACTION_SEQ_ATSTART	    "PLaunchAutoActionAtStart%d"
+
 #define PLAUNCH_ACTION_ENABLE_ATNETWORKUP   "PLaunchAutoActionAtNetworkUpEnable"
 #define PLAUNCH_ACTION_FIND_ATNETWORKUP	    "PLaunchAutoActionAtNetworkUpFind"
 #define PLAUNCH_ACTION_SEQ_ATNETWORKUP	    "PLaunchAutoActionAtNetworkUp%d"
+
 #define PLAUNCH_ACTION_ENABLE_ATNETWORKDOWN "PLaunchAutoActionAtNetworkDownEnable"
 #define PLAUNCH_ACTION_FIND_ATNETWORKDOWN   "PLaunchAutoActionAtNetworkDownFind"
 #define PLAUNCH_ACTION_SEQ_ATNETWORKDOWN    "PLaunchAutoActionAtNetworkDown%d"
+
 #define PLAUNCH_ACTION_ENABLE_ATSTOP	    "PLaunchAutoActionAtStopEnable"
 #define PLAUNCH_ACTION_FIND_ATSTOP	    "PLaunchAutoActionAtStopFind"
 #define PLAUNCH_ACTION_SEQ_ATSTOP	    "PLaunchAutoActionAtStop%d"
 
+#define PLAUNCH_LIMIT_ENABLE		    "PLaunchInstanceLimitEnable"
+#define PLAUNCH_LIMIT_LOWER_ENABLE	    "PLaunchInstanceLimitThresholdLowerEnable"
+#define PLAUNCH_LIMIT_LOWER_THRESHOLD	    "PLaunchInstanceLimitThresholdLower"
+#define PLAUNCH_LIMIT_UPPER_ENABLE	    "PLaunchInstanceLimitThresholdUpperEnable"
+#define PLAUNCH_LIMIT_UPPER_THRESHOLD	    "PLaunchInstanceLimitThresholdUpper"
+#define PLAUNCH_LIMIT_FIND_LOWER	    "PLaunchInstanceLimitLowerActionFind"
+#define PLAUNCH_LIMIT_SEQ_LOWER		    "PLaunchInstanceLimitLowerAction%d"
+#define PLAUNCH_LIMIT_FIND_UPPER	    "PLaunchInstanceLimitUpperActionFind"
+#define PLAUNCH_LIMIT_SEQ_UPPER		    "PLaunchInstanceLimitUpperAction%d"
+
+/*
 #define	LIMIT_SEARCHFOR_LAST		0
 #define	LIMIT_SEARCHFOR_FIRST		1
 #define	LIMIT_SEARCHFOR_SECOND		2
@@ -74,38 +97,38 @@ extern const char *const HOTKEY_STRINGS[];
 #define	LIMIT_SEARCHFOR_TVELFTH		12
 #define	LIMIT_SEARCHFOR_UMPTEENTH	13
 #define	LIMIT_SEARCHFOR_MAX		14
+*/
 
-extern const char *const LIMIT_SEARCHFOR_STRINGS[];
+extern char *LIMIT_LOWER_STRINGS[];
+extern char *LIMIT_UPPER_STRINGS[];
 
-#define	LIMIT_ACTION_NOTHING		0
-#define	LIMIT_ACTION_HIDE		1
-#define	LIMIT_ACTION_SHOW		2
-#define	LIMIT_ACTION_MINIMIZE		3
-#define	LIMIT_ACTION_MAXIMIZE		4
-#define	LIMIT_ACTION_CENTER		5
-#define	LIMIT_ACTION_KILL		6
-#define	LIMIT_ACTION_MURDER		7
-#define	LIMIT_ACTION_RUN		8
-#define LIMIT_ACTION_MAX		9
+#define	SESSION_ACTION_NOTHING		0
+#define	SESSION_ACTION_HIDE		1
+#define	SESSION_ACTION_SHOW		2
+#define	SESSION_ACTION_MINIMIZE		3
+#define	SESSION_ACTION_MAXIMIZE		4
+#define	SESSION_ACTION_CENTER		5
+#define	SESSION_ACTION_KILL		6
+#define	SESSION_ACTION_MURDER		7
+#define	SESSION_ACTION_RUN		8
+#define SESSION_ACTION_MAX		9
 
 extern const char *const LIMIT_ACTION_STRINGS[];
 
 #define	AUTORUN_WHEN_START		0
-#define	AUTORUN_WHEN_NETWORKSTART	1
-#define	AUTORUN_WHEN_QUIT		2
-#define	AUTORUN_WHEN_MAX		3
+#define	AUTORUN_WHEN_NETWORKUP		1
+#define	AUTORUN_WHEN_NETWORKDOWN	2
+#define	AUTORUN_WHEN_STOP		3
+#define	AUTORUN_WHEN_MAX		4
 
 extern const char *const AUTORUN_WHEN_STRINGS[];
 
-#define	AUTORUN_ACTION_NOTHING		0
-#define	AUTORUN_ACTION_HIDE		1
-#define	AUTORUN_ACTION_SHOW		2
-#define	AUTORUN_ACTION_MINIMIZE		3
-#define	AUTORUN_ACTION_MAXIMIZE		4
-#define	AUTORUN_ACTION_CENTER		5
-#define	AUTORUN_ACTION_MAX		6
-
 extern const char *const AUTORUN_ACTION_STRINGS[];
+
+extern char *ATSTART_STRINGS[];
+extern char *ATNETWORKUP_STRINGS[];
+extern char *ATNETWORKDOWN_STRINGS[];
+extern char *ATSTOP_STRINGS[];
 
 int GetSystemImageLists(HMODULE * hShell32, HIMAGELIST * phLarge,
 			HIMAGELIST * phSmall);
@@ -132,7 +155,11 @@ unsigned int save_config(struct _config *cfg, int what);
 HWND launch_putty(int action, char *path);
 void free_process_records(void);
 
+int work_over_actions(struct _config *cfg, char *path, char *strings[3]);
+
 int launch_autoruns(char *root, int when);
+
+int find_existing_processes(void);
 
 int enum_process_records(void **array, int nrecords, char *path);
 void *get_nth_process_record(void **array, int nrecords, char *path,

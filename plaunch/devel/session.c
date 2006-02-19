@@ -1,3 +1,12 @@
+/*
+ * Session abstraction layer for TuTTY and PLaunch.
+ * Distributed under MIT license, same as PuTTY itself.
+ * (c) 2005, 2006 dwalin <dwalin@dwalin.ru>
+ * Portions (c) Simon Tatham.
+ *
+ * Session abstraction implementation file.
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <malloc.h>
@@ -79,7 +88,7 @@ static void * (* default_open_session_w)(char *) =
 
 static void (* default_close_session)(void *) =
 #ifdef _WINDOWS
-    reg_close_session;
+    reg_close_key;
 #endif /* _WINDOWS */
 
 static void * (* default_enum_settings_start)(char *) =
@@ -178,7 +187,7 @@ int ses_is_folder(session_root_t *root, char *path)
 		    path, ppath, BUFSIZE) &&
 		(handle = default_open_session_r(ppath)) != NULL) {
 		reg_read_i(handle, ISFOLDER, 0, &isfolder);
-		reg_close_session(handle);
+		reg_close_key(handle);
 	    };
 	    break;
 #endif /* _WINDOWS */
@@ -199,7 +208,7 @@ int ses_make_folder(session_root_t *root, char *path) {
     if (!root || !root->root_type) {
 	if (default_make_path(NULL, path, ppath, BUFSIZE) &&
 	    (handle = default_open_session_w(ppath)) != NULL) {
-	    ret = default_write_i(ppath, ISFOLDER, TRUE);
+	    ret = default_write_i(handle, ISFOLDER, TRUE);
 	    default_close_session(handle);
 	};
     } else {
@@ -211,7 +220,7 @@ int ses_make_folder(session_root_t *root, char *path) {
 		    path, ppath, BUFSIZE) &&
 		(handle = reg_open_session_w(ppath)) != NULL) {
 		reg_write_i(handle, ISFOLDER, TRUE);
-		reg_close_session(handle);
+		reg_close_key(handle);
 	    };
 	    break;
 #endif /* _WINDOWS */
@@ -361,7 +370,7 @@ int ses_delete_value(session_root_t *root, char *path, char *valname)
 		    NULL, path, ppath, BUFSIZE) &&
 		(handle = reg_open_session_w(ppath)) != NULL) {
 		ret = reg_delete_v(handle, valname);
-		reg_close_session(handle);
+		reg_close_key(handle);
 	    };
 	    break;
 #endif /* _WINDOWS */
@@ -502,7 +511,7 @@ int ses_read_i(session_root_t *root, char *path, char *valname,
 		    NULL, path, ppath, BUFSIZE) &&
 		(handle = reg_open_session_r(ppath)) != NULL) {
 		ret = reg_read_i(handle, valname, defval, value);
-		reg_close_session(handle);
+		reg_close_key(handle);
 	    };
 	    break;
 #endif /* _WINDOWS */
@@ -535,7 +544,7 @@ int ses_write_i(session_root_t *root, char *path, char *valname, int value)
 		    NULL, path, ppath, BUFSIZE) &&
 		(handle = reg_open_session_w(ppath)) != NULL) {
 		ret = reg_write_i(handle, valname, value);
-		reg_close_session(handle);
+		reg_close_key(handle);
 	    };
 	    break;
 #endif /* _WINDOWS */
@@ -569,7 +578,7 @@ int ses_read_s(session_root_t *root, char *path, char *valname,
 		    NULL, path, ppath, BUFSIZE) &&
 		(handle = reg_open_session_r(ppath)) != NULL) {
 		ret = reg_read_s(handle, valname, defval, buffer, bufsize);
-		reg_close_session(handle);
+		reg_close_key(handle);
 	    };
 	    break;
 #endif /* _WINDOWS */
@@ -603,7 +612,7 @@ int ses_write_s(session_root_t *root, char *path, char *valname,
 		    NULL, path, ppath, BUFSIZE) &&
 		(handle = reg_open_session_w(ppath)) != NULL) {
 		ret = reg_write_s(handle, valname, value);
-		reg_close_session(handle);
+		reg_close_key(handle);
 	    };
 	    break;
 #endif /* _WINDOWS */
@@ -914,7 +923,7 @@ void ses_close_session(session_root_t *root, void *handle)
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
-	    reg_close_session(handle);
+	    reg_close_key(handle);
 	    break;
 #endif /* _WINDOWS */
 	};

@@ -387,9 +387,6 @@
 				RelativePath="resource.h">
 			</File>
 			<File
-				RelativePath=".\resrc1.h">
-			</File>
-			<File
 				RelativePath=".\session.h">
 			</File>
 			<File

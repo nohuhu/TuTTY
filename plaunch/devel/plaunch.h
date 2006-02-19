@@ -1,10 +1,10 @@
 /*
  * PLaunch: a convenient PuTTY launching and session-management utility.
  * Distributed under MIT license, same as PuTTY itself.
- * (c) 2004, 2005 dwalin <dwalin@dwalin.ru>
+ * (c) 2004-2006 dwalin <dwalin@dwalin.ru>
  * Portions (c) Simon Tatham.
  *
- * Header file.
+ * Main header file.
  */
 
 #ifndef PLAUNCH_H
@@ -47,10 +47,10 @@
 #define	IDM_EMPTY		0x0200
 
 #define IDM_SESSION_BASE	0x0300
-#define IDM_SESSION_MAX		0x0500
+#define IDM_SESSION_MAX		0x12ff
 
-#define	IDM_RUNNING_BASE	0x0501
-#define	IDM_RUNNING_MAX		0x0700
+#define	IDM_RUNNING_BASE	0x1300
+#define	IDM_RUNNING_MAX		0x1fff
 
 #define IDI_MAINICON		100
 

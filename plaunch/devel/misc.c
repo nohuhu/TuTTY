@@ -1,3 +1,12 @@
+/*
+ * PLaunch: a convenient PuTTY launching and session-management utility.
+ * Distributed under MIT license, same as PuTTY itself.
+ * (c) 2004-2006 dwalin <dwalin@dwalin.ru>
+ * Portions (c) Simon Tatham.
+ *
+ * Miscellaneous functions implementation file.
+ */
+
 #include <stdio.h>
 #include "entry.h"
 #include "plaunch.h"
@@ -473,10 +482,18 @@ static int extract_hotkeys(Config *cfg, char *root)
 
 static void launching_callback(session_callback_t *scb)
 {
-    HWND pwin;
-    int i, when;
+    int when;
+    char **when_strings[AUTORUN_WHEN_MAX] = {
+	ATSTART_STRINGS,
+	ATNETWORKUP_STRINGS,
+	ATNETWORKDOWN_STRINGS,
+	ATSTOP_STRINGS,
+    };
 
     if (!scb)
+	return;
+
+    if (scb->session->isfolder)
 	return;
 
     when = (int) scb->public1;
@@ -484,49 +501,8 @@ static void launching_callback(session_callback_t *scb)
     if (scb->mode == SES_MODE_POSTPROCESS)
 	return;
 
-/*
-    ses_read_i(&scb->session->root, scb->session->path, 
-	PLAUNCH_AUTORUN_ENABLE, 0, &i);
+    work_over_actions(config, scb->session->path, (when_strings[when]));
 
-    if (!i)
-	return;
-
-    ses_read_i(&scb->session->root, scb->session->path, 
-	PLAUNCH_AUTORUN_WHEN, 0, &i);
-
-    if (i != when)
-	return;
-
-    pwin = launch_putty(0, scb->session->path);
-
-    if (!pwin)
-	return;
-
-    ses_read_i(&scb->session->root, scb->session->path, 
-	PLAUNCH_AUTORUN_ACTION, 0, &i);
-
-    if (!i)
-	return;
-
-    switch (i) {
-    case AUTORUN_ACTION_HIDE:
-	ShowWindow(pwin, SW_HIDE);
-	break;
-    case AUTORUN_ACTION_SHOW:
-	ShowWindow(pwin, SW_SHOWNORMAL);
-	SetForegroundWindow(pwin);
-	break;
-    case AUTORUN_ACTION_MINIMIZE:
-	ShowWindow(pwin, SW_MINIMIZE);
-	break;
-    case AUTORUN_ACTION_MAXIMIZE:
-	ShowWindow(pwin, SW_MAXIMIZE);
-	break;
-    case AUTORUN_ACTION_CENTER:
-	center_window(pwin);
-	break;
-    };
-*/
     return;
 };
 
@@ -550,17 +526,19 @@ unsigned int read_config(Config *cfg)
 {
     char buf[BUFSIZE];
     int hk;
+    void *handle;
 
     if (!cfg)
 	return FALSE;
 
-    if (reg_read_s(PLAUNCH_REGISTRY_ROOT, PLAUNCH_PUTTY_PATH, 
-	NULL, buf, BUFSIZE))
+    handle = reg_open_key_r(PLAUNCH_REGISTRY_ROOT);
+
+    if (reg_read_s(handle, PLAUNCH_PUTTY_PATH, NULL, buf, BUFSIZE))
 	strcpy(config->putty_path, buf);
     else
 	get_putty_path(config->putty_path, BUFSIZE);
 
-    reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_LB, 0, &hk);
+    reg_read_i(handle, PLAUNCH_HOTKEY_LB, 0, &hk);
 
     if (hk == 0)
 	hk = MAKELPARAM(MOD_WIN, 'P');
@@ -569,7 +547,7 @@ unsigned int read_config(Config *cfg)
     config->hotkeys[HOTKEY_LAUNCHBOX].hotkey = hk;
     config->hotkeys[HOTKEY_LAUNCHBOX].destination = (char *)WM_LAUNCHBOX;
 
-    reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_WL, 0, &hk);
+    reg_read_i(handle, PLAUNCH_HOTKEY_WL, 0, &hk);
 
     if (hk == 0)
 	hk = MAKELPARAM(MOD_WIN, 'W');
@@ -578,7 +556,7 @@ unsigned int read_config(Config *cfg)
     config->hotkeys[HOTKEY_WINDOWLIST].hotkey = hk;
     config->hotkeys[HOTKEY_WINDOWLIST].destination = (char *)WM_WINDOWLIST;
 
-    reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_HIDEWINDOW, 0, &hk);
+    reg_read_i(handle, PLAUNCH_HOTKEY_HIDEWINDOW, 0, &hk);
 
     if (hk == 0)
 	hk = MAKELPARAM(MOD_WIN, 'H');
@@ -587,7 +565,7 @@ unsigned int read_config(Config *cfg)
     config->hotkeys[HOTKEY_HIDEWINDOW].hotkey = hk;
     config->hotkeys[HOTKEY_HIDEWINDOW].destination = (char *)WM_HIDEWINDOW;
 
-    reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_CYCLEWINDOW, 0, &hk);
+    reg_read_i(handle, PLAUNCH_HOTKEY_CYCLEWINDOW, 0, &hk);
 
     if (hk == 0)
 	hk = MAKELPARAM(MOD_WIN, 'Q');
@@ -598,25 +576,27 @@ unsigned int read_config(Config *cfg)
 
     config->nhotkeys = 4;
 
-    reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLEDRAGDROP, TRUE, &hk);
+    reg_read_i(handle, PLAUNCH_ENABLEDRAGDROP, TRUE, &hk);
     if (hk)
 	config->options |= OPTION_ENABLEDRAGDROP;
 
-    reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLESAVECURSOR, TRUE, &hk);
+    reg_read_i(handle, PLAUNCH_ENABLESAVECURSOR, TRUE, &hk);
     if (hk)
 	config->options |= OPTION_ENABLESAVECURSOR;
 
-    reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_SHOWONQUIT, TRUE, &hk);
+    reg_read_i(handle, PLAUNCH_SHOWONQUIT, TRUE, &hk);
     if (hk)
 	config->options |= OPTION_SHOWONQUIT;
 
-    reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_MENUSESSIONS, FALSE, &hk);
+    reg_read_i(handle, PLAUNCH_MENUSESSIONS, FALSE, &hk);
     if (hk)
 	config->options |= OPTION_MENUSESSIONS;
 
-    reg_read_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_MENURUNNING, FALSE, &hk);
+    reg_read_i(handle, PLAUNCH_MENURUNNING, FALSE, &hk);
     if (hk)
 	config->options |= OPTION_MENURUNNING;
+
+    reg_close_key(handle);
 
     extract_hotkeys(cfg, "");
 
@@ -626,86 +606,90 @@ unsigned int read_config(Config *cfg)
 unsigned int save_config(Config *cfg, int what)
 {
     char buf[BUFSIZE];
+    void *handle;
 
     if (!cfg || !what)
 	return FALSE;
 
+    handle = reg_open_key_w(PLAUNCH_REGISTRY_ROOT);
+
     if (what & CFG_SAVE_PUTTY_PATH) {
 	get_putty_path(buf, BUFSIZE);
 	if (!strcmp(buf, config->putty_path))
-	    reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_PUTTY_PATH);
+	    reg_delete_v(handle, PLAUNCH_PUTTY_PATH);
 	else
-	    reg_write_s(PLAUNCH_REGISTRY_ROOT, PLAUNCH_PUTTY_PATH,
+	    reg_write_s(handle, PLAUNCH_PUTTY_PATH,
 			config->putty_path);
     };
 
     if (what & CFG_SAVE_HOTKEY_LB) {
 	if (config->hotkeys[HOTKEY_LAUNCHBOX].hotkey == MAKELPARAM(MOD_WIN, 'P'))
-	    reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_LB);
+	    reg_delete_v(handle, PLAUNCH_HOTKEY_LB);
 	else
-	    reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_LB,
+	    reg_write_i(handle, PLAUNCH_HOTKEY_LB,
 			config->hotkeys[HOTKEY_LAUNCHBOX].hotkey);
     };
 
     if (what & CFG_SAVE_HOTKEY_WL) {
 	if (config->hotkeys[HOTKEY_WINDOWLIST].hotkey == MAKELPARAM(MOD_WIN, 'W'))
-	    reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_WL);
+	    reg_delete_v(handle, PLAUNCH_HOTKEY_WL);
 	else
-	    reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_WL,
+	    reg_write_i(handle, PLAUNCH_HOTKEY_WL,
 			config->hotkeys[HOTKEY_WINDOWLIST].hotkey);
     };
 
     if (what & CFG_SAVE_HOTKEY_HIDEWINDOW) {
 	if (config->hotkeys[HOTKEY_HIDEWINDOW].hotkey == 0)
-	    reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_HIDEWINDOW);
+	    reg_delete_v(handle, PLAUNCH_HOTKEY_HIDEWINDOW);
 	else
-	    reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_HIDEWINDOW,
+	    reg_write_i(handle, PLAUNCH_HOTKEY_HIDEWINDOW,
 			config->hotkeys[HOTKEY_HIDEWINDOW].hotkey);
     };
 
     if (what & CFG_SAVE_HOTKEY_CYCLEWINDOW) {
 	if (config->hotkeys[HOTKEY_CYCLEWINDOW].hotkey == 0)
-	    reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_CYCLEWINDOW);
+	    reg_delete_v(handle, PLAUNCH_HOTKEY_CYCLEWINDOW);
 	else
-	    reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_HOTKEY_CYCLEWINDOW,
+	    reg_write_i(handle, PLAUNCH_HOTKEY_CYCLEWINDOW,
 			config->hotkeys[HOTKEY_CYCLEWINDOW].hotkey);
     };
 
     if (what & CFG_SAVE_DRAGDROP) {
 	if (config->options & OPTION_ENABLEDRAGDROP)
-	    reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLEDRAGDROP);
+	    reg_delete_v(handle, PLAUNCH_ENABLEDRAGDROP);
 	else
-	    reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLEDRAGDROP, 0);
+	    reg_write_i(handle, PLAUNCH_ENABLEDRAGDROP, 0);
     };
 
     if (what & CFG_SAVE_SAVECURSOR) {
 	if (config->options & OPTION_ENABLESAVECURSOR)
-	    reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLESAVECURSOR);
+	    reg_delete_v(handle, PLAUNCH_ENABLESAVECURSOR);
 	else
-	    reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_ENABLESAVECURSOR,
-			0);
+	    reg_write_i(handle, PLAUNCH_ENABLESAVECURSOR, 0);
     };
 
     if (what & CFG_SAVE_SHOWONQUIT) {
 	if (config->options & OPTION_SHOWONQUIT)
-	    reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_SHOWONQUIT);
+	    reg_delete_v(handle, PLAUNCH_SHOWONQUIT);
 	else
-	    reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_SHOWONQUIT, 0);
+	    reg_write_i(handle, PLAUNCH_SHOWONQUIT, 0);
     };
 
     if (what & CFG_SAVE_MENUSESSIONS) {
 	if (config->options & OPTION_MENUSESSIONS)
-	    reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_MENUSESSIONS, 1);
+	    reg_write_i(handle, PLAUNCH_MENUSESSIONS, 1);
 	else
-	    reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_MENUSESSIONS);
+	    reg_delete_v(handle, PLAUNCH_MENUSESSIONS);
     };
 
     if (what & CFG_SAVE_MENURUNNING) {
 	if (config->options & OPTION_MENURUNNING)
-	    reg_write_i(PLAUNCH_REGISTRY_ROOT, PLAUNCH_MENURUNNING, 1);
+	    reg_write_i(handle, PLAUNCH_MENURUNNING, 1);
 	else
-	    reg_delete_v(PLAUNCH_REGISTRY_ROOT, PLAUNCH_MENURUNNING);
+	    reg_delete_v(handle, PLAUNCH_MENURUNNING);
     };
+
+    reg_close_key(handle);
 
     return TRUE;
 };
@@ -822,8 +806,10 @@ static BOOL CALLBACK FindPuttyWindowCallback(HWND hwnd, LPARAM lParam)
     char classname[BUFSIZE];
 
     if (GetClassName(hwnd, classname, BUFSIZE) &&
-	(strcmp(classname, PUTTY) == 0 ||
-	 strcmp(classname, PUTTYTEL) == 0)) {
+	(!strcmp(classname, PUTTY) ||
+	 !strcmp(classname, TUTTY) ||
+	 !strcmp(classname, PUTTYTEL) ||
+	 !strcmp(classname, TUTTYTEL))) {
 	*((HWND *) lParam) = hwnd;
 	return TRUE;
     };
@@ -869,8 +855,7 @@ HWND launch_putty(int action, char *path)
     CloseHandle(pi.hThread);
 
     pwin = NULL;
-    EnumThreadWindows(pi.dwThreadId, FindPuttyWindowCallback,
-		      (LPARAM) & pwin);
+    EnumThreadWindows(pi.dwThreadId, FindPuttyWindowCallback, (LPARAM) &pwin);
 
     if (!pwin) {
 	CloseHandle(pi.hProcess);
@@ -914,7 +899,7 @@ int enum_process_records(void **array, int nrecords, char *path)
     int i, count = 0;
 
     for (i = 0; i < nrecords; i++) {
-	if (!strcmp(records[i]->path, path))
+	if (records[i]->path && !strcmp(records[i]->path, path))
 	    count++;
     };
 
@@ -928,12 +913,12 @@ void *get_nth_process_record(void **array, int nrecords, char *path, int n)
 
     if (n == 0) {
 	for (i = nrecords - 1; i >= 0; i--) {
-	    if (!strcmp(records[i]->path, path))
+	    if (records[i]->path && !strcmp(records[i]->path, path))
 		return records[i];
 	};
     } else {
 	for (i = 0; i < nrecords; i++) {
-	    if (!strcmp(records[i]->path, path)) {
+	    if (records[i]->path && !strcmp(records[i]->path, path)) {
 		count++;
 
 		if (count == n)
@@ -977,4 +962,124 @@ int small_atoi(char *a)
 	number = -number;
 
     return number;
+};
+
+int work_over_actions(struct _config *cfg, char *path, char *strings[3])
+{
+    int i = 0, enable = TRUE, searchfor = 0, action = 0;
+    struct process_record *pr = NULL;
+    char buf[BUFSIZE];
+
+    if (strings[0])
+	ses_read_i(&cfg->sessionroot, path, strings[0], 0, &enable);
+
+    if (!enable)
+	return 0;
+
+    if (!ses_read_i(&cfg->sessionroot, path, strings[1], 0, &searchfor))
+	return 0;
+
+    pr = get_nth_process_record(process_records, nprocesses, path, searchfor);
+
+    i = 0; action = 0;
+    sprintf(buf, strings[2], i);
+
+    while (ses_read_i(&cfg->sessionroot, path, buf, 0, &action)) {
+	switch (action) {
+	case SESSION_ACTION_HIDE:
+	    if (pr && pr->window)
+		ShowWindow(pr->window, SW_HIDE);
+	    break;
+	case SESSION_ACTION_SHOW:
+	    if (pr && pr->window) {
+		ShowWindow(pr->window, /*SW_SHOWNORMAL*/ SW_SHOW);
+		SetForegroundWindow(pr->window);
+	    };
+	    break;
+	case SESSION_ACTION_MINIMIZE:
+	    if (pr && pr->window)
+		ShowWindow(pr->window, SW_MINIMIZE);
+	    break;
+	case SESSION_ACTION_MAXIMIZE:
+	    if (pr && pr->window)
+		ShowWindow(pr->window, SW_MAXIMIZE);
+	    break;
+	case SESSION_ACTION_CENTER:
+	    if (pr && pr->window)
+		center_window(pr->window);
+	    break;
+	case SESSION_ACTION_KILL:
+	    if (pr && pr->window)
+		SendMessage(pr->window, WM_CLOSE, 0, 0);
+	    break;
+	case SESSION_ACTION_MURDER:
+	    if (pr)
+		TerminateProcess(pr->hprocess, 0);
+	    break;
+	case SESSION_ACTION_RUN:
+	    launch_putty(0, path);
+	    break;
+	};
+
+	i++;
+	sprintf(buf, strings[2], i);
+    };
+
+    return i;
+};
+
+extern BOOL CALLBACK CountPuTTYWindows(HWND hwnd, LPARAM lParam);
+extern BOOL CALLBACK EnumPuTTYWindows(HWND hwnd, LPARAM lParam);
+
+int find_existing_processes(void)
+{
+    struct windowlist *wl = NULL;
+    struct process_record *pr = NULL;
+    unsigned int i, count;
+
+    wl = (struct windowlist *) malloc(sizeof(struct windowlist));
+    memset(wl, 0, sizeof(struct windowlist));
+
+    EnumWindows(CountPuTTYWindows, (LPARAM) &wl->nhandles);
+    count = wl->nhandles;
+
+    if (wl->nhandles == 0)
+	wl->handles = NULL;
+    else {
+	wl->handles = (HWND *) malloc(wl->nhandles * sizeof(HWND));
+	memset(wl->handles, 0, wl->nhandles * sizeof(HWND));
+
+	EnumWindows(EnumPuTTYWindows, (LPARAM) wl);
+
+	for (i = 0; i < wl->nhandles; i++) {
+	    DWORD pid = 0, tid = 0;
+	    HANDLE hprocess;
+
+	    tid = GetWindowThreadProcessId(wl->handles[i], &pid);
+	    hprocess = OpenProcess(PROCESS_QUERY_INFORMATION | 
+				   PROCESS_TERMINATE | 
+				   PROCESS_VM_READ |
+				   SYNCHRONIZE, FALSE, pid);
+
+	    if (!pid || !tid || !hprocess)
+		continue;
+
+	    pr = (struct process_record *) malloc(sizeof(struct process_record));
+	    pr->pid = pid;
+	    pr->tid = tid;
+	    pr->hprocess = hprocess;
+	    pr->window = wl->handles[i];
+	    pr->path = NULL;
+
+	    item_insert((void *) &process_handles, &nprocesses, hprocess);
+	    nprocesses -= 1;
+	    item_insert((void *) &process_records, &nprocesses, pr);
+	};
+
+	free(wl->handles);
+    };
+
+    free(wl);
+
+    return count;
 };

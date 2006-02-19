@@ -1,3 +1,12 @@
+/*
+ * PLaunch: a convenient PuTTY launching and session-management utility.
+ * Distributed under MIT license, same as PuTTY itself.
+ * (c) 2004-2006 dwalin <dwalin@dwalin.ru>
+ * Portions (c) Simon Tatham.
+ *
+ * Advanced Hotkey Control implementation file.
+ */
+
 #include "hotkey.h"
 
 #if !defined(_DEBUG) && defined(MINIRTL)

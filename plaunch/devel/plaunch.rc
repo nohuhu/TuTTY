@@ -18,7 +18,7 @@ BEGIN
     CTEXT           "PuTTY Launcher && Session Manager",IDC_STATIC,7,7,220,
                     11
     CTEXT           "",IDC_ABOUTBOX_STATIC_VERSION,12,20,210,8
-    CTEXT           "© 2004, 2005 dwalin <dwalin@dwalin.ru>. All rights reserved.",
+    CTEXT           "© 2004-2006 dwalin <dwalin@dwalin.ru>. All rights reserved.",
                     IDC_STATIC,7,35,220,11
 END
 
@@ -31,7 +31,7 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,95,210,50,14
     LTEXT           "The above copyright notice and this permission notice shall be\nincluded in all copies or substantial portions of the Software.",
                     IDC_STATIC,15,97,210,20
-    CTEXT           "PuTTY Launcher © 2004, 2005 dwalin <dwalin@dwalin.ru>\n\nPortions © Simon Tatham, 1997-2004",
+    CTEXT           "PuTTY Launcher © 2004-2006 dwalin <dwalin@dwalin.ru>\n\nPortions © Simon Tatham, 1997-2004",
                     IDC_STATIC,15,4,210,27
     LTEXT           "Permission is hereby granted, free of charge, to any person\nobtaining a copy of this software and associated documentation\nfiles (the """"Software""""), to deal in the Software without restriction,\n",
                     IDC_STATIC,15,36,210,24

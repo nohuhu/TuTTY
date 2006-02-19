@@ -1,10 +1,10 @@
 /*
  * PLaunch: a convenient PuTTY launching and session-management utility.
  * Distributed under MIT license, same as PuTTY itself.
- * (c) 2004, 2005 dwalin <dwalin@dwalin.ru>
+ * (c) 2004-2006 dwalin <dwalin@dwalin.ru>
  * Portions (c) Simon Tatham.
  *
- * Implementation file.
+ * Main implementation file.
  */
 
 #include "plaunch.h"
@@ -154,78 +154,38 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	    if (!lParam)
 		return FALSE;
 
-	    path = (char *)lParam;
+	    path = (char *) lParam;
 
-/*
-	    ses_read_i(&config->sessionroot, path, PLAUNCH_LIMIT_ENABLE, 
-		0, &limit);
+	    /*
+	     * is there an instance limit for this session?
+	     * if it is, work over the upper threshold (if it exists).
+	     */
+
+	    ses_read_i(&config->sessionroot, path, PLAUNCH_LIMIT_ENABLE, 0, &limit);
 
 	    if (limit) {
-		int i, number, active, searchfor, action[2];
-		struct process_record *pr;
+		int enable, threshold, active;
 
-		ses_read_i(&config->sessionroot, path, PLAUNCH_LIMIT_NUMBER, 
-		    0, &number);
+		/*
+		 * work over the upper threshold
+		 */
 
-		if (number) {
-		    active =
-			enum_process_records(process_records, nprocesses,
-					     (char *)lParam);
+		ses_read_i(&config->sessionroot, path, PLAUNCH_LIMIT_UPPER_ENABLE, 
+		    0, &enable);
 
-		    if (active >= number) {
-			ses_read_i(&config->sessionroot, path, 
-			    PLAUNCH_LIMIT_SEARCHFOR, 0, &searchfor);
+		if (enable) {
+		    ses_read_i(&config->sessionroot, path, PLAUNCH_LIMIT_UPPER_THRESHOLD,
+			0, &threshold);
 
-			pr = get_nth_process_record(process_records,
-						    nprocesses,
-						    (char *) lParam,
-						    searchfor);
+		    active = enum_process_records(process_records, nprocesses, path);
 
-			if (pr && pr->window) {
-			    ses_read_i(&config->sessionroot, path, 
-				PLAUNCH_LIMIT_ACTION1, 0, &action[0]);
-			    ses_read_i(&config->sessionroot, path, 
-				PLAUNCH_LIMIT_ACTION2, 0, &action[1]);
-
-			    for (i = 0; i < 2; i++) {
-				switch (action[i]) {
-				case LIMIT_ACTION_HIDE:
-				    ShowWindow(pr->window, SW_HIDE);
-				    break;
-				case LIMIT_ACTION_SHOW:
-				    ShowWindow(pr->window, SW_SHOWNORMAL);
-				    SetForegroundWindow(pr->window);
-				    break;
-				case LIMIT_ACTION_MINIMIZE:
-				    ShowWindow(pr->window, SW_MINIMIZE);
-				    break;
-				case LIMIT_ACTION_MAXIMIZE:
-				    ShowWindow(pr->window, SW_MAXIMIZE);
-				    break;
-				case LIMIT_ACTION_CENTER:
-				    center_window(pr->window);
-				    break;
-				case LIMIT_ACTION_KILL:
-				    SendMessage(pr->window, WM_CLOSE, 0,
-						0);
-				    break;
-				case LIMIT_ACTION_MURDER:
-				    TerminateProcess(pr->hprocess, 0);
-				    break;
-				case LIMIT_ACTION_RUN:
-				    launch_putty(0, (char *) lParam);
-				    break;
-				};
-				return FALSE;
-			    };
-			};
-		    };
+		    if (active >= threshold)
+			work_over_actions(config, path, LIMIT_UPPER_STRINGS);
+		    else
+			pwin = launch_putty(wParam - HOTKEY_ACTION_LAUNCH, path);
 		};
-	    };
-*/
-	    pwin =
-		launch_putty(wParam - HOTKEY_ACTION_LAUNCH,
-			     (char *) lParam);
+	    } else
+		pwin = launch_putty(wParam - HOTKEY_ACTION_LAUNCH, path);
 	};
 	return FALSE;
     case WM_HOTKEY:
@@ -273,12 +233,15 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 
 	    GetClassName(fwin, buf, BUFSIZE);
 
-	    if (!strcmp(buf, PUTTY) || !strcmp(buf, PUTTYTEL))
+	    if (!strcmp(buf, PUTTY) ||
+		!strcmp(buf, TUTTY) ||
+		!strcmp(buf, PUTTYTEL) ||
+		!strcmp(buf, TUTTYTEL))
 		ShowWindow(fwin, SW_HIDE);
 	};
 	break;
     case WM_NETWORKSTART:
-	launch_autoruns("", AUTORUN_WHEN_NETWORKSTART);
+	launch_autoruns("", AUTORUN_WHEN_NETWORKUP);
 	break;
     case WM_LAUNCHBOX:
 	do_launchbox();
@@ -452,12 +415,79 @@ void CALLBACK PLaunchInternetStatusCallback(HINTERNET hInternet, DWORD dwContext
 };
 */
 
+void main_message_loop(void)
+{
+    MSG msg;
+    DWORD wait;
+
+    while (TRUE) {
+	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+	    if (msg.message == WM_QUIT)
+		return;
+	    DispatchMessage(&msg);
+	};
+
+	wait = MsgWaitForMultipleObjects(nprocesses, process_handles,
+					 FALSE, INFINITE, QS_ALLINPUT);
+	if (wait == WAIT_OBJECT_0 + nprocesses)
+	    continue;
+	else if (wait >= WAIT_OBJECT_0 &&
+		 wait < (WAIT_OBJECT_0 + nprocesses)) {
+	    HANDLE hprocess;
+	    struct process_record *pr;
+	    int limit = FALSE;
+
+	    /*
+	     * process is dead, we need to clean up after it.
+	     */
+	    wait -= WAIT_OBJECT_0;
+	    hprocess = process_handles[wait];
+	    pr = process_records[wait];
+
+	    /*
+	     * is there an instance limit for this session?
+	     * if it is, work over the lower threshold (if it exists).
+	     */
+
+	    if (pr && pr->path)
+		ses_read_i(&config->sessionroot, pr->path, PLAUNCH_LIMIT_ENABLE, 0, &limit);
+
+	    if (limit) {
+		int enable, threshold, active;
+
+		/*
+		 * work over the lower threshold
+		 */
+
+		ses_read_i(&config->sessionroot, pr->path, PLAUNCH_LIMIT_LOWER_ENABLE,
+		    0, &enable);
+
+		if (enable) {
+		    ses_read_i(&config->sessionroot, pr->path, PLAUNCH_LIMIT_LOWER_THRESHOLD,
+			0, &threshold);
+
+		    active = enum_process_records(process_records, nprocesses, pr->path) - 1;
+
+		    if (active < threshold)
+			work_over_actions(config, pr->path, LIMIT_LOWER_STRINGS);
+		};
+	    };
+
+	    item_remove((void *) &process_handles, &nprocesses, hprocess);
+	    nprocesses++;
+	    item_remove((void *) &process_records, &nprocesses, pr);
+	    CloseHandle(hprocess);
+	    if (pr->path)
+		free(pr->path);
+	    free(pr);
+	};
+    };
+};
+
 int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 {
     WNDCLASS wndclass;
-    MSG msg;
     OSVERSIONINFO osv;
-    DWORD wait;
 //      HINTERNET hinternet = NULL;
 
 #ifndef _DEBUG
@@ -470,7 +500,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	    return 0;
 	};
     };
-#endif				/* _DEBUG */
+#endif /* _DEBUG */
 
     InitCommonControls();
 
@@ -488,7 +518,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 
 #ifdef WINDOWS_NT351_COMPATIBLE
     config->have_shell = (config->version_major >= 4);
-#endif				/* WINDOWS_NT351_COMPATIBLE */
+#endif /* WINDOWS_NT351_COMPATIBLE */
 
     config->hinst = inst;
 
@@ -525,7 +555,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	if (
 #ifdef WINDOWS_NT351_COMPATIBLE
 	       config->have_shell &&
-#endif				/* WINDOWS_NT351_COMPATIBLE */
+#endif /* WINDOWS_NT351_COMPATIBLE */
 	       GetSystemImageLists(&shell32, &large_list, &small_list)) {
 	    ImageList_GetIconSize(small_list, &config->iconx,
 				  &config->icony);
@@ -560,7 +590,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 #ifdef WINDOWS_NT351_COMPATIBLE
 	else {
 	    config->image_list =
-		ImageList_Create(16, 16, ILC_COLOR8 | ILC_MASK, 3, 3);
+		ImageList_Create(config->iconx, config->icony, ILC_COLOR8 | ILC_MASK, 3, 3);
 
 	    icon = config->main_icon;
 	    config->img_closed =
@@ -569,7 +599,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 		ImageList_AddIcon(config->image_list, icon);
 //                      DeleteObject(icon);
 	};
-#endif				/* WINDOWS_NT351_COMPATIBLE */
+#endif /* WINDOWS_NT351_COMPATIBLE */
     }
 
     if (!prev) {
@@ -587,22 +617,6 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	RegisterClass(&wndclass);
     }
 
-/*
-	{
-		WNDCLASS dlg, dlgkid;
-
-		memset(&dlg, 0, sizeof(WNDCLASS));
-		memset(&dlgkid, 0, sizeof(WNDCLASS));
-		GetClassInfo(NULL, "#32770", &dlg);
-		memmove(&dlgkid, &dlg, sizeof(WNDCLASS));
-		dlgkid.lpszMenuName = NULL;
-		dlgkid.lpszClassName = "PLaunchTransparentChildDialog";
-		dlgkid.hbrBackground = GetStockObject(HOLLOW_BRUSH);
-		dlgkid.hInstance = inst;
-		RegisterClass(&dlgkid);
-	};
-*/
-
     config->hwnd_mainwindow = CreateWindow(APPNAME, WINDOWTITLE,
 					   WS_OVERLAPPED | WS_CAPTION |
 					   WS_SYSMENU | WS_ICONIC,
@@ -613,13 +627,13 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
     /* Set up a system tray icon */
 #ifdef WINDOWS_NT351_COMPATIBLE
     if (config->have_shell)
-#endif				/* WINDOWS_NT351_COMPATIBLE */
+#endif /* WINDOWS_NT351_COMPATIBLE */
 	add_tray_icon(config->hwnd_mainwindow);
 
     /* Create popup menu */
 #ifdef WINDOWS_NT351_COMPATIBLE
     if (config->have_shell)
-#endif				/* WINDOWS_NT351_COMPATIBLE */
+#endif /* WINDOWS_NT351_COMPATIBLE */
 	config->systray_menu = CreatePopupMenu();
 #ifdef WINDOWS_NT351_COMPATIBLE
     else {
@@ -632,16 +646,16 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 		   (UINT) config->systray_menu, WINDOWTITLE "...");
 	DrawMenuBar(config->hwnd_mainwindow);
     };
-#endif				/* WINDOWS_NT351_COMPATIBLE */
+#endif /* WINDOWS_NT351_COMPATIBLE */
 
 #ifdef WINDOWS_NT351_COMPATIBLE
     if (config->have_shell)
-#endif				/* WINDOWS_NT351_COMPATIBLE */
+#endif /* WINDOWS_NT351_COMPATIBLE */
 	ShowWindow(config->hwnd_mainwindow, SW_HIDE);
 #ifdef WINDOWS_NT351_COMPATIBLE
     else
 	ShowWindow(config->hwnd_mainwindow, SW_SHOWMINIMIZED);
-#endif				/* WINDOWS_NT351_COMPATIBLE */
+#endif /* WINDOWS_NT351_COMPATIBLE */
 
     /*
      * register all hot keys.
@@ -693,6 +707,14 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	    };
 	};
     };
+    
+    /*
+     * find all previously started putty sessions and fill 'em into process
+     * records table.
+     */
+    {
+	find_existing_processes();
+    };
 
     /*
      * work over all startup autorun session.
@@ -705,7 +727,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
      */
 #ifdef WINDOWS_NT351_COMPATIBLE
     if (config->have_shell)
-#endif				/* WINDOWS_NT351_COMPATIBLE */
+#endif /* WINDOWS_NT351_COMPATIBLE */
     {
 //              DWORD flags;
 
@@ -721,43 +743,17 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 */
     };
 
-    while (GetMessage(&msg, NULL, 0, 0)) {
-	DispatchMessage(&msg);
-
-	wait = MsgWaitForMultipleObjects(nprocesses, process_handles,
-					 FALSE, INFINITE, QS_ALLINPUT);
-	if (wait == WAIT_OBJECT_0 + nprocesses)
-	    continue;
-	else if (wait >= WAIT_OBJECT_0
-		 && wait < (WAIT_OBJECT_0 + nprocesses)) {
-	    HANDLE hprocess;
-	    struct process_record *pr;
-
-	    /*
-	     * process is dead, we need to clean up after it.
-	     */
-	    wait -= WAIT_OBJECT_0;
-	    hprocess = process_handles[wait];
-	    pr = process_records[wait];
-	    item_remove((void *) &process_handles, &nprocesses, hprocess);
-	    nprocesses++;
-	    item_remove((void *) &process_records, &nprocesses, pr);
-	    CloseHandle(hprocess);
-	    if (pr->path)
-		free(pr->path);
-	    free(pr);
-	};
-    };
+    main_message_loop();
 
 #ifdef WINDOWS_NT351_COMPATIBLE
     if (config->have_shell)
-#endif				/* WINDOWS_NT351_COMPATIBLE */
+#endif /* WINDOWS_NT351_COMPATIBLE */
 //              InternetCloseHandle(hinternet);
 
 	/*
 	 * work over all quit auto-run session.
 	 */
-	launch_autoruns("", AUTORUN_WHEN_QUIT);
+	launch_autoruns("", AUTORUN_WHEN_STOP);
 
     /*
      * show up all hidden putty windows if applicable.
@@ -796,7 +792,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
     /* Clean up the system tray icon */
 #ifdef WINDOWS_NT351_COMPATIBLE
     if (config->have_shell)
-#endif				/* WINDOWS_NT351_COMPATIBLE */
+#endif /* WINDOWS_NT351_COMPATIBLE */
     {
 	NOTIFYICONDATA tnid;
 
@@ -808,8 +804,6 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
     }
 
     DestroyMenu(config->systray_menu);
-
-//      UnregisterClass("PLaunchTransparentChildDialog", config->hinst);
 
     ses_finish_session_root(&config->sessionroot);
 

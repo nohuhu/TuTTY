@@ -1,3 +1,12 @@
+/*
+ * PLaunch: a convenient PuTTY launching and session-management utility.
+ * Distributed under MIT license, same as PuTTY itself.
+ * (c) 2004-2006 dwalin <dwalin@dwalin.ru>
+ * Portions (c) Simon Tatham.
+ *
+ * Window List Box Dialog implementation file.
+ */
+
 #include "plaunch.h"
 #include <stdio.h>
 #include "entry.h"
@@ -78,7 +87,7 @@ static void refresh_listbox(HWND listbox, struct windowlist *wl)
 
     SendMessage(listbox, (UINT) LB_RESETCONTENT, 0, 0);
 
-    EnumWindows(CountPuTTYWindows, (LPARAM) & wl->nhandles);
+    EnumWindows(CountPuTTYWindows, (LPARAM) &wl->nhandles);
 
     if (wl->nhandles == 0) {
 	wl->handles = NULL;

@@ -1,3 +1,12 @@
+/*
+ * Session abstraction layer for TuTTY and PLaunch.
+ * Distributed under MIT license, same as PuTTY itself.
+ * (c) 2005, 2006 dwalin <dwalin@dwalin.ru>
+ * Portions (c) Simon Tatham.
+ *
+ * Windows-specific registry storage header file.
+ */
+
 #ifndef REGISTRY_H
 #define REGISTRY_H
 
@@ -13,7 +22,11 @@ int reg_make_path_specific(char *root, char *parent, char *path,
 
 void *reg_open_session_r(char *keyname);
 void *reg_open_session_w(char *keyname);
-void reg_close_session(void *handle);
+
+void *reg_open_key_r(char *keyname);
+void *reg_open_key_w(char *keyname);
+
+void reg_close_key(void *handle);
 
 int reg_copy_session(char *from, char *to);
 

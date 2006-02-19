@@ -1,3 +1,12 @@
+/*
+ * PLaunch: a convenient PuTTY launching and session-management utility.
+ * Distributed under MIT license, same as PuTTY itself.
+ * (c) 2004-2006 dwalin <dwalin@dwalin.ru>
+ * Portions (c) Simon Tatham.
+ *
+ * License Dialog Box implementation file.
+ */
+
 #include "plaunch.h"
 #include "resource.h"
 #include "dlgtmpl.h"
