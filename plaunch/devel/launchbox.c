@@ -1933,6 +1933,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
     static HMENU context_menu = NULL;
     static unsigned int cut_or_copy = 0;
     static unsigned int morestate;
+    static unsigned int cancel_context_menu = FALSE;
     static HTREEITEM editing_now = NULL;
     static HTREEITEM copying_now = NULL;
     static HTREEITEM dragging_now = NULL;
@@ -2251,6 +2252,11 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 	    DWORD msg;
 	    HTREEITEM item;
 
+	    if (cancel_context_menu) {
+		cancel_context_menu = FALSE;
+		break;
+	    };
+
 	    pt.x = ((int)(short)LOWORD(lParam));
 	    pt.y = ((int)(short)HIWORD(lParam));
 
@@ -2300,15 +2306,17 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		x = LOWORD(lParam);
 		y = HIWORD(lParam);
 
-		ImageList_DragMove(x, y);
+		ImageList_DragMove(x - 32, y - 25);
+		ImageList_DragShowNolock(FALSE);
 
-		hit.pt.x = x;
-		hit.pt.y = y;
+		hit.pt.x = x - 20;
+		hit.pt.y = y - 20;
 
 		if ((target = TreeView_HitTest(treeview, &hit))) {
 		    HTREEITEM visible;
 		    RECT r;
 
+//		    TreeView_SelectDropTarget(treeview, target);
 		    GetClientRect(treeview, &r);
 		    height = TreeView_GetItemHeight(treeview);
 //                                      ScreenToClient(treeview, &hit.pt);
@@ -2325,13 +2333,14 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		    else
 			visible = target;
 		    if (visible)
-			TreeView_EnsureVisible(treeview, target);
-		    ImageList_DragShowNolock(FALSE);
+			TreeView_EnsureVisible(treeview, visible);
+//		    ImageList_DragShowNolock(FALSE);
 //                                      TreeView_SetInsertMark(treeview, target, TRUE);
 		    TreeView_SelectDropTarget(treeview, target);
 //                                      TreeView_SelectItem(treeview, target);
-		    ImageList_DragShowNolock(TRUE);
+//		    ImageList_DragShowNolock(TRUE);
 		};
+		ImageList_DragShowNolock(TRUE);
 	    };
 	}
 	break;
@@ -2339,30 +2348,37 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
     case WM_RBUTTONUP:
 	if (dragging_now) {
 	    HTREEITEM target;
-	    TVHITTESTINFO hit;
 
 //                      TreeView_SetInsertMark(treeview, NULL, TRUE);
+	    ImageList_DragLeave(treeview);
 	    ImageList_EndDrag();
-	    ReleaseCapture();
-	    ShowCursor(TRUE);
 	    copying_now = dragging_now;
 	    dragging_now = NULL;
 	    ImageList_Destroy(draglist);
 	    draglist = NULL;
+	    ReleaseCapture();
+	    ShowCursor(TRUE);
 
-	    hit.pt.x = LOWORD(lParam);
-	    hit.pt.y = HIWORD(lParam);
+//	    hit.pt.x = LOWORD(lParam);
+//	    hit.pt.y = HIWORD(lParam);
 
-	    if ((target = TreeView_HitTest(treeview, &hit))) {
+//	    if ((target = TreeView_HitTest(treeview, &hit))) {
+	    if (target = TreeView_GetDropHilight(treeview)) {
+		TreeView_SelectItem(treeview, target);
+		TreeView_SelectDropTarget(treeview, NULL);
 		switch (msg) {
 		case WM_LBUTTONUP:
 		    cut_or_copy = 1;	// cut;
 		    break;
 		case WM_RBUTTONUP:
 		    {
+//			TVHITTESTINFO hit;
 			HMENU menu;
 			RECT r;
+			POINT pt;
 			int ret, height, flags;
+
+			cancel_context_menu = TRUE;
 
 			menu = CreatePopupMenu();
 			AppendMenu(menu, MF_STRING, IDCANCEL, "Cancel");
@@ -2375,18 +2391,17 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			GetClientRect(treeview, &r);
 			height = TreeView_GetItemHeight(treeview);
 
-			flags =
-			    TPM_RIGHTBUTTON | TPM_RETURNCMD |
-			    TPM_LEFTALIGN;
-			if ((hit.pt.y >= 0) && (hit.pt.y <= height))
-			    flags |= TPM_TOPALIGN;
-			else if ((hit.pt.y >= (r.bottom - height))
-				 && (hit.pt.y <= r.bottom))
-			    flags |= TPM_BOTTOMALIGN;
-			ClientToScreen(treeview, &hit.pt);
+			pt.x = LOWORD(lParam) - 20;
+			pt.y = HIWORD(lParam) - 20;
 
-			if (ret = TrackPopupMenu(menu, flags,
-						 hit.pt.x, hit.pt.y, 0,
+			flags = TPM_RIGHTBUTTON | TPM_RETURNCMD | TPM_LEFTALIGN;
+			if ((pt.y >= 0) && (pt.y <= height))
+			    flags |= TPM_TOPALIGN;
+			else if ((pt.y >= (r.bottom - height)) && (pt.y <= r.bottom))
+			    flags |= TPM_BOTTOMALIGN;
+			ClientToScreen(treeview, &pt);
+
+			if (ret = TrackPopupMenu(menu, flags, pt.x, pt.y, 0,
 						 hwnd, NULL)) {
 			    switch (ret) {
 			    case IDCANCEL:
@@ -2406,10 +2421,10 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		    };
 		    break;
 		};
-		TreeView_SelectItem(treeview, target);
 		SendMessage(hwnd, WM_COMMAND, (WPARAM) IDM_CTXM_PASTE, 0);
 		return FALSE;
 	    };
+	    return FALSE;
 	};
 	break;
     case WM_COMMAND:
@@ -2904,22 +2919,20 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 	    case TVN_BEGINDRAG:
 	    case TVN_BEGINRDRAG:
 		{
-		    RECT r;
-		    POINT pt;
-		    DWORD indent;
+//		    RECT r;
+//		    POINT pt;
+//		    DWORD indent;
 		    LPNMTREEVIEW nmtv = (LPNMTREEVIEW) lParam;
 
-		    draglist =
-			TreeView_CreateDragImage(treeview,
-						 nmtv->itemNew.hItem);
-		    TreeView_GetItemRect(treeview, nmtv->itemNew.hItem, &r,
-					 TRUE);
-		    indent = TreeView_GetIndent(treeview);
+		    draglist = TreeView_CreateDragImage(treeview, nmtv->itemNew.hItem);
+//		    TreeView_GetItemRect(treeview, nmtv->itemNew.hItem, &r, TRUE);
+//		    indent = TreeView_GetIndent(treeview);
 
 		    ImageList_BeginDrag(draglist, 0, 0, 0);
-		    GetCursorPos(&pt);
-		    ScreenToClient(hwnd, &pt);
-		    ImageList_DragEnter(treeview, pt.x, pt.y);
+//		    GetCursorPos(&pt);
+//		    ScreenToClient(hwnd, &pt);
+//		    ImageList_DragEnter(treeview, pt.x, pt.y);
+		    ImageList_DragEnter(treeview, nmtv->ptDrag.x, nmtv->ptDrag.y);
 
 		    ShowCursor(FALSE);
 		    SetCapture(hwnd);
