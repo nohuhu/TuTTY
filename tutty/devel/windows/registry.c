@@ -1,3 +1,12 @@
+/*
+ * Session abstraction layer for TuTTY and PLaunch.
+ * Distributed under MIT license, same as PuTTY itself.
+ * (c) 2005, 2006 dwalin <dwalin@dwalin.ru>
+ * Portions (c) Simon Tatham.
+ *
+ * Windows-specific registry storage implementation file.
+ */
+
 #include <windows.h>
 #include <stdio.h>
 #if !defined(_DEBUG) && defined(MINIRTL)
@@ -92,12 +101,27 @@ int reg_make_path_specific(char *root, char *parent, char *path,
 
 void *reg_open_session_r(char *keyname)
 {
-    HKEY key = 0;
     char munge[BUFSIZE];
 
     mungestr(keyname, munge, BUFSIZE);
 
-    if (RegOpenKeyEx(HKEY_CURRENT_USER, munge, 0, KEY_READ, &key) !=
+    return reg_open_key_r(munge);
+};
+
+void *reg_open_session_w(char *keyname)
+{
+    char munge[BUFSIZE];
+
+    mungestr(keyname, munge, BUFSIZE);
+
+    return reg_open_key_w(munge);
+};
+
+void *reg_open_key_r(char *keyname)
+{
+    HKEY key = 0;
+
+    if (RegOpenKeyEx(HKEY_CURRENT_USER, keyname, 0, KEY_READ, &key) !=
 	ERROR_SUCCESS) {
 	RegCloseKey(key);
 	return NULL;
@@ -106,16 +130,13 @@ void *reg_open_session_r(char *keyname)
     return (void *) key;
 };
 
-void *reg_open_session_w(char *keyname)
+void *reg_open_key_w(char *keyname)
 {
     HKEY key = 0;
-    char munge[BUFSIZE];
 
-    mungestr(keyname, munge, BUFSIZE);
-
-    if (RegOpenKeyEx(HKEY_CURRENT_USER, munge, 0, 
+    if (RegOpenKeyEx(HKEY_CURRENT_USER, keyname, 0, 
 		     KEY_ALL_ACCESS, &key) != ERROR_SUCCESS &&
-	RegCreateKeyEx(HKEY_CURRENT_USER, munge, 0, 
+	RegCreateKeyEx(HKEY_CURRENT_USER, keyname, 0, 
 		     NULL, REG_OPTION_NON_VOLATILE,
 		     KEY_ALL_ACCESS, NULL, &key, NULL) != ERROR_SUCCESS)
 	return NULL;
@@ -123,7 +144,7 @@ void *reg_open_session_w(char *keyname)
     return (void *) key;
 };
 
-void reg_close_session(void *handle)
+void reg_close_key(void *handle)
 {
     RegCloseKey((HKEY) handle);
 };
@@ -239,7 +260,10 @@ int reg_copy_session(char *frompath, char *topath)
 	};
     };
 
-    return FALSE;
+    RegCloseKey(key1);
+    RegCloseKey(key2);
+
+    return TRUE;
 };
 
 struct enumsettings {

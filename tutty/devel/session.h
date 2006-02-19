@@ -1,3 +1,12 @@
+/*
+ * Session abstraction layer for TuTTY and PLaunch.
+ * Distributed under MIT license, same as PuTTY itself.
+ * (c) 2005, 2006 dwalin <dwalin@dwalin.ru>
+ * Portions (c) Simon Tatham.
+ *
+ * Session abstraction header file.
+ */
+
 #ifndef SESSION_H
 #define SESSION_H
 
