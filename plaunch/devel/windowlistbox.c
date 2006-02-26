@@ -92,8 +92,8 @@ static void refresh_listbox(HWND listbox, struct windowlist *wl)
     if (wl->nhandles == 0) {
 	wl->handles = NULL;
     } else {
-	unsigned char *buf, *title, visible;
-	unsigned int len;
+	unsigned char *buf, *title, *visible;
+	unsigned int len, item;
 
 	wl->handles = (HWND *) malloc(wl->nhandles * sizeof(HWND));
 	memset(wl->handles, 0, wl->nhandles * sizeof(HWND));
@@ -107,12 +107,14 @@ static void refresh_listbox(HWND listbox, struct windowlist *wl)
 	    memset(buf, 0, BUFSIZE);
 
 	    if (len = GetWindowText(wl->handles[i], buf, BUFSIZE)) {
-		visible = IsWindowVisible(wl->handles[i]) ? 'v' : 'h';
-		sprintf(title, "[%c] %s", visible, buf);
+		visible = IsWindowVisible(wl->handles[i]) ? "" : " (Hidden)";
+		sprintf(title, "%s%s", buf, visible);
 	    } else
 		title[0] = '\0';
 
-	    SendMessage(listbox, (UINT) LB_ADDSTRING, 0, (LPARAM) title);
+	    item = SendMessage(listbox, LB_ADDSTRING, 0, (LPARAM) title);
+//	    data = dupstr(buf);
+//	    SendMessage(listbox, LB_SETITEMDATA, (WPARAM) item, (LPARAM) data);
 	};
 
 	free(buf);
@@ -130,6 +132,7 @@ static int CALLBACK WindowListBoxProc(HWND hwnd, UINT msg,
     static HWND listbox;
     static HWND hidebutton, showbutton, killbutton;
     static HMENU context_menu = NULL;
+    static UINT iconx = 0, icony = 0, cxmenucheck = 0, cymenucheck = 0;
 
     switch (msg) {
     case WM_INITDIALOG:
@@ -137,6 +140,11 @@ static int CALLBACK WindowListBoxProc(HWND hwnd, UINT msg,
 	if (!config->have_shell)
 	    center_window(hwnd);
 #endif				/* WINDOWS_NT351_COMPATIBLE */
+
+	iconx = config->iconx;
+	icony = config->icony;
+	cxmenucheck = GetSystemMetrics(SM_CXMENUCHECK);
+	cymenucheck = GetSystemMetrics(SM_CYMENUCHECK);
 
 	hwnd_windowlistbox = hwnd;
 	SendMessage(hwnd, WM_SETICON, (WPARAM) ICON_BIG,
@@ -364,6 +372,105 @@ static int CALLBACK WindowListBoxProc(HWND hwnd, UINT msg,
 	default:
 	    return -1;
 	};
+    case WM_MEASUREITEM:
+	{
+	    LPMEASUREITEMSTRUCT mis;
+	    HDC hdc;
+	    HWND ctl;
+	    SIZE size;
+	    char *name;
+	    int len = 0;
+	    UINT y, y1;
+
+	    mis = (LPMEASUREITEMSTRUCT) lParam;
+
+	    len = SendDlgItemMessage(hwnd, mis->CtlID, LB_GETTEXTLEN, mis->itemID, 0);
+
+	    if (len == 0)
+		return FALSE;
+
+	    name = (char *) malloc(len + 1);
+	    SendDlgItemMessage(hwnd, mis->CtlID, LB_GETTEXT, mis->itemID, (LPARAM) name);
+
+	    if (!name)
+		return FALSE;
+
+	    ctl = GetDlgItem(hwnd, mis->CtlID);
+	    hdc = GetDC(ctl);
+	    GetTextExtentPoint32(hdc, name, len, &size);
+	    ReleaseDC(ctl, hdc);
+
+	    mis->itemWidth = size.cx + iconx + 7 + cxmenucheck;
+	    y1 = icony > (UINT) size.cy ? icony : size.cy;
+	    y = cymenucheck > y1 ? cymenucheck : y1;
+	    mis->itemHeight = y + 2;
+
+	    return TRUE;
+	};
+	break;
+    case WM_DRAWITEM:
+	{
+	    LPDRAWITEMSTRUCT dis;
+	    HWND pwin = NULL;
+	    HICON icon = NULL;
+	    SIZE size;
+	    char *name;
+	    unsigned int selected = 0, len, x, y;
+
+	    dis = (LPDRAWITEMSTRUCT) lParam;
+
+	    len = SendMessage(dis->hwndItem, LB_GETTEXTLEN, dis->itemID, 0);
+
+	    if (len == 0)
+		return FALSE;
+
+	    name = (char *) malloc(len + 1);
+	    SendMessage(dis->hwndItem, LB_GETTEXT, dis->itemID, (LPARAM) name);
+
+	    if (!name)
+		return FALSE;
+
+	    if (dis->itemState & ODS_SELECTED) {
+		SetTextColor(dis->hDC, GetSysColor(COLOR_HIGHLIGHTTEXT));
+		SetBkColor(dis->hDC, GetSysColor(COLOR_HIGHLIGHT));
+		selected = TRUE;
+	    };
+
+	    GetTextExtentPoint32(dis->hDC, name, len, &size);
+
+	    x = dis->rcItem.left + config->iconx + 7;
+	    y = dis->rcItem.top +
+		((dis->rcItem.bottom - dis->rcItem.top - size.cy) / 2);
+
+	    ExtTextOut(dis->hDC, x, y, ETO_OPAQUE, &dis->rcItem, name, len, NULL);
+
+	    x = dis->rcItem.left + 2;
+	    y = dis->rcItem.top + 1;
+
+	    if (wl.handles)
+		pwin = wl.handles[dis->itemID];
+
+	    if (pwin) {
+		icon = (HICON) GetClassLong(pwin, GCL_HICONSM);
+
+		if (!icon)
+		    icon = (HICON) GetClassLong(pwin, GCL_HICON);
+	    };
+
+	    if (!icon)
+		icon = config->main_icon;
+
+	    DrawIconEx(dis->hDC, x, y, icon, iconx, icony, 0, NULL, DI_NORMAL);
+	    DestroyIcon(icon);
+
+	    if (selected) {
+		SetTextColor(dis->hDC, GetSysColor(COLOR_MENUTEXT));
+		SetBkColor(dis->hDC, GetSysColor(COLOR_MENU));
+	    };
+
+	    return TRUE;
+	};
+	break;
     default:
 	return FALSE;
     };

@@ -36,6 +36,9 @@ static char *lastname(char *in)
     return p + 1;
 };
 
+extern BOOL CALLBACK CountPuTTYWindows(HWND hwnd, LPARAM lParam);
+extern BOOL CALLBACK EnumPuTTYWindows(HWND hwnd, LPARAM lParam);
+
 static unsigned int add_tray_icon(HWND hwnd)
 {
     unsigned int ret;
@@ -238,6 +241,29 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 		!strcmp(buf, PUTTYTEL) ||
 		!strcmp(buf, TUTTYTEL))
 		ShowWindow(fwin, SW_HIDE);
+	};
+	break;
+    case WM_CYCLEWINDOW:
+	{
+	    struct windowlist wl;
+	    HWND pwin;
+
+	    memset(&wl, 0, sizeof(struct windowlist));
+
+	    EnumWindows(CountPuTTYWindows, (LPARAM) &wl.nhandles);
+
+	    if (!wl.nhandles)
+		break;
+
+	    wl.handles = (HWND *) malloc(wl.nhandles * sizeof(HWND));
+	    memset(wl.handles, 0, wl.nhandles * sizeof(HWND));
+
+	    EnumWindows(EnumPuTTYWindows, (LPARAM) &wl);
+
+	    pwin = wl.handles[wl.nhandles - 1];
+
+	    ShowWindow(pwin, SW_SHOW);
+	    SetForegroundWindow(pwin);
 	};
 	break;
     case WM_NETWORKSTART:
@@ -488,6 +514,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 {
     WNDCLASS wndclass;
     OSVERSIONINFO osv;
+    HIMAGELIST small_list, large_list;
 //      HINTERNET hinternet = NULL;
 
 #ifndef _DEBUG
@@ -548,7 +575,6 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
      * with system's.
      */
     {
-	HIMAGELIST small_list, large_list;
 	HICON icon;
 	HMODULE shell32 = 0;
 
@@ -580,10 +606,6 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	    config->img_session =
 		ImageList_AddIcon(config->image_list, config->main_icon);
 
-	    if (osv.dwPlatformId == VER_PLATFORM_WIN32_NT) {
-		ImageList_Destroy(large_list);
-		ImageList_Destroy(small_list);
-	    };
 	    FreeSystemImageLists(shell32);
 
 	}
@@ -819,6 +841,16 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 
 	free(config);
     }
+
+    /*
+     * clean up image lists
+     */
+    {
+	if (osv.dwPlatformId == VER_PLATFORM_WIN32_NT) {
+	    ImageList_Destroy(large_list);
+	    ImageList_Destroy(small_list);
+	};
+    };
 
     return 0;
 };

@@ -47,10 +47,9 @@
 #define	IDM_EMPTY		0x0200
 
 #define IDM_SESSION_BASE	0x0300
-#define IDM_SESSION_MAX		0x12ff
+#define IDM_SESSION_MAX		0x1fff
 
-#define	IDM_RUNNING_BASE	0x1300
-#define	IDM_RUNNING_MAX		0x1fff
+#define	IDM_RUNNING_BASE	0x2000
 
 #define IDI_MAINICON		100
 

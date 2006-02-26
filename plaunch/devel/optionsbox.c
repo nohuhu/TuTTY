@@ -246,13 +246,15 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 		ofn.lStructSize = sizeof(OPENFILENAME);
 		ofn.hwndOwner = hwnd;
 		ofn.lpstrFilter =
-		    "PuTTY executable\0tutty.exe;tuttytel.exe;putty.exe;puttytel.exe\0All Files\0*.*\0\0";
+		    "PuTTY/TuTTY executable\0tutty.exe;tuttytel.exe;putty.exe;puttytel.exe\0All Files\0*.*\0\0";
+		ofn.nFilterIndex = 1;
 		ofn.lpstrFile = buf;
+		buf[0] = '\0';
 		ofn.nMaxFile = BUFSIZE;
 		ofn.lpstrTitle = "Locate PuTTY executable";
 		ofn.Flags =
 		    OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR |
-		    OFN_PATHMUSTEXIST;
+		    OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_LONGNAMES;
 
 		if (GetOpenFileName(&ofn)) {
 		    strcpy(config->putty_path, buf);

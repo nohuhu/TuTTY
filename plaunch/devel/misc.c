@@ -327,6 +327,7 @@ HMENU menu_addrunning(HMENU menu)
 
     for (i = 0; i < wl.nhandles; i++) {
 	if (wl.handles[i]) {
+/*
 	    if (IsWindowVisible(wl.handles[i]))
 		h = 'v';
 	    else
@@ -335,6 +336,10 @@ HMENU menu_addrunning(HMENU menu)
 	    sprintf(buf2, "[%c] %s", h, buf);
 	    AppendMenu(menu, MF_STRING,
 		       IDM_RUNNING_BASE + (UINT) wl.handles[i], buf2);
+*/
+	    AppendMenu(menu, MF_OWNERDRAW, 
+			IDM_RUNNING_BASE + (UINT) wl.handles[i], 
+			(LPCTSTR) wl.handles[i]);
 	};
     };
 
