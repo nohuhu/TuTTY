@@ -41,12 +41,29 @@ void __cdecl free(void *);
 void *__cdecl memmove(void *, const void *, size_t);
 void *__cdecl memset(void *, int, size_t);
 
+char *minirtl_strrchr(const char *, int);
+char *minirtl_strstr(const char *str1, const char *str2);
+
+int minirtl_atoi(char *);
+char *minirtl_getenv(const char *option);
+
+int minirtl_snprintf(char *, size_t, const char *, ...);
+
 #define	sprintf	wsprintf
 #define	strlen	lstrlen
 #define	strcpy	lstrcpy
+#define strncpy lstrcpyn
 #define	strcmp	lstrcmp
 #define stricmp	lstrcmpi
 #define	strcat	lstrcat
+#define strrchr	minirtl_strrchr
+#define _snprintf minirtl_snprintf
+#define atoi    minirtl_atoi
+//#define _vsnprintf StringCbVPrintf
+#define strstr	minirtl_strstr
+#define	getenv	minirtl_getenv
+
+//#include <strsafe.h>
 
 #endif				/* _DEBUG && MINIRTL */
 

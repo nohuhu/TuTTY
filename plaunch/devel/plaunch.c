@@ -125,23 +125,30 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 				 wParam, lParam, 0, hwnd, NULL);
 	    PostMessage(hwnd, WM_NULL, 0, 0);
 
-	    if (ret > IDM_SESSION_BASE && ret < IDM_SESSION_MAX) {
+	    if (ret >= IDM_SESSION_BASE && ret <= IDM_SESSION_MAX) {
 		MENUITEMINFO mii;
 
 		memset(&mii, 0, sizeof(MENUITEMINFO));
 		mii.cbSize = sizeof(MENUITEMINFO);
 		mii.fMask = MIIM_DATA;
-		if (GetMenuItemInfo(config->systray_menu, ret, FALSE, &mii)
-		    && mii.dwItemData != 0)
+		if (GetMenuItemInfo(config->systray_menu, ret, FALSE, &mii) &&
+		    mii.dwItemData != 0)
 		    SendMessage(hwnd, WM_LAUNCHPUTTY,
 				(WPARAM) HOTKEY_ACTION_LAUNCH,
 				(LPARAM) mii.dwItemData);
-	    } else if (ret > IDM_RUNNING_BASE) {
+	    } else if (ret >= IDM_RUNNING_BASE && ret <= IDM_RUNNING_MAX) {
+		MENUITEMINFO mii;
 		HWND window;
 
-		window = (HWND) (ret - IDM_RUNNING_BASE);
-		ShowWindow(window, SW_NORMAL);
-		SetForegroundWindow(window);
+		memset(&mii, 0, sizeof(MENUITEMINFO));
+		mii.cbSize = sizeof(MENUITEMINFO);
+		mii.fMask = MIIM_DATA;
+		if (GetMenuItemInfo(config->systray_menu, ret, FALSE, &mii) &&
+		    mii.dwItemData != 0) {
+		    window = (HWND) mii.dwItemData;
+		    ShowWindow(window, SW_NORMAL);
+		    SetForegroundWindow(window);
+		};
 	    } else
 		SendMessage(hwnd, WM_COMMAND, (WPARAM) ret, 0);
 
@@ -282,11 +289,21 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	    LPMEASUREITEMSTRUCT mis;
 	    HDC hdc;
 	    SIZE size;
-	    char *name;
+	    char *name, *visible, buf[BUFSIZE], buf2[BUFSIZE];
+	    HWND pwin;
 	    UINT y, y1;
 
 	    mis = (LPMEASUREITEMSTRUCT) lParam;
-	    name = lastname((char *) mis->itemData);
+
+	    if (mis->itemID >= IDM_RUNNING_BASE &&
+		mis->itemID <= IDM_RUNNING_MAX) {
+		pwin = (HWND) mis->itemData;
+		GetWindowText(pwin, buf, BUFSIZE);
+		visible = IsWindowVisible(pwin) ? "" : " [Hidden]";
+		sprintf(buf2, "%s%s", buf, visible);
+		name = buf;
+	    } else
+		name = lastname((char *) mis->itemData);
 
 	    if (!name)
 		return FALSE;
@@ -308,12 +325,66 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	    LPDRAWITEMSTRUCT dis;
 	    HICON icon;
 	    SIZE size;
-	    char *name, *path;
-	    unsigned int selected = 0, x, y;
+	    HWND pwin;
+	    char *name, *path, *visible, buf[BUFSIZE], buf2[BUFSIZE];
+	    unsigned int selected = 0, x, y, idestroy;
 
 	    dis = (LPDRAWITEMSTRUCT) lParam;
-	    path = (char *) dis->itemData;
-	    name = lastname(path);
+
+	    if (dis->itemID >= IDM_RUNNING_BASE &&
+		dis->itemID <= IDM_RUNNING_MAX) {
+		pwin = (HWND) dis->itemData;
+		GetWindowText(pwin, buf, BUFSIZE);
+		visible = IsWindowVisible(pwin) ? "" : " [Hidden]";
+		sprintf(buf2, "%s%s", buf, visible);
+		name = buf2;
+		path = buf2;
+		icon = (HICON) GetClassLong(pwin, GCL_HICONSM);
+		
+		if (!icon)
+		    icon = (HICON) GetClassLong(pwin, GCL_HICON);
+
+		idestroy = FALSE;
+	    } else {
+		path = (char *) dis->itemData;
+		name = lastname(path);
+
+		if (ses_is_folder(&config->sessionroot, path)) {
+		    if (selected)
+			icon = ImageList_ExtractIcon(0, config->image_list,
+						    config->img_open);
+		    else
+			icon = ImageList_ExtractIcon(0, config->image_list,
+						    config->img_closed);
+		} else {
+		    char sesicon[256];
+
+		    icon = NULL;
+
+		    if (ses_read_s(&config->sessionroot, path, SESSIONICON, 
+				    "", sesicon, 255) &&
+			sesicon[0]) {
+			char iname[256], *comma;
+			int iindex;
+
+			iname[0] = '\0';
+			iindex = 0;
+
+			comma = strrchr(sesicon, ',');
+			if (comma) {
+			    comma[0] = '\0';
+			    *comma++;
+			    iindex = atoi(comma);
+			    icon = ExtractIcon(config->hinst, sesicon, iindex);
+			};
+		    };
+
+		    if (!icon)
+			icon = ImageList_ExtractIcon(0, config->image_list,
+						    config->img_session);
+		};
+		idestroy = TRUE;
+	    };
 
 	    if (!name)
 		return FALSE;
@@ -336,44 +407,11 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	    x = dis->rcItem.left + 2;
 	    y = dis->rcItem.top + 1;
 
-	    if (ses_is_folder(&config->sessionroot, path)) {
-		if (selected)
-		    icon = ImageList_ExtractIcon(0, config->image_list,
-					config->img_open);
-		else
-		    icon = ImageList_ExtractIcon(0, config->image_list,
-					config->img_closed);
-	    } else {
-		char sesicon[256];
-
-		icon = NULL;
-
-		if (ses_read_s(&config->sessionroot, path, SESSIONICON, 
-		    "", sesicon, 255)
-		    && sesicon[0]) {
-		    char iname[256], *comma;
-		    int iindex;
-
-		    iname[0] = '\0';
-		    iindex = 0;
-
-		    comma = strrchr(sesicon, ',');
-		    if (comma) {
-			comma[0] = '\0';
-			*comma++;
-			iindex = atoi(comma);
-			icon = ExtractIcon(config->hinst, sesicon, iindex);
-		    };
-		};
-
-		if (!icon)
-		    icon =
-			ImageList_ExtractIcon(0, config->image_list,
-					      config->img_session);
-	    };
 	    DrawIconEx(dis->hDC, x, y, icon, iconx, icony, 0, NULL,
 		       DI_NORMAL);
-	    DestroyIcon(icon);
+
+	    if (idestroy)
+		DestroyIcon(icon);
 
 	    if (selected) {
 		SetTextColor(dis->hDC, GetSysColor(COLOR_MENUTEXT));

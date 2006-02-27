@@ -304,7 +304,7 @@ extern unsigned int nhandles;
 
 HMENU menu_addrunning(HMENU menu)
 {
-    unsigned int i;
+    unsigned int i, id;
     struct windowlist wl;
     char buf[BUFSIZE], buf2[BUFSIZE], h;
 
@@ -317,7 +317,7 @@ HMENU menu_addrunning(HMENU menu)
 
     if (!wl.nhandles) {
 	AppendMenu(menu, MF_STRING | MF_GRAYED, IDM_EMPTY,
-		   "(No running sessions)");
+		   "(No running instances)");
 	return menu;
     };
 
@@ -326,6 +326,11 @@ HMENU menu_addrunning(HMENU menu)
     EnumWindows(EnumPuTTYWindows, (LPARAM) & wl);
 
     for (i = 0; i < wl.nhandles; i++) {
+	id = IDM_RUNNING_BASE + i;
+
+	if (id > IDM_RUNNING_MAX)
+	    break;
+
 	if (wl.handles[i]) {
 /*
 	    if (IsWindowVisible(wl.handles[i]))
@@ -337,9 +342,7 @@ HMENU menu_addrunning(HMENU menu)
 	    AppendMenu(menu, MF_STRING,
 		       IDM_RUNNING_BASE + (UINT) wl.handles[i], buf2);
 */
-	    AppendMenu(menu, MF_OWNERDRAW, 
-			IDM_RUNNING_BASE + (UINT) wl.handles[i], 
-			(LPCTSTR) wl.handles[i]);
+	    AppendMenu(menu, MF_OWNERDRAW, id, (LPCTSTR) wl.handles[i]);
 	};
     };
 
@@ -358,8 +361,10 @@ static void menu_free(HMENU menu)
 	submenu = GetSubMenu(menu, 0);
 	memset(&mii, 0, sizeof(MENUITEMINFO));
 	mii.cbSize = sizeof(MENUITEMINFO);
-	mii.fMask = MIIM_DATA;
-	if (GetMenuItemInfo(menu, 0, TRUE, &mii) && mii.dwItemData != 0)
+	mii.fMask = MIIM_DATA | MIIM_ID;
+	if (GetMenuItemInfo(menu, 0, TRUE, &mii) &&
+	    !(mii.wID >= IDM_RUNNING_BASE && mii.wID <= IDM_RUNNING_MAX) &&
+	    mii.dwItemData != 0)
 	    free((char *) mii.dwItemData);
 	DeleteMenu(menu, 0, MF_BYPOSITION);
 	if (submenu) {
@@ -395,7 +400,7 @@ HMENU menu_refresh(HMENU menu, char *root)
 
 	running = CreatePopupMenu();
 	running = menu_addrunning(running);
-	AppendMenu(menu, MF_POPUP, (UINT) running, "&Running sessions");
+	AppendMenu(menu, MF_POPUP, (UINT) running, "&Running instances");
     } else
 	menu = menu_addrunning(menu);
     AppendMenu(menu, MF_SEPARATOR, 0, 0);
@@ -546,38 +551,38 @@ unsigned int read_config(Config *cfg)
     reg_read_i(handle, PLAUNCH_HOTKEY_LB, 0, &hk);
 
     if (hk == 0)
-	hk = MAKELPARAM(MOD_WIN, 'P');
+	hk = HOTKEY_DEFAULT_LAUNCHBOX;
 
     config->hotkeys[HOTKEY_LAUNCHBOX].action = HOTKEY_ACTION_MESSAGE;
     config->hotkeys[HOTKEY_LAUNCHBOX].hotkey = hk;
-    config->hotkeys[HOTKEY_LAUNCHBOX].destination = (char *)WM_LAUNCHBOX;
+    config->hotkeys[HOTKEY_LAUNCHBOX].destination = (char *) WM_LAUNCHBOX;
 
     reg_read_i(handle, PLAUNCH_HOTKEY_WL, 0, &hk);
 
     if (hk == 0)
-	hk = MAKELPARAM(MOD_WIN, 'W');
+	hk = HOTKEY_DEFAULT_WINDOWLIST;
 
     config->hotkeys[HOTKEY_WINDOWLIST].action = HOTKEY_ACTION_MESSAGE;
     config->hotkeys[HOTKEY_WINDOWLIST].hotkey = hk;
-    config->hotkeys[HOTKEY_WINDOWLIST].destination = (char *)WM_WINDOWLIST;
+    config->hotkeys[HOTKEY_WINDOWLIST].destination = (char *) WM_WINDOWLIST;
 
     reg_read_i(handle, PLAUNCH_HOTKEY_HIDEWINDOW, 0, &hk);
 
     if (hk == 0)
-	hk = MAKELPARAM(MOD_WIN, 'H');
+	hk = HOTKEY_DEFAULT_HIDEWINDOW;
 
     config->hotkeys[HOTKEY_HIDEWINDOW].action = HOTKEY_ACTION_MESSAGE;
     config->hotkeys[HOTKEY_HIDEWINDOW].hotkey = hk;
-    config->hotkeys[HOTKEY_HIDEWINDOW].destination = (char *)WM_HIDEWINDOW;
+    config->hotkeys[HOTKEY_HIDEWINDOW].destination = (char *) WM_HIDEWINDOW;
 
     reg_read_i(handle, PLAUNCH_HOTKEY_CYCLEWINDOW, 0, &hk);
 
     if (hk == 0)
-	hk = MAKELPARAM(MOD_WIN, 'Q');
+	hk = HOTKEY_DEFAULT_CYCLEWINDOW;
 
     config->hotkeys[HOTKEY_CYCLEWINDOW].action = HOTKEY_ACTION_MESSAGE;
     config->hotkeys[HOTKEY_CYCLEWINDOW].hotkey = hk;
-    config->hotkeys[HOTKEY_CYCLEWINDOW].destination = (char *)WM_CYCLEWINDOW;
+    config->hotkeys[HOTKEY_CYCLEWINDOW].destination = (char *) WM_CYCLEWINDOW;
 
     config->nhotkeys = 4;
 
@@ -628,7 +633,7 @@ unsigned int save_config(Config *cfg, int what)
     };
 
     if (what & CFG_SAVE_HOTKEY_LB) {
-	if (config->hotkeys[HOTKEY_LAUNCHBOX].hotkey == MAKELPARAM(MOD_WIN, 'P'))
+	if (config->hotkeys[HOTKEY_LAUNCHBOX].hotkey == HOTKEY_DEFAULT_LAUNCHBOX)
 	    reg_delete_v(handle, PLAUNCH_HOTKEY_LB);
 	else
 	    reg_write_i(handle, PLAUNCH_HOTKEY_LB,
@@ -636,7 +641,7 @@ unsigned int save_config(Config *cfg, int what)
     };
 
     if (what & CFG_SAVE_HOTKEY_WL) {
-	if (config->hotkeys[HOTKEY_WINDOWLIST].hotkey == MAKELPARAM(MOD_WIN, 'W'))
+	if (config->hotkeys[HOTKEY_WINDOWLIST].hotkey == HOTKEY_DEFAULT_WINDOWLIST)
 	    reg_delete_v(handle, PLAUNCH_HOTKEY_WL);
 	else
 	    reg_write_i(handle, PLAUNCH_HOTKEY_WL,
@@ -644,7 +649,7 @@ unsigned int save_config(Config *cfg, int what)
     };
 
     if (what & CFG_SAVE_HOTKEY_HIDEWINDOW) {
-	if (config->hotkeys[HOTKEY_HIDEWINDOW].hotkey == 0)
+	if (config->hotkeys[HOTKEY_HIDEWINDOW].hotkey == HOTKEY_DEFAULT_HIDEWINDOW)
 	    reg_delete_v(handle, PLAUNCH_HOTKEY_HIDEWINDOW);
 	else
 	    reg_write_i(handle, PLAUNCH_HOTKEY_HIDEWINDOW,
@@ -652,7 +657,7 @@ unsigned int save_config(Config *cfg, int what)
     };
 
     if (what & CFG_SAVE_HOTKEY_CYCLEWINDOW) {
-	if (config->hotkeys[HOTKEY_CYCLEWINDOW].hotkey == 0)
+	if (config->hotkeys[HOTKEY_CYCLEWINDOW].hotkey == HOTKEY_DEFAULT_CYCLEWINDOW)
 	    reg_delete_v(handle, PLAUNCH_HOTKEY_CYCLEWINDOW);
 	else
 	    reg_write_i(handle, PLAUNCH_HOTKEY_CYCLEWINDOW,
@@ -948,25 +953,6 @@ void *get_process_record_by_window(void **array, int nrecords, HWND window)
     };
 
     return NULL;
-};
-
-int small_atoi(char *a)
-{
-    char *orig;
-    int number = 0;
-
-    orig = a;
-
-    while (*a) {
-	number *= 10;
-	number += ((unsigned char) *a - 0x30);
-	*a++;
-    };
-
-    if (*orig == '-')
-	number = -number;
-
-    return number;
 };
 
 int work_over_actions(struct _config *cfg, char *path, char *strings[3])

@@ -7,6 +7,7 @@
  * License Dialog Box implementation file.
  */
 
+#include "entry.h"
 #include "plaunch.h"
 #include "resource.h"
 #include "dlgtmpl.h"

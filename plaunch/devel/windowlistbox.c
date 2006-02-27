@@ -107,7 +107,7 @@ static void refresh_listbox(HWND listbox, struct windowlist *wl)
 	    memset(buf, 0, BUFSIZE);
 
 	    if (len = GetWindowText(wl->handles[i], buf, BUFSIZE)) {
-		visible = IsWindowVisible(wl->handles[i]) ? "" : " (Hidden)";
+		visible = IsWindowVisible(wl->handles[i]) ? "" : " [Hidden]";
 		sprintf(title, "%s%s", buf, visible);
 	    } else
 		title[0] = '\0';
@@ -415,9 +415,14 @@ static int CALLBACK WindowListBoxProc(HWND hwnd, UINT msg,
 	    HICON icon = NULL;
 	    SIZE size;
 	    char *name;
-	    unsigned int selected = 0, len, x, y;
+	    unsigned int selected = 0, len, count, x, y;
 
 	    dis = (LPDRAWITEMSTRUCT) lParam;
+
+	    count = SendMessage(dis->hwndItem, LB_GETCOUNT, 0, 0);
+
+	    if (dis->itemID > count)
+		return FALSE;
 
 	    len = SendMessage(dis->hwndItem, LB_GETTEXTLEN, dis->itemID, 0);
 

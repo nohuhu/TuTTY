@@ -1952,6 +1952,20 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		    (LPARAM) config->main_icon);
 
 	/*
+	 * Hide and disable two groupboxes used for tree view and tab view
+	 * placement.
+	 */
+
+	EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_GROUPBOX_TREEVIEW),
+		    FALSE);
+	ShowWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_GROUPBOX_TREEVIEW),
+		   SW_HIDE);
+	EnableWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_GROUPBOX_TABVIEW),
+		    FALSE);
+	ShowWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_GROUPBOX_TABVIEW),
+		   SW_HIDE);
+
+	/*
 	 * Create the tree view.
 	 */
 	{
@@ -1992,9 +2006,6 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		TreeView_SetImageList(treeview, config->image_list,
 				      TVSIL_NORMAL);
 	}
-
-	ShowWindow(GetDlgItem(hwnd, IDC_LAUNCHBOX_GROUPBOX_TABVIEW),
-		   SW_HIDE);
 
 	/*
 	 * Create the tab view.
@@ -2061,6 +2072,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 					    hwnd, dlghdr->kids[i].dlgproc);
 		dlghdr->kids[i].type = i;
 		ShowWindow(dlghdr->kids[i].hwnd, SW_HIDE);
+		SendMessage(dlghdr->kids[i].hwnd, WM_ENABLEITEMS, (WPARAM) FALSE, 0);
 	    };
 
 	    dlghdr->kidwnd = dlghdr->kids[0].hwnd;

@@ -55,7 +55,7 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 	/*
 	 * !!! TEMPORARILY BLOCKED !!!
 	 */
-	EnableWindow(cycledit, FALSE);
+//	EnableWindow(cycledit, FALSE);
 
 	handle = reg_open_key_r(PLAUNCH_AUTO_STARTUP);
 	check = reg_read_s(handle, APPNAME, NULL, buf, BUFSIZE) ?
@@ -174,6 +174,7 @@ static int CALLBACK OptionsBoxProc(HWND hwnd, UINT msg,
 		    handle = reg_open_key_w(PLAUNCH_AUTO_STARTUP);
 		    reg_delete_v(handle, APPNAME);
 		    reg_close_key(handle);
+		};
 #endif				/* _DEBUG */
 
 		check =

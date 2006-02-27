@@ -183,6 +183,4 @@ void item_insert(void **array, int *anum, void *item);
 int item_find(void *array, int anum, void *item);
 void item_remove(void **array, int *anum, void *item);
 
-int small_atoi(char *a);
-
 #endif /* MISC_H */

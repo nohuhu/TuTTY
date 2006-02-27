@@ -10,6 +10,10 @@
 
 #include <windows.h>
 
+#ifndef BUFSIZE
+#define BUFSIZE 2048
+#endif /* BUFSIZE */
+
 #if !defined(_DEBUG) && defined(MINIRTL)
 
 // Remove run-time library
@@ -33,12 +37,12 @@ HANDLE __ApplicationHeap;
 void *__cdecl operator  new(unsigned int s)
 {
     return HeapAlloc(__ApplicationHeap, 0, s);
-}
+};
 
 void __cdecl operator  delete(void *p)
 {
     HeapFree(__ApplicationHeap, 0, p);
-}
+};
 
 extern "C" void *__cdecl malloc(size_t size);
 extern "C" void __cdecl free(void *p);
@@ -49,12 +53,12 @@ extern "C" int __cdecl WinMainCRTStartup();
 void *__cdecl malloc(size_t size)
 {
     return HeapAlloc(__ApplicationHeap, HEAP_ZERO_MEMORY, size);
-}
+};
 
 void __cdecl free(void *p)
 {
     HeapFree(__ApplicationHeap, 0, p);
-}
+};
 
 void *__cdecl memmove(void *dst, const void *src, size_t count)
 {
@@ -78,7 +82,7 @@ void *__cdecl memmove(void *dst, const void *src, size_t count)
     }
 
     return (ret);
-}
+};
 
 void *__cdecl memset(void *dst, int val, size_t count)
 {
@@ -90,7 +94,88 @@ void *__cdecl memset(void *dst, int val, size_t count)
     }
 
     return (start);
-}
+};
+
+char *minirtl_strrchr(const char *string, int ch)
+{
+    char *start = (char *) string;
+
+    while (*string++)				/* find end of string */
+	;
+                                                /* search towards front */
+    while (--string != start && *string != (char) ch)
+	;
+
+    if (*string == (char) ch)                /* char found ? */
+	return((char *) string);
+
+    return(NULL);
+};
+
+int minirtl_atoi(char *a)
+{
+    char *orig;
+    int number = 0;
+
+    orig = a;
+
+    while (*a) {
+	number *= 10;
+	number += ((unsigned char) *a - 0x30);
+	*a++;
+    };
+
+    if (*orig == '-')
+	number = -number;
+
+    return number;
+};
+
+char *minirtl_strstr(const char *str1, const char *str2)
+{
+    char *cp = (char *) str1;
+    char *s1, *s2;
+
+    if ( !*str2 )
+	return((char *) str1);
+
+    while (*cp) {
+	s1 = cp;
+	s2 = (char *) str2;
+
+	while (*s1 && *s2 && !(*s1 - *s2))
+	    s1++, s2++;
+
+	if (!*s2)
+	    return(cp);
+
+	cp++;
+    };
+
+    return(NULL);
+};
+
+static char envbuf[BUFSIZE];
+
+char *minirtl_getenv(const char *option)
+{
+    memset(envbuf, 0, BUFSIZE);
+
+    GetEnvironmentVariable(option, envbuf, BUFSIZE);
+
+    return envbuf;
+};
+
+int minirtl_snprintf(char *buffer, size_t count, const char *format, ...) {
+    int ret;
+    va_list arg;
+
+    va_start(arg, format);
+    ret = wvsprintf(buffer, format, arg);
+    va_end(arg);
+
+    return ret;
+};
 
 int __cdecl WinMainCRTStartup()
 {
@@ -132,6 +217,6 @@ int __cdecl WinMainCRTStartup()
     ret = WinMain(hInst, 0, ptr, SW_SHOWNORMAL);
     ExitProcess(ret);
     return ret;
-}
+};
 
 #endif				// _DEBUG && MINIRTL
