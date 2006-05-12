@@ -10,6 +10,7 @@
 #define PUTTY_TERMINAL_H
 
 #include "tree234.h"
+#include "filexfer.h"
 
 struct beeptime {
     struct beeptime *next;
@@ -149,7 +150,6 @@ struct terminal_tag {
     int cset_attr[2];
 
     termchar last_printable;
-    HWND bottom_buttons[10];
     int sec_proceed;
     int sec_item;
     int sec_pos;
@@ -199,8 +199,12 @@ struct terminal_tag {
 	VT52_Y1,
 	VT52_Y2,
 	VT52_FG,
-	VT52_BG
+	VT52_BG,
+
+	FILE_XFER
     } termstate;
+
+    filexfer_t *xfer;
 
     enum {
 	NO_SELECTION, ABOUT_TO, DRAGGING, SELECTED

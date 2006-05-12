@@ -1,81 +1,54 @@
 #include "putty.h"
 #include "misc.h"
 #include "resource.h"
-#include "win_res.h"
+#include "progress.h"
+//#include "win_res.h"
 
 #ifndef FALSE
-#define FALSE	0
+#define FALSE				0
 #endif
 #ifndef TRUE
-#define TRUE	1
+#define TRUE				1
 #endif
 
-#ifndef PBM_SETRANGE
-#define PBM_SETRANGE	WM_USER + 1
-#endif
-
-#ifndef PBM_SETPOS
-#define PBM_SETPOS		WM_USER + 2
-#endif
-
-#ifndef PBM_SETSTEP
-#define PBM_SETSTEP		WM_USER + 4
-#endif
-
-#ifndef PBM_STEPIT
-#define PBM_STEPIT		WM_USER + 5
-#endif
-
-#define SERIAL_STATE_NONE			0
+#define SERIAL_STATE_NONE		0
 #define SERIAL_STATE_INITIALIZING	1
 #define SERIAL_STATE_RECONFIGURING	2
 #define SERIAL_STATE_NOT_CONNECTED	3
 #define SERIAL_STATE_DIALING		4
 #define SERIAL_STATE_CONNECTED		5
-#define SERIAL_STATE_XMODEMUPLOAD	6
-#define SERIAL_STATE_XMODEMDOWNLOAD	7
-#define SERIAL_STATE_YMODEMUPLOAD	8
-#define SERIAL_STATE_YMODEMDOWNLOAD	9
-#define SERIAL_STATE_ZMODEMUPLOAD	10
-#define SERIAL_STATE_ZMODEMDOWNLOAD	11
-#define SERIAL_STATE_KERMITUPLOAD	12
-#define SERIAL_STATE_KERMITDOWNLOAD	13
 
-#define DIAL_STATE_NONE				0
-#define DIAL_STATE_INIT				1
+#define DIAL_STATE_NONE			0
+#define DIAL_STATE_INIT			1
 #define DIAL_STATE_INITRESPONSE		2
-#define DIAL_STATE_DIALING			3
+#define DIAL_STATE_DIALING		3
 #define DIAL_STATE_DIALINGRESPONSE	4
 #define DIAL_STATE_CONNECTED		5
-#define DIAL_STATE_RETRYING			6
-#define DIAL_STATE_ABORTED			7
-#define DIAL_STATE_CANCELED			8
+#define DIAL_STATE_RETRYING		6
+#define DIAL_STATE_ABORTED		7
+#define DIAL_STATE_CANCELED		8
 
-#define DIAL_RESPONSE_NONE			0
-#define DIAL_RESPONSE_OK			1
-#define DIAL_RESPONSE_ERROR			2
+#define DIAL_RESPONSE_NONE		0
+#define DIAL_RESPONSE_OK		1
+#define DIAL_RESPONSE_ERROR		2
 #define DIAL_RESPONSE_CONNECT		3
 #define DIAL_RESPONSE_NO_DIALTONE	4
-#define DIAL_RESPONSE_BUSY			5
+#define DIAL_RESPONSE_BUSY		5
 #define DIAL_RESPONSE_NO_CARRIER	6
-#define DIAL_RESPONSE_ABORT			7
+#define DIAL_RESPONSE_ABORT		7
 #define DIAL_RESPONSE_TIMEOUT		8
 
-#define ZMODEM_STATE_NONE			0
-
-#define KERMIT_STATE_NONE			0
-
-#define SERIAL_MAX_BACKLOG			4096
+#define SERIAL_MAX_BACKLOG		4096
 #define SERIAL_MAX_READ_BUFFER		2048
 #define SERIAL_MAX_WRITE_BUFFER		1024
-#define SERIAL_XON_LIM				SERIAL_MAX_READ_BUFFER % 4
-#define SERIAL_XOFF_LIM				SERIAL_MAX_READ_BUFFER - \
-										(SERIAL_MAX_READ_BUFFER % 4)
+#define SERIAL_XON_LIM			SERIAL_MAX_READ_BUFFER % 4
+#define SERIAL_XOFF_LIM			SERIAL_MAX_READ_BUFFER - \
+					(SERIAL_MAX_READ_BUFFER % 4)
 /* 
  * Sometimes we just have to wait a millisecond or twenty.
  * I think this should be enough for most cases.
  */
-#define SERIAL_WAIT_TIMEOUT			10
+#define SERIAL_WAIT_TIMEOUT		10
 
 /* 
  * We don't really need to define different event sets
@@ -86,9 +59,9 @@
  * control mechanism and do it myself, so I decided to leave
  * those event masks separated, just in case.
  */
-#define FCTL_NONE					EV_BREAK | EV_ERR | EV_RLSD | EV_RXCHAR
-#define FCTL_RTSCTS					EV_BREAK | EV_ERR | EV_RLSD | EV_RXCHAR
-#define FCTL_XONXOFF				EV_BREAK | EV_ERR | EV_RLSD | EV_RXCHAR
+#define FCTL_NONE			EV_BREAK | EV_ERR | EV_RLSD | EV_RXCHAR
+#define FCTL_RTSCTS			EV_BREAK | EV_ERR | EV_RLSD | EV_RXCHAR
+#define FCTL_XONXOFF			EV_BREAK | EV_ERR | EV_RLSD | EV_RXCHAR
 
 typedef struct serial_backend_data *Serial;
 
@@ -122,26 +95,6 @@ struct Socket_serial_tag {
 	    UINT_PTR timer;
 	    int attempt;
 	} dialing;
-	struct _xymodem {
-	    int state;
-	    int response;
-	    int timeout;
-	    int direction;
-	    int protocol;
-	    int attempt;
-	    UINT_PTR timer;
-	    HANDLE file;
-	} xymodem;
-	struct _zmodem {
-	    int state;
-	    int response;
-	    int timeout;
-	} zmodem;
-	struct _kermit {
-	    int state;
-	    int response;
-	    int timeout;
-	} kermit;
     } protstate;
 
     /*
@@ -531,6 +484,7 @@ static char *serial_init(void *frontend_handle, void **backend_handle,
 
     int err;
     Serial sp;
+    char *realport;
 
     sp = snew(struct serial_backend_data);
     sp->fn = &plug_fn_table;
@@ -569,12 +523,15 @@ static char *serial_init(void *frontend_handle, void **backend_handle,
     s->o_writer.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
     *realhost = dupprintf("COM%d", cfg->port);
+    realport = dupprintf("\\\\.\\COM%d", cfg->port);
 
     s->state = SERIAL_STATE_INITIALIZING;
 
-    s->port = CreateFile(*realhost, GENERIC_READ | GENERIC_WRITE, 0, 0,
+    s->port = CreateFile(realport, GENERIC_READ | GENERIC_WRITE, 0, 0,
 			 OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL |
 			 FILE_FLAG_OVERLAPPED, 0);
+
+    sfree(realport);
 
     if (s->port == INVALID_HANDLE_VALUE) {
 	err = GetLastError();
@@ -986,10 +943,6 @@ VOID CALLBACK tick_timer(HWND hwnd, UINT msg, UINT_PTR event, DWORD time)
 void update_dialing_rules(Config * cfg);
 static int CALLBACK ProgressProc(HWND hwnd, UINT msg,
 				 WPARAM wParam, LPARAM lParam);
-HWND progress_dlg;
-static HWND progress_text;
-static HWND progress_bar;
-
 /*
  * Dialing state machine. Gets characters one by one,
  * processes them and if there was some results, returns
@@ -1066,32 +1019,17 @@ static int process_dialing(Serial_Socket s, char c)
 	/*
 	 * Create progress dialog.
 	 */
-	if (!progress_dlg) {
-//                      EnableWindow(hwnd, FALSE);
-	    progress_dlg =
-		CreateDialogParam(hinst, MAKEINTRESOURCE(IDD_PROGRESSBOX),
-				  hwnd, ProgressProc, (LPARAM) s);
-	    SetWindowText(progress_dlg, "Dialing progress");
-	    progress_text = GetDlgItem(progress_dlg, IDC_PROGRESSTEXT);
-	    text =
-		dupprintf("Initializing modem:\n%s",
-			  s->cfg->ser_modem_init);
-	    SetWindowText(progress_text, text);
-	    sfree(text);
-	    progress_bar = GetDlgItem(progress_dlg, IDC_PROGRESSBAR);
-	    SendMessage(progress_bar, PBM_SETRANGE, 0, MAKELPARAM(0, 2));
-	    SendMessage(progress_bar, PBM_SETSTEP, (WPARAM) 1, 0);
-	    ShowWindow(progress_bar, SW_HIDE);
-	    ShowWindow(progress_dlg, SW_SHOWNORMAL);
-//                      EnableWindow(progress_dlg, TRUE);
-//                      SetActiveWindow(progress_dlg);
+	if (!pd) {
+	    pd = progress_dialog_init();
+	    progress_dialog_action(pd, PDA_SETTEXT, PDI_DIALOGBOX, "Dialing progress");
+	    progress_dialog_action(pd, PDA_SETTEXT, PDI_STATIC1, "Initializing modem:");
+	    progress_dialog_action(pd, PDA_SETTEXT, PDI_STATIC2, s->cfg->ser_modem_init);
+	    progress_dialog_action(pd, PDA_SETSTATUS, PDI_DIALOGBOX, 
+				    PDS_ENABLED | PDS_VISIBLE);
 	} else {
-	    SetWindowText(progress_dlg, "Dialing progress");
-	    text =
-		dupprintf("Initializing modem:\n%s",
-			  s->cfg->ser_modem_init);
-	    SetWindowText(progress_text, text);
-	    sfree(text);
+	    progress_dialog_action(pd, PDA_SETTEXT, PDI_DIALOGBOX, "Dialing progress");
+	    progress_dialog_action(pd, PDA_SETTEXT, PDI_STATIC1, "Initializing modem:");
+	    progress_dialog_action(pd, PDA_SETTEXT, PDI_STATIC2, s->cfg->ser_modem_init);
 	};
 	/*
 	 * Start dialing. First, initialize the modem by sending
@@ -1129,9 +1067,7 @@ static int process_dialing(Serial_Socket s, char c)
 	};
 	string[sptr] = '\0';
 	in = strupr(string);
-	text = dupprintf("Initializing modem:\n%s", in);
-	SetWindowText(progress_text, text);
-	sfree(text);
+	progress_dialog_action(pd, PDA_SETTEXT, PDI_STATIC2, in);
 	if (strstr(in, s->cfg->ser_modem_ok) == in) {
 	    /*
 	     * Modem said OK, let's dial the number.
@@ -1152,12 +1088,10 @@ static int process_dialing(Serial_Socket s, char c)
 			s->cfg->host);
 	    else
 		sprintf(number, "%s", s->cfg->host);
-	    text = dupprintf("Dialing number:\n%s", number);
 	    sfree(out);
 	    s->protstate.dialing.state = DIAL_STATE_DIALINGRESPONSE;
-	    SetWindowText(progress_text, text);
-	    sfree(text);
-	    SendMessage(progress_bar, PBM_STEPIT, 0, 0);
+	    progress_dialog_action(pd, PDA_SETTEXT, PDI_STATIC1, "Dialing number:");
+	    progress_dialog_action(pd, PDA_SETTEXT, PDI_STATIC2, number);
 	    sptr = 0;
 	    return TRUE;
 	} else if (strstr(in, s->cfg->ser_modem_error) == in) {
@@ -1170,7 +1104,6 @@ static int process_dialing(Serial_Socket s, char c)
 		KillTimer(NULL, s->protstate.dialing.timer);
 	    s->protstate.dialing.timer = 0;
 	    s->protstate.dialing.timeout = 0;
-	    SendMessage(progress_bar, PBM_SETPOS, (WPARAM) 0, 0);
 	    sptr = 0;
 	    return TRUE;
 	};
@@ -1206,9 +1139,7 @@ static int process_dialing(Serial_Socket s, char c)
 	};
 	string[sptr] = '\0';
 	in = strupr(string);
-	text = dupprintf("Dialing number:\n%s", in);
-	SetWindowText(progress_text, text);
-	sfree(text);
+	progress_dialog_action(pd, PDA_SETTEXT, PDI_STATIC2, in);
 	if (strstr(in, s->cfg->ser_modem_connect) == in) {
 	    /*
 	     * We're connected, hooray!
@@ -1219,7 +1150,6 @@ static int process_dialing(Serial_Socket s, char c)
 		KillTimer(NULL, s->protstate.dialing.timer);
 	    s->protstate.dialing.timer = 0;
 	    s->protstate.dialing.timeout = 0;
-	    SendMessage(progress_bar, PBM_STEPIT, 0, 0);
 	    sptr = 0;
 	    return TRUE;
 	} else if (strstr(in, s->cfg->ser_modem_busy) == in) {
@@ -1232,7 +1162,6 @@ static int process_dialing(Serial_Socket s, char c)
 		KillTimer(NULL, s->protstate.dialing.timer);
 	    s->protstate.dialing.timer = 0;
 	    s->protstate.dialing.timeout = 0;
-	    SendMessage(progress_bar, PBM_SETPOS, (WPARAM) 0, 0);
 	    sptr = 0;
 	    return TRUE;
 	} else if (strstr(in, s->cfg->ser_modem_no_carrier) == in) {
@@ -1245,7 +1174,6 @@ static int process_dialing(Serial_Socket s, char c)
 		KillTimer(NULL, s->protstate.dialing.timer);
 	    s->protstate.dialing.timer = 0;
 	    s->protstate.dialing.timeout = 0;
-	    SendMessage(progress_bar, PBM_SETPOS, (WPARAM) 0, 0);
 	    sptr = 0;
 	    return TRUE;
 	} else if (strstr(in, s->cfg->ser_modem_no_dialtone) == in) {
@@ -1258,7 +1186,6 @@ static int process_dialing(Serial_Socket s, char c)
 		KillTimer(NULL, s->protstate.dialing.timer);
 	    s->protstate.dialing.timer = 0;
 	    s->protstate.dialing.timeout = 0;
-	    SendMessage(progress_bar, PBM_SETPOS, (WPARAM) 0, 0);
 	    sptr = 0;
 	    return TRUE;
 	} else if (strstr(in, s->cfg->ser_modem_error) == in) {
@@ -1271,7 +1198,6 @@ static int process_dialing(Serial_Socket s, char c)
 		KillTimer(NULL, s->protstate.dialing.timer);
 	    s->protstate.dialing.timer = 0;
 	    s->protstate.dialing.timeout = 0;
-	    SendMessage(progress_bar, PBM_SETPOS, (WPARAM) 0, 0);
 	    sptr = 0;
 	    return TRUE;
 	};
@@ -1280,11 +1206,16 @@ static int process_dialing(Serial_Socket s, char c)
     return FALSE;
 };
 
-static int xymodem(Serial_Socket s, char c);
-static int zmodem(Serial_Socket s);
-static int kermit(Serial_Socket s);
-
 #define ATTEMPT_TIMER 1
+
+
+void dial_timer(void *ctx, long now)
+{
+    Serial_Socket s = (Serial_Socket) ctx;
+
+    if (now - s->protstate.dialing.timeout >= 0) {
+    };
+};
 
 extern void do_serial_processing(void)
 {
@@ -1296,7 +1227,6 @@ extern void do_serial_processing(void)
     COMSTAT comstat;
     HANDLE events[2] = { s->o_status.hEvent, s->o_writer.hEvent };
     char buf[512];
-
 
     if (!s->pending_error && !s->pending_status) {
 	if (!WaitCommEvent(s->port, &commevent, &s->o_status)) {
@@ -1332,7 +1262,7 @@ extern void do_serial_processing(void)
     if (!nread) {
 	res =
 	    MsgWaitForMultipleObjects(2, events, FALSE, INFINITE,
-				      QS_ALLEVENTS);
+				      QS_ALLEVENTS | QS_POSTMESSAGE);
 	switch (res) {
 	case WAIT_OBJECT_0:
 	    GetOverlappedResult(s->port, &s->o_status, &dummy, FALSE);
@@ -1406,49 +1336,26 @@ extern void do_serial_processing(void)
 		    s->protstate.dialing.state = DIAL_STATE_NONE;
 		    s->protstate.dialing.response = DIAL_RESPONSE_NONE;
 		    s->protstate.dialing.attempt = 0;
-		    if (progress_dlg)
-			DestroyWindow(progress_dlg);
-		    progress_dlg = 0;
-		    progress_text = 0;
-		    progress_bar = 0;
-//                                      EnableWindow(hwnd, TRUE);
+		    if (pd)
+			progress_dialog_free(pd);
+		    pd = NULL;
 		    SetFocus(hwnd);
 		    break;
 		};
-		SetWindowText(progress_dlg, "Dialing timed out");
-		text =
-		    dupprintf
-		    ("Dialing operation timed out without connect acknowledge.\n"
-		     "Should we try to redial?");
-		SetWindowText(progress_text, text);
-		sfree(text);
-		SendMessage(progress_bar, PBM_SETPOS, (WPARAM) 0, 0);
-		button = GetDlgItem(progress_dlg, IDOK);
-		SetWindowText(button, "OK");
-		ShowWindow(button, SW_SHOW);
-		button = GetDlgItem(progress_dlg, IDHELP);
-		ShowWindow(button, SW_SHOW);
-		SetTimer(progress_dlg, (UINT_PTR) ATTEMPT_TIMER, 1000,
-			 NULL);
-		s->protstate.dialing.timeout = s->cfg->ser_redialtimeout;
+		progress_dialog_action(pd, PDA_SETTEXT, PDI_DIALOGBOX, "Dialing timed out");
+		progress_dialog_action(pd, PDA_SETTEXT, PDI_STATIC1,
+		    "Dialing operation timed out without connect acknowledge.);
+		progress_dialog_action(pd, PDA_SETTEXT, PDI_STATIC2,
+		    "Should we try to redial?");
+		progress_dialog_action(pd, PDA_SETTEXT, PDI_OKBTN, "OK");
+		progress_dialog_action(pd, PDA_SETSTATUS, PDI_OKBTN,
+		    PDS_ENABLED | PDS_VISIBLE);
+		progress_dialog_action(pd, PDA_SETSTATUS, PDI_HELPBTN,
+		    PDS_ENABLED | PDS_VISIBLE);
+		s->protstate.dialing.timeout = schedule_timer(s->cfg->ser_redialtimeout,
+			dial_timer, s);
 	    };
 	};
-	break;
-    case SERIAL_STATE_XMODEMUPLOAD:
-    case SERIAL_STATE_XMODEMDOWNLOAD:
-	if (s->protstate.xymodem.timeout <= 0)
-	    xymodem(s, 0);
-	break;
-    case SERIAL_STATE_ZMODEMUPLOAD:
-    case SERIAL_STATE_ZMODEMDOWNLOAD:
-	if (s->protstate.zmodem.timeout <= 0)
-	    zmodem(s);
-	break;
-    case SERIAL_STATE_KERMITUPLOAD:
-    case SERIAL_STATE_KERMITDOWNLOAD:
-	if (s->protstate.kermit.timeout <= 0)
-	    kermit(s);
-	break;
     };
 
     if (!nread &&
@@ -1487,15 +1394,14 @@ extern void do_serial_processing(void)
 	     * Canceled by user, just clean up and exit;
 	     */
 	    s->state = SERIAL_STATE_NOT_CONNECTED;
-	    if (progress_dlg)
-		DestroyWindow(progress_dlg);
-	    progress_dlg = 0;
-	    progress_text = 0;
-	    progress_bar = 0;
-//                      EnableWindow(hwnd, TRUE);
+	    if (pd)
+		progress_dialog_free(pd);
+	    pd = NULL;
 	    SetFocus(hwnd);
-	    if (s->protstate.dialing.timer)
-		KillTimer(NULL, s->protstate.dialing.timer);
+
+//	    if (s->protstate.dialing.timer)
+//		KillTimer(NULL, s->protstate.dialing.timer);
+
 	    s->protstate.dialing.timer = 0;
 	    s->protstate.dialing.timeout = 0;
 	    s->protstate.dialing.attempt = 0;
@@ -1514,12 +1420,10 @@ extern void do_serial_processing(void)
 		    switch (s->protstate.dialing.state) {
 		    case DIAL_STATE_CONNECTED:
 			s->state = SERIAL_STATE_CONNECTED;
-			if (progress_dlg) {
-			    DestroyWindow(progress_dlg);
-			    progress_dlg = 0;
-			    progress_text = 0;
-			    progress_bar = 0;
-//                                                      EnableWindow(hwnd, TRUE);
+			if (pd) {
+			    progress_dialog_free(pd);
+			    pd = NULL;
+			    
 			    SetFocus(hwnd);
 			};
 			break;
@@ -1532,9 +1436,10 @@ extern void do_serial_processing(void)
 			    if (s->protstate.dialing.attempt >=
 				s->cfg->ser_redials) {
 				s->state = SERIAL_STATE_NOT_CONNECTED;
-				if (s->protstate.dialing.timer)
-				    KillTimer(NULL,
-					      s->protstate.dialing.timer);
+				expire_timer_context(s);
+//				if (s->protstate.dialing.timer)
+//				    KillTimer(NULL,
+//					      s->protstate.dialing.timer);
 				s->protstate.dialing.timer = 0;
 				s->protstate.dialing.timeout = 0;
 				s->protstate.dialing.state =
@@ -1542,32 +1447,30 @@ extern void do_serial_processing(void)
 				s->protstate.dialing.response =
 				    DIAL_RESPONSE_NONE;
 				s->protstate.dialing.attempt = 0;
-				if (progress_dlg)
-				    DestroyWindow(progress_dlg);
-				progress_dlg = 0;
-				progress_text = 0;
-				progress_bar = 0;
-//                                                              EnableWindow(hwnd, TRUE);
-				SetFocus(hwnd);
+
+				if (pd) {
+				    progress_dialog_free(pd);
+				    pd = NULL;
+			    
+				    SetFocus(hwnd);
+				};
 				break;
 			    };
-			    SetWindowText(progress_dlg, "Dialing error");
-			    text =
-				dupprintf
-				("It seems that remote side is not answering our call.\n"
-				 "Should we try to redial?");
-			    SetWindowText(progress_text, text);
-			    sfree(text);
-			    SendMessage(progress_bar, PBM_SETPOS,
-					(WPARAM) 0, 0);
-			    button = GetDlgItem(progress_dlg, IDOK);
-			    ShowWindow(button, SW_SHOW);
-			    button = GetDlgItem(progress_dlg, IDHELP);
-			    ShowWindow(button, SW_SHOW);
-			    SetTimer(progress_dlg,
-				     (UINT_PTR) ATTEMPT_TIMER, 1000, NULL);
-			    s->protstate.dialing.timeout =
-				s->cfg->ser_redialtimeout;
+
+			    progress_dialog_action(pd, PDA_SETTEXT, PDI_DIALOGBOX,
+				"Dialing error");
+			    progress_dialog_action(pd, PDA_SETTEXT, PDI_STATIC1,
+				"It seems that remote side is not answering our call.");
+			    progress_dialog_action(pd, PDA_SETTEXT, PDI_STATIC2,
+				"Should we try to redial?");
+			    progress_dialog_action(pd, PDA_SETSTATUS, PDI_OKBTN,
+				PDS_VISIBLE | PDS_ENABLED);
+			    progress_dialog_action(pd, PDA_SETSTATUS, PDI_HELPBTN,
+				PDS_VISIBLE | PDS_ENABLED);
+//			    SetTimer(progress_dlg,
+//				     (UINT_PTR) ATTEMPT_TIMER, 1000, NULL);
+			    s->protstate.dialing.timeout = schedule_timer(
+				s->cfg->ser_redialtimeout, dial_timer, s);
 			    break;
 			case DIAL_RESPONSE_BUSY:
 			    /*
@@ -1576,9 +1479,10 @@ extern void do_serial_processing(void)
 			    if (s->protstate.dialing.attempt >=
 				s->cfg->ser_redials) {
 				s->state = SERIAL_STATE_NOT_CONNECTED;
-				if (s->protstate.dialing.timer)
-				    KillTimer(NULL,
-					      s->protstate.dialing.timer);
+				expire_timer_context(s);
+//				if (s->protstate.dialing.timer)
+//				    KillTimer(NULL,
+//					      s->protstate.dialing.timer);
 				s->protstate.dialing.timer = 0;
 				s->protstate.dialing.timeout = 0;
 				s->protstate.dialing.state =
@@ -1586,29 +1490,29 @@ extern void do_serial_processing(void)
 				s->protstate.dialing.response =
 				    DIAL_RESPONSE_NONE;
 				s->protstate.dialing.attempt = 0;
-				if (progress_dlg)
-				    DestroyWindow(progress_dlg);
-				progress_dlg = 0;
-				progress_text = 0;
-				progress_bar = 0;
-//                                                              EnableWindow(hwnd, TRUE);
-				SetFocus(hwnd);
+				if (pd) {
+				    progress_dialog_free(pd);
+				    pd = NULL;
+			    
+				    SetFocus(hwnd);
+				};
 				break;
 			    };
-			    SetWindowText(progress_dlg, "Dialing error");
-			    text =
-				dupprintf
-				("It seems that remote side is busy with someone else's call.\n"
-				 "Should we try to redial?");
-			    SetWindowText(progress_text, text);
-			    sfree(text);
-			    SendMessage(progress_bar, PBM_SETPOS,
-					(WPARAM) 0, 0);
-			    button = GetDlgItem(progress_dlg, IDOK);
-			    SetWindowText(button, "OK");
-			    ShowWindow(button, SW_SHOW);
-			    button = GetDlgItem(progress_dlg, IDHELP);
-			    ShowWindow(button, SW_SHOW);
+			    progress_dialog_action(pd, PDA_SETTEXT, PDI_DIALOGBOX,
+				"Dialing error");
+			    progress_dialog_action(pd, PDA_SETTEXT, PDI_STATIC1,
+				"It seems that remote side is busy with someone else's call.");
+			    progress_dialog_action(pd, PDA_SETTEXT, PDI_STATIC2,
+				"Should we try to redial?");
+			    progress_dialog_action(pd, PDA_SETSTATUS, PDI_OKBTN,
+				PDS_VISIBLE | PDS_ENABLED);
+			    progress_dialog_action(pd, PDA_SETSTATUS, PDI_HELPBTN,
+				PDS_VISIBLE | PDS_ENABLED);
+//			    SetTimer(progress_dlg,
+//				     (UINT_PTR) ATTEMPT_TIMER, 1000, NULL);
+			    s->protstate.dialing.timeout = schedule_timer(
+				s->cfg->ser_redialtimeout, dial_timer, s);
+
 			    SetTimer(progress_dlg,
 				     (UINT_PTR) ATTEMPT_TIMER, 1000, NULL);
 			    s->protstate.dialing.timeout =

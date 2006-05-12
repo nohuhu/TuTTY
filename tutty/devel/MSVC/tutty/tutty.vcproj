@@ -99,7 +99,7 @@
 				Optimization="0"
 				EnableIntrinsicFunctions="TRUE"
 				AdditionalIncludeDirectories="c:\home\tutty,c:\home\tutty\windows"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;SNAPSHOT"
+				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;SNAPSHOT;RELEASE=0.58.2.0"
 				MinimalRebuild="TRUE"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="0"
@@ -261,6 +261,15 @@
 						PreprocessorDefinitions=""
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\filexfer.c">
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="TRUE">
+					<Tool
+						Name="VCCLCompilerTool"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -953,6 +962,9 @@
 				RelativePath="..\..\windows\winprint.c">
 			</File>
 			<File
+				RelativePath="..\..\windows\winprogress.c">
+			</File>
+			<File
 				RelativePath="..\..\windows\winserial.c">
 			</File>
 			<File
@@ -1001,6 +1013,9 @@
 				RelativePath="..\..\dialog.h">
 			</File>
 			<File
+				RelativePath="..\..\filexfer.h">
+			</File>
+			<File
 				RelativePath="..\..\int64.h">
 			</File>
 			<File
@@ -1020,6 +1035,9 @@
 			</File>
 			<File
 				RelativePath="..\..\windows\PickIconDialog.h">
+			</File>
+			<File
+				RelativePath="..\..\progress.h">
 			</File>
 			<File
 				RelativePath="..\..\proxy.h">
@@ -1052,7 +1070,7 @@
 				RelativePath="..\..\unix\unix.h">
 			</File>
 			<File
-				RelativePath="..\..\win_res.h">
+				RelativePath="..\..\windows\win_res.h">
 			</File>
 			<File
 				RelativePath="..\..\winhelp.h">

@@ -1501,6 +1501,12 @@ Terminal *term_init(Config * mycfg, struct unicode_data *ucsdata,
     term->sec_len = 0;
     term->sec_count = 0;
 
+    /*
+     * Initialize file transfer structure.
+     */
+    term->xfer = snew(filexfer_t);
+    memset(term->xfer, 0, sizeof(filexfer_t));
+
     if (mycfg->secondary) {
 	int i;
 	i = strlen(mycfg->secondaryscript);
@@ -1564,6 +1570,8 @@ void term_free(Terminal * term)
     sfree(term->post_bidi_cache);
 
     expire_timer_context(term);
+
+    sfree(term->xfer);
 
     sfree(term);
 }

@@ -327,7 +327,10 @@ enum {
     FUNKY_XTERM,
     FUNKY_VT400,
     FUNKY_VT100P,
-    FUNKY_SCO, FUNKY_ATT513
+    FUNKY_SCO, 
+    FUNKY_ATT513,
+    FUNKY_ATT4410,
+    FUNKY_SUNXTERM
 };
 
 enum {
@@ -650,6 +653,9 @@ struct RSAKey;			/* be a little careful of scope */
 /*
  * Exports from window.c.
  */
+
+extern HWND pd;
+
 void request_resize(void *frontend, int, int);
 void do_text(Context, int, int, wchar_t *, int, unsigned long, int);
 void do_cursor(Context, int, int, wchar_t *, int, unsigned long, int);
@@ -819,7 +825,6 @@ extern Backend loop_backend;
  * Exports from serial.c.
  */
 
-extern HWND progress_dlg;
 extern void serial_cleanup(void);
 
 extern Backend serial_backend;

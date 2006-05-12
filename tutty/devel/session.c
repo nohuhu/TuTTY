@@ -9,8 +9,11 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <malloc.h>
 #include <string.h>
+#include <malloc.h>
+#if !defined(_DEBUG) && defined(MINIRTL)
+#include "entry.h"
+#endif
 #include "session.h"
 
 /*

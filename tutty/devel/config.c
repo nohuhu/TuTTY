@@ -1331,7 +1331,7 @@ static void funky_handler(union control *ctrl, void *dlg,
 	    cfg->erase_to_scrollback = FALSE;
 	    cfg->scrollbar_in_fullscreen = FALSE;
 	    cfg->bksp_is_delete = 0;
-	    cfg->bottom_buttons = 0;	/* doesn't show bottom buttons (yet) */
+	    cfg->bottom_buttons = 0;	/* show bottom buttons */
 	    cfg->passive_telnet = 1;	/* compatibility with c-lan telnetd */
 	    cfg->colours[0][0] = 255;
 	    cfg->colours[0][1] = 255;
@@ -1755,7 +1755,12 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
 		      I(offsetof(Config, funky_type)),
 		      "ESC[n~", I(0), "Linux", I(1), "Xterm R6", I(2),
 		      "VT400", I(3), "VT100+", I(4), "SCO", I(5),
-		      "AT&T 513", I(6), NULL);
+		      "AT&T 513", I(6), 
+/*
+		      "AT&T 4410", I(7),
+*/
+		      "Sun Xterm", I(8),
+		      NULL);
 
     s = ctrl_getset(b, "Terminal/Keyboard", "appkeypad",
 		    "Application keypad settings:");
@@ -1846,7 +1851,7 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
     ctrl_checkbox(s, "Disable bidirectional text display", 'd',
 		  HELPCTX(features_bidi), dlg_stdcheckbox_handler,
 		  I(offsetof(Config, bidi)));
-    ctrl_checkbox(s, "Show bottom buttons (AT&T 513 terminal only)", NO_SHORTCUT,
+    ctrl_checkbox(s, "Disable feature key buttons", NO_SHORTCUT,
 		  HELPCTX(features_bottombuttons), dlg_stdcheckbox_handler,
 		  I(offsetof(Config, bottom_buttons)));
 

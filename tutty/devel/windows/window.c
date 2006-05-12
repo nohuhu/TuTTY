@@ -196,6 +196,8 @@ static int compose_state = 0;
 
 static UINT wm_mousewheel = WM_MOUSEWHEEL;
 
+static HWND pd = NULL;
+
 /* Dummy routine, only required in plink. */
 void ldisc_update(void *frontend, int echo, int edit)
 {
@@ -352,6 +354,13 @@ void FreeSystemImageLists(HMODULE hShell32)
     FreeLibrary(hShell32);
     hShell32 = 0;
 };
+
+typedef struct _bottom_panel {
+    HWND panel;
+    HWND buttons[8];
+} bottom_panel;
+
+static bottom_panel bp;
 
 int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 {
@@ -769,7 +778,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	    exwinmode |= WS_EX_TOPMOST;
 	if (cfg.sunken_edge)
 	    exwinmode |= WS_EX_CLIENTEDGE;
-	if (cfg.bottom_buttons && cfg.funky_type == FUNKY_ATT513)
+	if (!cfg.bottom_buttons)
 	    hwnd = CreateWindowEx(exwinmode, appname, appname,
 				  winmode, CW_USEDEFAULT, CW_USEDEFAULT,
 				  guess_width,
@@ -793,25 +802,21 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
     term_provide_logctx(term, logctx);
     term_size(term, cfg.height, cfg.width, cfg.savelines);
 
-    if (cfg.bottom_buttons && cfg.funky_type == FUNKY_ATT513) {
+    {
 	int i, j = 0;
-	char *names[10] =
-	    { "F1 Cancel", "F2 Refresh", "F3 Enter", "F4 Clear",
-	      "F5 Help", "F6 Edit", "F7 Next", "F8 Prev", "F9", "F10" };
-	for (i = 0; i < 10; i++) {
-	    term->bottom_buttons[i] = CreateWindow("BUTTON",
-						   names[i],
-						   WS_VISIBLE |
-						   WS_CHILD |
-						   BS_PUSHBUTTON,
-						   (guess_width / 10) * i,
-						   guess_height -
-						   BOTTOM_BUTTON_HEIGHT,
-						   (guess_width / 10),
-						   BOTTOM_BUTTON_HEIGHT,
-						   hwnd, NULL, hinst, NULL);
-	    EnableWindow(term->bottom_buttons[i], TRUE);
-	    ShowWindow(term->bottom_buttons[i], SW_SHOW);
+
+	bp.panel = CreateWindow("STATIC", "",
+	    WS_CHILD | SS_SIMPLE | SS_GRAYRECT, 0, guess_height - BOTTOM_BUTTON_HEIGHT,
+	    guess_width, BOTTOM_BUTTON_HEIGHT, hwnd, NULL, hinst, NULL);
+
+	for (i = 0; i < 8; i++) {
+	    bp.buttons[i] = CreateWindow("BUTTON", "",
+					 WS_CHILD | BS_PUSHBUTTON,
+					 (guess_width / 10) * i,
+					 guess_height - BOTTOM_BUTTON_HEIGHT,
+					 (guess_width / 10),
+					 BOTTOM_BUTTON_HEIGHT,
+					 hwnd, NULL, hinst, NULL);
 	};
     };
 
@@ -1000,8 +1005,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
     if (GetMessage(&msg, NULL, 0, 0) == 1) {
 	while (msg.message != WM_QUIT) {
 	    if (!
-		(IsWindow(progress_dlg)
-		 && IsDialogMessage(progress_dlg, &msg))
+		(IsWindow(pd)
+		 && IsDialogMessage(pd, &msg))
 		&& !(IsWindow(logbox) && IsDialogMessage(logbox, &msg)))
 		DispatchMessage(&msg);
 	    /* Send the paste buffer if there's anything to send */
@@ -1748,6 +1753,51 @@ void request_resize(void *frontend, int w, int h)
     InvalidateRect(hwnd, NULL, TRUE);
 }
 
+static void redraw_buttons(HWND hwnd, int show)
+{
+    RECT cr;
+    int i, j, y, w, gap, win_width, win_height;
+    char *names_att[8] =
+	{ "F1 Cancel", "F2 Refresh", "F3 Enter", "F4 Clear",
+	  "F5 Help", "F6 Edit", "F7 Next", "F8 Prev" };
+    char *names_sunxterm[8] =
+	{ "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8" };
+
+    GetClientRect(hwnd, &cr);
+
+    gap = cfg.funky_type == FUNKY_SUNXTERM ? font_width * 1 : 0;
+    win_width = font_width * term->cols + offset_width * 2;
+    win_height = font_height * term->rows + extra_height;
+
+    y = cr.bottom - cr.top - BOTTOM_BUTTON_HEIGHT;
+
+    SetWindowPos(bp.panel, NULL, 0, y, cr.right - cr.left, BOTTOM_BUTTON_HEIGHT, 0);
+    ShowWindow(bp.panel, show ? SW_SHOW : SW_HIDE);
+
+    w = cfg.funky_type == FUNKY_SUNXTERM ? font_width * 8 : 
+	(win_width - offset_width * 2) / 8;
+
+    j = offset_width + gap;
+
+    for (i = 0; i < 4; i++) {
+	ShowWindow(bp.buttons[i], SW_HIDE);
+	SetWindowText(bp.buttons[i], cfg.funky_type == FUNKY_SUNXTERM ?
+		      names_sunxterm[i] : names_att[i]);
+	SetWindowPos(bp.buttons[i], bp.panel, j, y, w, BOTTOM_BUTTON_HEIGHT, 0);
+	ShowWindow(bp.buttons[i], show ? SW_SHOW : SW_HIDE);
+	j += w + gap;
+    };
+    j = win_width - offset_width - gap - w;
+    for (i = 7; i > 3; i--) {
+	ShowWindow(bp.buttons[i], SW_HIDE);
+	SetWindowText(bp.buttons[i], cfg.funky_type == FUNKY_SUNXTERM ?
+		      names_sunxterm[i] : names_att[i]);
+	SetWindowPos(bp.buttons[i], bp.panel, j, y, w, BOTTOM_BUTTON_HEIGHT, 0);
+	ShowWindow(bp.buttons[i], show ? SW_SHOW : SW_HIDE);
+	j -= w + gap;
+    };
+};
+
 static void reset_window(int reinit)
 {
     /*
@@ -1807,6 +1857,11 @@ static void reset_window(int reinit)
 	extra_width = wr.right - wr.left - cr.right + cr.left;
 	extra_height = wr.bottom - wr.top - cr.bottom + cr.top;
 
+	if (!cfg.bottom_buttons) {
+	    extra_height += BOTTOM_BUTTON_HEIGHT;
+	    win_height -= BOTTOM_BUTTON_HEIGHT;
+	};
+
 	if (cfg.resize_action != RESIZE_TERM) {
 	    if (font_width != win_width / term->cols ||
 		font_height != win_height / term->rows) {
@@ -1839,6 +1894,7 @@ static void reset_window(int reinit)
 #endif
 	    }
 	}
+	redraw_buttons(hwnd, !cfg.bottom_buttons);
 	return;
     }
 
@@ -1855,12 +1911,13 @@ static void reset_window(int reinit)
 	    wr.right - wr.left - cr.right + cr.left + offset_width * 2;
 	extra_height =
 	    wr.bottom - wr.top - cr.bottom + cr.top + offset_height * 2;
-	if (cfg.bottom_buttons && cfg.funky_type == FUNKY_ATT513)
+
+	if (!cfg.bottom_buttons) 
 	    extra_height += BOTTOM_BUTTON_HEIGHT;
 
 	if (win_width != font_width * term->cols + offset_width * 2 ||
 	    win_height != font_height * term->rows + offset_height * 2 ||
-	    (cfg.bottom_buttons && cfg.funky_type == FUNKY_ATT513)) {
+	    !cfg.bottom_buttons) {
 
 	    /* If this is too large windows will resize it to the maximum
 	     * allowed window size, we will then be back in here and resize
@@ -1870,30 +1927,10 @@ static void reset_window(int reinit)
 			 font_width * term->cols + extra_width,
 			 font_height * term->rows + extra_height,
 			 SWP_NOMOVE | SWP_NOZORDER);
-	    if (cfg.bottom_buttons && cfg.funky_type == FUNKY_ATT513) {
-		int i, j, w;
-		win_width = font_width * term->cols + offset_width * 2;
-		win_height = font_height * term->rows + extra_height;
-		w = (win_width / 10) - (offset_width);
-		j = offset_width;
-		for (i = 0; i < 10; i++) {
-		    ShowWindow(term->bottom_buttons[i], SW_HIDE);
-		    SetWindowPos(term->bottom_buttons[i], NULL, j,
-//                      (win_width / 10) * i + offset_width,
-				 font_height * term->rows +
-				 offset_height * 2, w,
-				 BOTTOM_BUTTON_HEIGHT, 0);
-		    EnableWindow(term->bottom_buttons[i], TRUE);
-		    ShowWindow(term->bottom_buttons[i], SW_SHOW);
-		    j += w + offset_width;
-		};
-	    } else {
-		int i;
-		for (i = 0; i < 10; i++) {
-		    EnableWindow(term->bottom_buttons[i], FALSE);
-		    ShowWindow(term->bottom_buttons[i], SW_HIDE);
-		};
-	    };
+	    if (!cfg.bottom_buttons)
+		redraw_buttons(hwnd, TRUE);
+	    else
+		redraw_buttons(hwnd, FALSE);
 	}
 
 	InvalidateRect(hwnd, NULL, TRUE);
@@ -1911,6 +1948,9 @@ static void reset_window(int reinit)
 	    wr.right - wr.left - cr.right + cr.left + offset_width * 2;
 	extra_height =
 	    wr.bottom - wr.top - cr.bottom + cr.top + offset_height * 2;
+
+	if (!cfg.bottom_buttons) 
+	    extra_height += BOTTOM_BUTTON_HEIGHT;
 
 	if (win_width != font_width * term->cols + offset_width * 2 ||
 	    win_height != font_height * term->rows + offset_height * 2) {
@@ -1970,6 +2010,12 @@ static void reset_window(int reinit)
     }
 
     /* We're allowed to or must change the font but do we want to ?  */
+
+    if (!cfg.bottom_buttons) {
+	extra_height += BOTTOM_BUTTON_HEIGHT;
+	win_height -= BOTTOM_BUTTON_HEIGHT;
+	redraw_buttons(hwnd, !cfg.bottom_buttons);
+    };
 
     if (font_width != (win_width - cfg.window_border * 2) / term->cols ||
 	font_height != (win_height - cfg.window_border * 2) / term->rows) {
@@ -2230,55 +2276,11 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	};
     case WM_COMMAND:
     case WM_SYSCOMMAND:
-	if (HIWORD(wParam) == BN_CLICKED && cfg.bottom_buttons &&
-	    cfg.funky_type == FUNKY_ATT513) {
+	if (HIWORD(wParam) == BN_CLICKED && !cfg.bottom_buttons) {
 	    int i;
-	    for (i = 0; i < 10; i++) {
-		if ((HWND) lParam == term->bottom_buttons[i]) {
-		    switch (i) {
-		    case 0:
-			ldisc_send(term->ldisc, "\x1BOw", 3, 0);
-			SetFocus(hwnd);
-			break;
-		    case 1:
-			ldisc_send(term->ldisc, "\x1BNa", 3, 0);
-			SetFocus(hwnd);
-			break;
-		    case 2:
-			ldisc_send(term->ldisc, "\x1BSB", 3, 0);
-			SetFocus(hwnd);
-			break;
-		    case 3:
-			ldisc_send(term->ldisc, "\x1B[J", 3, 0);
-			SetFocus(hwnd);
-			break;
-		    case 4:
-			ldisc_send(term->ldisc, "\x1BOm", 3, 0);
-			SetFocus(hwnd);
-			break;
-		    case 5:
-			ldisc_send(term->ldisc, "\033f6", 3, 0);
-			SetFocus(hwnd);
-			break;
-		    case 6:
-			ldisc_send(term->ldisc, "\x1B[U", 3, 0);
-			SetFocus(hwnd);
-			break;
-		    case 7:
-			ldisc_send(term->ldisc, "\x1B[V", 3, 0);
-			SetFocus(hwnd);
-			break;
-		    case 8:
-			ldisc_send(term->ldisc, "\x1BOk", 3, 0);
-			SetFocus(hwnd);
-			break;
-		    case 9:
-			ldisc_send(term->ldisc, "\x1BOl", 3, 0);
-			SetFocus(hwnd);
-			break;
-		    };
-
-		};
+	    for (i = 0; i < 8; i++) {
+		if ((HWND) lParam == bp.buttons[i])
+		    SendMessage(hwnd, WM_KEYUP, VK_F1 + i, 0);
 	    };
 	};
 	switch (wParam & ~0xF) {	/* low 4 bits reserved to Windows */
@@ -2805,6 +2807,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	     * current terminal appearance so that WM_PAINT becomes
 	     * completely trivial. However, this should do for now.
 	     */
+/*
 	    if (cfg.bottom_buttons && cfg.funky_type == FUNKY_ATT513)
 		term_paint(term, hdc,
 			   (p.rcPaint.left - offset_width) / font_width,
@@ -2815,6 +2818,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 			    BOTTOM_BUTTON_HEIGHT) / font_height,
 			   is_alt_pressed());
 	    else
+*/
 		term_paint(term, hdc,
 			   (p.rcPaint.left - offset_width) / font_width,
 			   (p.rcPaint.top - offset_height) / font_height,
@@ -2875,8 +2879,8 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	net_pending_errors();
 	return 0;
     case WM_SETFOCUS:
-	if (progress_dlg)
-	    SetFocus(progress_dlg);
+	if (pd)
+	    SetFocus(pd);
 	else {
 	    term_set_focus(term, TRUE);
 	    CreateCaret(hwnd, caretbm, font_width, font_height);
@@ -4495,140 +4499,23 @@ static int TranslateKey(UINT message, WPARAM wParam, LPARAM lParam,
 	}
 
 	if (cfg.funky_type == FUNKY_ATT513 &&	/* AT&T 513 terminal function keys */
-	    code >= 11 && code <= 20) {
-	    switch (wParam) {
-	    case VK_F1:
-		if (cfg.bottom_buttons) {
-		    SendMessage(term->bottom_buttons[0],
-				(UINT) BM_SETSTATE,
-				(WPARAM) TRUE, (LPARAM) 0);
-		    Sleep(100);
-		    SendMessage(term->bottom_buttons[0],
-				(UINT) BM_SETSTATE,
-				(WPARAM) FALSE, (LPARAM) 0);
+	    code >= 11 && code <= 19) {
+		int tcode;
+		char *codes[8] = {
+		    "\x1BOw", "\x1BNa", "\x1BSB", "\x1B[J",
+		    "\x1BOm", "\033f6", "\x1B[U", "\x1B[V"
 		};
-		p += sprintf((char *) p, "\x1BOw");
-		return p - output;
-		break;
-	    case VK_F2:
-		if (cfg.bottom_buttons) {
-		    SendMessage(term->bottom_buttons[1],
-				(UINT) BM_SETSTATE,
-				(WPARAM) TRUE, (LPARAM) 0);
-		    Sleep(100);
-		    SendMessage(term->bottom_buttons[1],
-				(UINT) BM_SETSTATE,
-				(WPARAM) FALSE, (LPARAM) 0);
+		tcode = (code >= 11 && code <= 15) ? code - 11 : code - 12;
+/*
+		if (!cfg.bottom_buttons) {
+		    SendMessage(bp.buttons[tcode], BM_SETSTATE, (WPARAM) TRUE, 0);
+		    Sleep(50);
+		    SendMessage(bp.buttons[tcode], BM_SETSTATE, (WPARAM) FALSE, 0);
 		};
-		p += sprintf((char *) p, "\x1BNa");
+*/
+		p += sprintf((char *) p, codes[tcode]);
 		return p - output;
-		break;
-	    case VK_F3:
-		if (cfg.bottom_buttons) {
-		    SendMessage(term->bottom_buttons[2],
-				(UINT) BM_SETSTATE,
-				(WPARAM) TRUE, (LPARAM) 0);
-		    Sleep(100);
-		    SendMessage(term->bottom_buttons[2],
-				(UINT) BM_SETSTATE,
-				(WPARAM) FALSE, (LPARAM) 0);
-		};
-		p += sprintf((char *) p, "\x1BSB");
-		return p - output;
-		break;
-	    case VK_F4:
-		if (cfg.bottom_buttons) {
-		    SendMessage(term->bottom_buttons[3],
-				(UINT) BM_SETSTATE,
-				(WPARAM) TRUE, (LPARAM) 0);
-		    Sleep(100);
-		    SendMessage(term->bottom_buttons[3],
-				(UINT) BM_SETSTATE,
-				(WPARAM) FALSE, (LPARAM) 0);
-		};
-		p += sprintf((char *) p, "\x1B[J");
-		return p - output;
-		break;
-	    case VK_F5:
-		if (cfg.bottom_buttons) {
-		    SendMessage(term->bottom_buttons[4],
-				(UINT) BM_SETSTATE,
-				(WPARAM) TRUE, (LPARAM) 0);
-		    Sleep(100);
-		    SendMessage(term->bottom_buttons[4],
-				(UINT) BM_SETSTATE,
-				(WPARAM) FALSE, (LPARAM) 0);
-		};
-		p += sprintf((char *) p, "\x1BOm");
-		return p - output;
-		break;
-	    case VK_F6:
-		if (cfg.bottom_buttons) {
-		    SendMessage(term->bottom_buttons[5],
-				(UINT) BM_SETSTATE,
-				(WPARAM) TRUE, (LPARAM) 0);
-		    Sleep(100);
-		    SendMessage(term->bottom_buttons[5],
-				(UINT) BM_SETSTATE,
-				(WPARAM) FALSE, (LPARAM) 0);
-		};
-		p += sprintf((char *) p, "\033f6");
-		return p - output;
-		break;
-	    case VK_F7:
-		if (cfg.bottom_buttons) {
-		    SendMessage(term->bottom_buttons[6],
-				(UINT) BM_SETSTATE,
-				(WPARAM) TRUE, (LPARAM) 0);
-		    Sleep(100);
-		    SendMessage(term->bottom_buttons[6],
-				(UINT) BM_SETSTATE,
-				(WPARAM) FALSE, (LPARAM) 0);
-		};
-		p += sprintf((char *) p, "\x1B[U");
-		return p - output;
-		break;
-	    case VK_F8:
-		if (cfg.bottom_buttons) {
-		    SendMessage(term->bottom_buttons[7],
-				(UINT) BM_SETSTATE,
-				(WPARAM) TRUE, (LPARAM) 0);
-		    Sleep(100);
-		    SendMessage(term->bottom_buttons[7],
-				(UINT) BM_SETSTATE,
-				(WPARAM) FALSE, (LPARAM) 0);
-		};
-		p += sprintf((char *) p, "\x1B[V");
-		return p - output;
-		break;
-	    case VK_F9:
-		if (cfg.bottom_buttons) {
-		    SendMessage(term->bottom_buttons[8],
-				(UINT) BM_SETSTATE,
-				(WPARAM) TRUE, (LPARAM) 0);
-		    Sleep(100);
-		    SendMessage(term->bottom_buttons[8],
-				(UINT) BM_SETSTATE,
-				(WPARAM) FALSE, (LPARAM) 0);
-		};
-		p += sprintf((char *) p, "\x1BOk");
-		return p - output;
-		break;
-	    case VK_F10:
-		if (cfg.bottom_buttons) {
-		    SendMessage(term->bottom_buttons[9],
-				(UINT) BM_SETSTATE,
-				(WPARAM) TRUE, (LPARAM) 0);
-		    Sleep(100);
-		    SendMessage(term->bottom_buttons[9],
-				(UINT) BM_SETSTATE,
-				(WPARAM) FALSE, (LPARAM) 0);
-		};
-		p += sprintf((char *) p, "\x1BOl");
-		return p - output;
-		break;
-	    }
-	}
+	};
 
 	if (cfg.funky_type == FUNKY_SCO &&	/* SCO function keys */
 	    code >= 11 && code <= 34) {
@@ -4715,6 +4602,32 @@ static int TranslateKey(UINT message, WPARAM wParam, LPARAM lParam,
 		p += sprintf((char *) p, "\x1BO%c", code + 'P' - 11);
 	    return p - output;
 	}
+
+	if (cfg.funky_type == FUNKY_SUNXTERM && code >= 11 && code <= 21) {
+	    if (code >= 11 && code <= 14)
+		p += sprintf((char *) p, "\x1BO%c", code + 'P' - 11);
+	    else if (code >= 15 && code <= 19) {
+		char c;
+
+		switch (code) {
+		case 15:
+		    c = 't';
+		    break;
+		case 17:
+		    c = 'u';
+		    break;
+		case 18:
+		    c = 'v';
+		    break;
+		case 19:
+		    c = 'l';
+		};
+		p += sprintf((char *) p, "\x1BO%c", c);
+	    } else if (code >= 20 && code <= 21)
+		p += sprintf((char *) p, "\x1B[2%c~", code + '0' - 20);
+	    return p - output;
+	};
+
 	if (cfg.rxvt_homeend && (code == 1 || code == 4)) {
 	    p += sprintf((char *) p, code == 1 ? "\x1B[H" : "\x1BOw");
 	    return p - output;
