@@ -244,6 +244,11 @@ void *enum_settings_start(session_root_t *root, char *path)
     ret->root = root;
     ret->handle = ses_enum_settings_start(root, path);
 
+    if (!ret->handle) {
+	sfree(ret);
+	ret = NULL;
+    };
+
     return ret;
 }
 

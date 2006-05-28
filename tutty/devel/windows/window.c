@@ -14,10 +14,10 @@
 #include "ldisc.h"
 
 #ifndef NO_MULTIMON
-#if WINVER < 0x0500
+//#if WINVER < 0x0500
 #define COMPILE_MULTIMON_STUBS
 #include <multimon.h>
-#endif
+//#endif
 #endif
 
 #include <imm.h>
@@ -196,7 +196,7 @@ static int compose_state = 0;
 
 static UINT wm_mousewheel = WM_MOUSEWHEEL;
 
-static HWND pd = NULL;
+HWND pd = NULL;
 
 /* Dummy routine, only required in plink. */
 void ldisc_update(void *frontend, int echo, int edit)

@@ -99,7 +99,7 @@
 				Optimization="0"
 				EnableIntrinsicFunctions="TRUE"
 				AdditionalIncludeDirectories="c:\home\tutty,c:\home\tutty\windows"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;SNAPSHOT;RELEASE=0.58.2.0"
+				PreprocessorDefinitions="WINVER=0x0400;_DEBUG;WIN32;_WINDOWS;SNAPSHOT;RELEASE=0.58.2.0"
 				MinimalRebuild="TRUE"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="0"
