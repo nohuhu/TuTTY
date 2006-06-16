@@ -28,7 +28,7 @@
 				InlineFunctionExpansion="1"
 				FavorSizeOrSpeed="2"
 				OptimizeForWindowsApplication="TRUE"
-				AdditionalIncludeDirectories="c:\home\plaunch"
+				AdditionalIncludeDirectories="c:\home\devel\plaunch;c:\home\devel\plaunch\sapi;c:\home\devel\plaunch\sapi\ezxml"
 				PreprocessorDefinitions="NDEBUG;MINIRTL;WIN32;_WINDOWS;NO_PARSE_CMD_LINE;PLAUNCH"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
@@ -103,7 +103,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				EnableIntrinsicFunctions="TRUE"
-				AdditionalIncludeDirectories="c:\home\plaunch"
+				AdditionalIncludeDirectories="c:\home\devel\plaunch;c:\home\devel\plaunch\sapi;c:\home\devel\plaunch\sapi\ezxml"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;PLAUNCH"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
@@ -317,25 +317,10 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="registry.c">
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						PreprocessorDefinitions=""
-						BasicRuntimeChecks="3"/>
-				</FileConfiguration>
+				RelativePath=".\sapi\registry.c">
 			</File>
 			<File
-				RelativePath=".\session.c">
+				RelativePath=".\sapi\session.c">
 			</File>
 			<File
 				RelativePath="windowlistbox.c">
@@ -381,13 +366,13 @@
 				RelativePath="plaunch.h">
 			</File>
 			<File
-				RelativePath="registry.h">
+				RelativePath=".\sapi\registry.h">
 			</File>
 			<File
 				RelativePath="resource.h">
 			</File>
 			<File
-				RelativePath=".\session.h">
+				RelativePath=".\sapi\session.h">
 			</File>
 			<File
 				RelativePath=".\winmenu.h">
