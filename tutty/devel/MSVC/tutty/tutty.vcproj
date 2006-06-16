@@ -26,7 +26,7 @@
 				InlineFunctionExpansion="1"
 				FavorSizeOrSpeed="2"
 				OptimizeForWindowsApplication="TRUE"
-				AdditionalIncludeDirectories="c:\home\tutty,c:\home\tutty\windows"
+				AdditionalIncludeDirectories="..\..;..\..\windows;..\..\sapi;..\..\sapi\ezxml"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;RELEASE=0.58.2.0;SNAPSHOT=0.58.2.0"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
@@ -98,7 +98,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				EnableIntrinsicFunctions="TRUE"
-				AdditionalIncludeDirectories="c:\home\tutty,c:\home\tutty\windows"
+				AdditionalIncludeDirectories="..\..;..\..\windows;..\..\sapi;..\..\sapi\ezxml"
 				PreprocessorDefinitions="WINVER=0x0400;_DEBUG;WIN32;_WINDOWS;SNAPSHOT;RELEASE=0.58.2.0"
 				MinimalRebuild="TRUE"
 				ExceptionHandling="FALSE"
@@ -434,7 +434,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\plaunch\registry.c">
+				RelativePath="..\..\sapi\registry.c">
 			</File>
 			<File
 				RelativePath="..\..\rlogin.c">
@@ -456,7 +456,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\session.c">
+				RelativePath="..\..\sapi\session.c">
 			</File>
 			<File
 				RelativePath="..\..\settings.c">
@@ -1052,7 +1052,7 @@
 				RelativePath="..\..\puttyps.h">
 			</File>
 			<File
-				RelativePath="..\..\session.h">
+				RelativePath="..\..\sapi\session.h">
 			</File>
 			<File
 				RelativePath="..\..\ssh.h">

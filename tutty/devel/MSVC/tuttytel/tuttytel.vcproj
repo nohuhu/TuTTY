@@ -22,7 +22,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				EnableIntrinsicFunctions="TRUE"
-				AdditionalIncludeDirectories="c:\home\tutty,c:\home\tutty\windows"
+				AdditionalIncludeDirectories="..\..;..\..\windows;..\..\sapi;..\..\sapi\ezxml"
 				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;SNAPSHOT"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
@@ -100,7 +100,7 @@
 				InlineFunctionExpansion="1"
 				FavorSizeOrSpeed="2"
 				OptimizeForWindowsApplication="TRUE"
-				AdditionalIncludeDirectories="c:\home\tutty,c:\home\tutty\windows"
+				AdditionalIncludeDirectories="..\..;..\..\windows;..\..\sapi;..\..\sapi\ezxml"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;RELEASE=0.58.2.0;SNAPSHOT=0.58.2.0"
 				StringPooling="TRUE"
 				ExceptionHandling="FALSE"
@@ -404,7 +404,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\windows\registry.c">
+				RelativePath="..\..\sapi\registry.c">
 			</File>
 			<File
 				RelativePath="..\..\rlogin.c">
@@ -426,7 +426,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\session.c">
+				RelativePath="..\..\sapi\session.c">
 			</File>
 			<File
 				RelativePath="..\..\settings.c">
@@ -577,6 +577,9 @@
 				RelativePath="..\..\windows\winprint.c">
 			</File>
 			<File
+				RelativePath="..\..\windows\winprogress.c">
+			</File>
+			<File
 				RelativePath="..\..\windows\winserial.c">
 			</File>
 			<File
@@ -632,10 +635,7 @@
 				RelativePath="..\..\puttyps.h">
 			</File>
 			<File
-				RelativePath="..\..\windows\registry.h">
-			</File>
-			<File
-				RelativePath="..\..\session.h">
+				RelativePath="..\..\sapi\session.h">
 			</File>
 			<File
 				RelativePath="..\..\ssh.h">
