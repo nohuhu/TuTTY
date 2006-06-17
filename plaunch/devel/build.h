@@ -1,1 +1,1 @@
-#define BUILDNUMBER $Rev$
+#define BUILDNUMBER 81M

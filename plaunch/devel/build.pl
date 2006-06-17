@@ -1,14 +1,15 @@
 #!/usr/bin/perl
 
-open(BUILD, "/home/devel/plaunch/build.h") or die "cannot open build.h!";
-$line = <BUILD>;
-close(BUILD);
+system("svnversion > revision");
 
-($define, $buildnumber, $build) = split(' ', $line);
-$build++;
+open(REVISION, "<revision");
+$rev = <REVISION>;
+close(REVISION);
+unlink("revision");
+chomp $rev;
 
 open(BUILD, ">/home/devel/plaunch/build.h");
-print BUILD "#define BUILDNUMBER $build\n";
+print BUILD "#define BUILDNUMBER $rev\n";
 close(BUILD);
 
 system("touch /home/devel/plaunch/build.h");
