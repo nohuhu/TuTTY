@@ -144,7 +144,7 @@
 			<Tool
 				Name="VCPreBuildEventTool"
 				Description="Generating build number"
-				CommandLine="c:\usr\perl\bin\perl c:\home\plaunch\build.pl"/>
+				CommandLine="c:\usr\perl\bin\perl c:\home\devel\plaunch\build.pl"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
 			<Tool

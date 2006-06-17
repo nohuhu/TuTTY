@@ -35,10 +35,10 @@ static int CALLBACK AboutProc(HWND hwnd, UINT msg,
 		    (LPARAM) config->main_icon);
 #ifdef RELEASE
 	SetWindowText(GetDlgItem(hwnd, IDC_ABOUTBOX_STATIC_VERSION),
-		      "Release " APPVERSION " build " STR(BUILDNUMBER) ".");
+		      "Release " APPVERSION " revision " STR(REVISION) ".");
 #else
 	SetWindowText(GetDlgItem(hwnd, IDC_ABOUTBOX_STATIC_VERSION),
-		      "Version " APPVERSION " build " STR(BUILDNUMBER) ", compiled " 
+		      "Version " APPVERSION " revision " STR(REVISION) ", compiled " 
 		      __DATE__ " " __TIME__);
 #endif				/* RELEASE */
 	return TRUE;
