@@ -1,1 +1,1 @@
-#define BUILDNUMBER 434
+#define BUILDNUMBER $Rev$
