@@ -224,6 +224,9 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\sapi\ezxml\ezxml.c">
+			</File>
+			<File
 				RelativePath="hotkey.c">
 				<FileConfiguration
 					Name="Release|Win32">
@@ -343,6 +346,9 @@
 			<File
 				RelativePath=".\winmenu.c">
 			</File>
+			<File
+				RelativePath=".\sapi\xmlstore.c">
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -355,6 +361,9 @@
 			</File>
 			<File
 				RelativePath="entry.h">
+			</File>
+			<File
+				RelativePath=".\sapi\ezxml\ezxml.h">
 			</File>
 			<File
 				RelativePath="hotkey.h">
@@ -376,6 +385,9 @@
 			</File>
 			<File
 				RelativePath=".\winmenu.h">
+			</File>
+			<File
+				RelativePath=".\sapi\xmlstore.h">
 			</File>
 		</Filter>
 		<Filter

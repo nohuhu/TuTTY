@@ -32,19 +32,19 @@
 				     * windows only: registry with non-default
 				     * path
 				     */
-#define	SES_ROOT_DISKLEGACY	2   /*
-				     * windows/unix: legacy disk file
+#define	SES_ROOT_FILETREE	2   /*
+				     * windows/unix: file tree (as in unix putty)
 				     */
-#define	SES_ROOT_DISKXML	3   /*
-				     * windows/unix: xml disk file
+#define	SES_ROOT_XMLFILE	3   /*
+				     * windows/unix: xml file on local file system
 				     */
-#define	SES_ROOT_HTTPXML	4   /*
+#define	SES_ROOT_XMLHTTP	4   /*
 				     * windows/unix: xml file on remote http server
 				     */
-#define SES_ROOT_FTPXML		5   /*
+#define SES_ROOT_XMLFTP		5   /*
 				     * windows/unix: xml file on remote ftp server
 				     */
-#define SES_ROOT_HTTPSXML	6   /*
+#define SES_ROOT_XMLSHTTP	6   /*
 				     * windows/unix: xml file on remote https server
 				     */
 
@@ -56,6 +56,12 @@ typedef struct _session_root_t {
 				     */
     int readonly;		    /*
 				     * is the root read only?
+				     */
+    void *data;			    /*
+				     * private data for a session root
+				     */
+    int modified;		    /*
+				     * was the data modified and needs to save?
 				     */
 } session_root_t;
 
@@ -148,9 +154,9 @@ typedef struct _session_walk_t {
 } session_walk_t;
 
 char *ses_lastname(char *in);
-int ses_pathname(char *in, char *buffer, unsigned int bufsize);
-int ses_make_path(char *parent, char *path, char *buffer,
-		  unsigned int bufsize);
+char *ses_firstname(char *in, char *buffer, int bufsize);
+int ses_pathname(char *in, char *buffer, int bufsize);
+int ses_make_path(char *parent, char *path, char *buffer, int bufsize);
 
 int ses_is_folder(session_root_t *root, char *path);
 
@@ -199,9 +205,9 @@ char *ses_enum_settings_next(session_root_t *root, void *handle,
 void ses_enum_settings_finish(session_root_t *root, void *handle);
 
 int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg, 
-			  int bufsize);
+			  int errsize);
 int ses_cmdline_from_session_root(session_root_t *root, char *cmdline, 
-				  int bufsize);
-int ses_finish_session_root(session_root_t *root);
+				  int errsize);
+int ses_finish_session_root(session_root_t *root, char *errmsg, int errsize);
 
 #endif				/* SESSION_H */

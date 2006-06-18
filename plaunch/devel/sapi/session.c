@@ -23,6 +23,8 @@
 #include "registry.h"
 #endif /* _WINDOWS */
 
+#include "xmlstore.h"
+
 #ifndef FALSE
 #define FALSE	0
 #define	TRUE	1
@@ -129,7 +131,31 @@ char *ses_lastname(char *in)
     return p + 1;
 };
 
-int ses_pathname(char *in, char *buffer, unsigned int bufsize)
+char *ses_firstname(char *in, char *buffer, int bufsize)
+{
+    char *p, *e;
+    int len;
+
+    if (!in || !in[0] || !buffer || !bufsize)
+	return in;
+
+    p = in;
+    e = &in[strlen(in)];
+
+    while (p <= e && *p != '\\' && *p != '\0')
+	*p++;
+
+    if (p == e) {
+	strncpy(buffer, in, bufsize);
+	return buffer;
+    } else {
+	len = (p - in);
+	strncpy(buffer, in, len < bufsize ? len : bufsize);
+	return buffer;
+    };
+};
+
+int ses_pathname(char *in, char *buffer, int bufsize)
 {
     char *p;
 
@@ -148,8 +174,7 @@ int ses_pathname(char *in, char *buffer, unsigned int bufsize)
     return TRUE;
 };
 
-int ses_make_path(char *parent, char *path, char *buffer,
-		  unsigned int bufsize) 
+int ses_make_path(char *parent, char *path, char *buffer, int bufsize) 
 {
     if (!path || !path[0] || !buffer || !bufsize)
 	return FALSE;
@@ -193,6 +218,21 @@ int ses_is_folder(session_root_t *root, char *path)
 		reg_close_key(handle);
 	    };
 	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    if (root->root_location &&
+		xml_make_path(NULL, path, ppath, BUFSIZE) &&
+		(handle = xml_open_session_r(root, ppath)) != NULL) {
+		xml_read_i(handle, ISFOLDER, 0, &isfolder);
+	    };
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
 #endif /* _WINDOWS */
 	};
     };
@@ -226,6 +266,16 @@ int ses_make_folder(session_root_t *root, char *path) {
 		reg_close_key(handle);
 	    };
 	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
 #endif /* _WINDOWS */
 	};
     };
@@ -253,6 +303,16 @@ int ses_copy_session(session_root_t *root, char *frompath, char *topath)
 		reg_make_path_specific(root->root_location,
 		    NULL, frompath, fppath, BUFSIZE))
 		return reg_copy_session(fppath, tppath);
+	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
 	    break;
 #endif /* _WINDOWS */
 	};
@@ -376,6 +436,16 @@ int ses_delete_value(session_root_t *root, char *path, char *valname)
 		reg_close_key(handle);
 	    };
 	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
 #endif /* _WINDOWS */
 	};
     };
@@ -401,6 +471,16 @@ int ses_delete_session(session_root_t *root, char *path)
 		    NULL, path, ppath, BUFSIZE))
 		return reg_delete_k(ppath);
 	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
 #endif /* _WINDOWS */
 	};
     };
@@ -425,6 +505,16 @@ int ses_delete_folder(session_root_t *root, char *path)
 	    if (reg_make_path_specific(root->root_location,
 		    NULL, path, ppath, BUFSIZE))
 		return reg_delete_k(ppath);
+	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
 	    break;
 #endif /* _WINDOWS */
 	};
@@ -517,6 +607,16 @@ int ses_read_i(session_root_t *root, char *path, char *valname,
 		reg_close_key(handle);
 	    };
 	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
 #endif /* _WINDOWS */
 	};
     };
@@ -549,6 +649,16 @@ int ses_write_i(session_root_t *root, char *path, char *valname, int value)
 		ret = reg_write_i(handle, valname, value);
 		reg_close_key(handle);
 	    };
+	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
 	    break;
 #endif /* _WINDOWS */
 	};
@@ -584,6 +694,16 @@ int ses_read_s(session_root_t *root, char *path, char *valname,
 		reg_close_key(handle);
 	    };
 	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
 #endif /* _WINDOWS */
 	};
     };
@@ -617,6 +737,16 @@ int ses_write_s(session_root_t *root, char *path, char *valname,
 		ret = reg_write_s(handle, valname, value);
 		reg_close_key(handle);
 	    };
+	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
 	    break;
 #endif /* _WINDOWS */
 	};
@@ -886,6 +1016,16 @@ void *ses_open_session_r(session_root_t *root, char *path)
 		    NULL, path, ppath, BUFSIZE))
 		return reg_open_session_r(ppath);
 	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
 #endif /* _WINDOWS */
 	};
     };
@@ -911,6 +1051,16 @@ void *ses_open_session_w(session_root_t *root, char *path)
 		    NULL, path, ppath, BUFSIZE))
 		return reg_open_session_w(ppath);
 	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
 #endif /* _WINDOWS */
 	};
     };
@@ -928,6 +1078,16 @@ void ses_close_session(session_root_t *root, void *handle)
 	case SES_ROOT_REGISTRY:
 	    reg_close_key(handle);
 	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
 #endif /* _WINDOWS */
 	};
     };
@@ -943,6 +1103,16 @@ int ses_read_handle_i(session_root_t *root, void *handle, char *valname,
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
 	    return reg_read_i(handle, valname, defval, value);
+	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
 	    break;
 #endif /* _WINDOWS */
 	};
@@ -962,6 +1132,16 @@ int ses_write_handle_i(session_root_t *root, void *handle, char *valname,
 	case SES_ROOT_REGISTRY:
 	    return reg_write_i(handle, valname, value);
 	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
 #endif /* _WINDOWS */
 	};
     };
@@ -980,6 +1160,16 @@ int ses_read_handle_s(session_root_t *root, void *handle, char *valname,
 	case SES_ROOT_REGISTRY:
 	    return reg_read_s(handle, valname, defval, buffer, bufsize);
 	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
 #endif /* _WINDOWS */
 	};
     };
@@ -997,6 +1187,16 @@ int ses_write_handle_s(session_root_t *root, void *handle, char *valname,
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
 	    return reg_write_s(handle, valname, value);
+	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
 	    break;
 #endif /* _WINDOWS */
 	};
@@ -1023,6 +1223,16 @@ void *ses_enum_settings_start(session_root_t *root, char *path)
 		    NULL, path, ppath, BUFSIZE))
 		return reg_enum_settings_start(ppath);
 	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
 #endif /* _WINDOWS */
 	};
     };
@@ -1039,6 +1249,16 @@ int ses_enum_settings_count(session_root_t *root, void *handle)
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
 	    return reg_enum_settings_count(handle);
+	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
 	    break;
 #endif /* _WINDOWS */
 	};
@@ -1058,6 +1278,16 @@ char *ses_enum_settings_next(session_root_t *root, void *handle,
 	case SES_ROOT_REGISTRY:
 	    return reg_enum_settings_next(handle, buffer, buflen);
 	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
 #endif /* _WINDOWS */
 	};
     };
@@ -1075,13 +1305,23 @@ void ses_enum_settings_finish(session_root_t *root, void *handle)
 	case SES_ROOT_REGISTRY:
 	    reg_enum_settings_finish(handle);
 	    break;
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
 #endif /* _WINDOWS */
 	};
     };
 };
 
-int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg,
-			  int bufsize)
+int ses_init_session_root(session_root_t *root, char *cmdline, 
+			  char *errmsg, int errsize)
 {
     char *command, *url = NULL, *urlend = NULL, *cmdbegin = NULL, *path;
     int i, env = FALSE;
@@ -1139,37 +1379,37 @@ int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg,
 	 * xml file type root. should point at filesystem destination.
 	 */
 	} else if (strstr(url, "file://")) {
-	    root->root_type = SES_ROOT_DISKXML;
+	    root->root_type = SES_ROOT_XMLFILE;
 	    url += 7;
 	/*
 	 * legacy file type root. it is now used in unix version of PuTTY,
 	 * should not be used in windows version.
 	 */
-	} else if (strstr(url, "legacy://")) {
+	} else if (strstr(url, "unix://")) {
 #ifdef _WINDOWS
-	    strncpy(errmsg, "Legacy file type session root"
-		" is not supported in Windows.", bufsize);
+	    strncpy(errmsg, "File tree type session root"
+		" is not supported in Windows.", errsize);
 	    return FALSE;
 #endif /* _WINDOWS */
-	    root->root_type = SES_ROOT_DISKLEGACY;
-	    url += 9;
+	    root->root_type = SES_ROOT_FILETREE;
+	    url += 7;
 	/*
 	 * remote xml file type root, located on http server.
 	 */
 	} else if (strstr(url, "http://")) {
-	    root->root_type = SES_ROOT_HTTPXML;
+	    root->root_type = SES_ROOT_XMLHTTP;
 	    url += 7;
 	/*
 	 * remote xml file type root, located on ftp server.
 	 */
 	} else if (strstr(url, "ftp://")) {
-	    root->root_type = SES_ROOT_FTPXML;
+	    root->root_type = SES_ROOT_XMLFTP;
 	    url += 6;
 	/*
 	 * remote xml file type root, located on https server.
 	 */
 	} else if (strstr(url, "https://")) {
-	    root->root_type = SES_ROOT_HTTPSXML;
+	    root->root_type = SES_ROOT_XMLSHTTP;
 	    url += 8;
 	};
 
@@ -1178,7 +1418,7 @@ int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg,
 	while (*url != ' ' && *url != '\t' && *url != '\0') {
 #ifdef _WINDOWS
 	    if ((root->root_type == SES_ROOT_REGISTRY ||
-		root->root_type == SES_ROOT_DISKXML) &&
+		root->root_type == SES_ROOT_XMLFILE) &&
 		*url == '/')
 #endif /* _WINDOWS */
 		*url = '\\';
@@ -1244,6 +1484,12 @@ int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg,
 	};
     };
 
+    switch (root->root_type) {
+    case SES_ROOT_XMLFILE:
+	root->data = xml_init(root, errmsg, errsize);
+	break;
+    };
+
     return TRUE;
 };
 
@@ -1269,17 +1515,20 @@ int ses_cmdline_from_session_root(session_root_t *root, char *cmdline, int bufsi
     case SES_ROOT_REGISTRY:
 	sprintf(buf2, "--session-root=registry://%s", root->root_location);
 	break;
-    case SES_ROOT_DISKLEGACY:
-	sprintf(buf2, "--session-root=legacy://%s", root->root_location);
-	break;
-    case SES_ROOT_DISKXML:
+    case SES_ROOT_FILETREE:
 	sprintf(buf2, "--session-root=file://%s", root->root_location);
 	break;
-    case SES_ROOT_HTTPXML:
+    case SES_ROOT_XMLFILE:
+	sprintf(buf2, "--session-root=xml://%s", root->root_location);
+	break;
+    case SES_ROOT_XMLHTTP:
 	sprintf(buf2, "--session-root=http://%s", root->root_location);
 	break;
-    case SES_ROOT_FTPXML:
+    case SES_ROOT_XMLFTP:
 	sprintf(buf2, "--session-root=ftp://%s", root->root_location);
+	break;
+    case SES_ROOT_XMLSHTTP:
+	sprintf(buf2, "--session-root=https://%s", root->root_location);
 	break;
     };
 
@@ -1288,7 +1537,18 @@ int ses_cmdline_from_session_root(session_root_t *root, char *cmdline, int bufsi
     return TRUE;
 };
 
-int ses_finish_session_root(session_root_t *root) {
+int ses_finish_session_root(session_root_t *root, char *errmsg, int errsize) {
+    if (!root)
+	return FALSE;
+
+    switch (root->root_type) {
+    case SES_ROOT_XMLFILE:
+	if (root->modified && !root->readonly)
+	    xml_write(root, errmsg, errsize);
+	xml_finish(root);
+	break;
+    };
+
     if (root->root_location)
 	free(root->root_location);
 
