@@ -48,6 +48,16 @@
 				     * windows/unix: xml file on remote https server
 				     */
 
+#define SES_VALUE_UNDEFINED	0   /*
+				     * value type: undefined
+				     */
+#define SES_VALUE_INTEGER	1   /*
+				     * value type: integer
+				     */
+#define SES_VALUE_STRING	2   /*
+				     * value type: zero-terminated string
+				     */
+
 typedef struct _session_root_t {
     unsigned int root_type;	    /* session root type */
     char *root_location;	    /* 
@@ -203,6 +213,13 @@ int ses_enum_settings_count(session_root_t *root, void *handle);
 char *ses_enum_settings_next(session_root_t *root, void *handle, 
 			     char *buffer, int buflen);
 void ses_enum_settings_finish(session_root_t *root, void *handle);
+
+void *ses_enum_values_start(session_root_t *root, void *session);
+int ses_enum_values_count(session_root_t *root, void *handle);
+int ses_enum_values_type(session_root_t *root, void *handle);
+char *ses_enum_values_next(session_root_t *root, void *handle, 
+			   char *buffer, int buflen);
+void ses_enum_values_finish(session_root_t *root, void *handle);
 
 int ses_init_session_root(session_root_t *root, char *cmdline, char *errmsg, 
 			  int errsize);

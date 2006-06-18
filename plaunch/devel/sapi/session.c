@@ -40,80 +40,107 @@ static int (* default_make_path)(char *, char *, char *, int) =
     reg_make_path;
 #endif /* _WINDOWS */
 
-static int (* default_copy_session)(char *, char *) =
+static int (* default_copy_session)(session_root_t *, char *, char *) =
 #ifdef _WINDOWS
     reg_copy_session;
 #endif /* _WINDOWS */
 
-static int (* default_delete_value)(void *, char *) =
+static int (* default_delete_value)(session_root_t *, void *, char *) =
 #ifdef _WINDOWS
     reg_delete_v;
 #endif /* _WINDOWS */
 
-static int (* default_delete_session)(char *) =
+static int (* default_delete_session)(session_root_t *, char *) =
 #ifdef _WINDOWS
     reg_delete_k;
 #endif /* _WINDOWS */
 
-static int (* default_delete_folder)(char *) =
+static int (* default_delete_folder)(session_root_t *, char *) =
 #ifdef _WINDOWS
     reg_delete_k;
 #endif /* _WINDOWS */
 
-static int (* default_read_i)(void *, char *, int, int *) =
+static int (* default_read_i)(session_root_t *, void *, char *, int, int *) =
 #ifdef _WINDOWS
     reg_read_i;
 #endif /* _WINDOWS */
 
-static int (* default_write_i)(void *, char *, int) =
+static int (* default_write_i)(session_root_t *, void *, char *, int) =
 #ifdef _WINDOWS
     reg_write_i;
 #endif /* _WINDOWS */
 
-static int (* default_read_s)(void *, char *, char *,
-			      char *, int) =
+static int (* default_read_s)(session_root_t *, void *, char *, 
+			      char *, char *, int) =
 #ifdef _WINDOWS
     reg_read_s;
 #endif /* _WINDOWS */
 
-static int (* default_write_s)(void *, char *, char *) =
+static int (* default_write_s)(session_root_t *, void *, char *, char *) =
 #ifdef _WINDOWS
     reg_write_s;
 #endif /* _WINDOWS */
 
-static void * (* default_open_session_r)(char *) =
+static void * (* default_open_session_r)(session_root_t *, char *) =
 #ifdef _WINDOWS
     reg_open_session_r;
 #endif /* _WINDOWS */
 
-static void * (* default_open_session_w)(char *) =
+static void * (* default_open_session_w)(session_root_t *, char *) =
 #ifdef _WINDOWS
     reg_open_session_w;
 #endif /* _WINDOWS */
 
-static void (* default_close_session)(void *) =
+static void (* default_close_session)(session_root_t *, void *) =
 #ifdef _WINDOWS
     reg_close_key;
 #endif /* _WINDOWS */
 
-static void * (* default_enum_settings_start)(char *) =
+static void * (* default_enum_settings_start)(session_root_t *, char *) =
 #ifdef _WINDOWS
     reg_enum_settings_start;
 #endif /* _WINDOWS */
 
-static int (* default_enum_settings_count)(void *) =
+static int (* default_enum_settings_count)(session_root_t *, void *) =
 #ifdef _WINDOWS
     reg_enum_settings_count;
 #endif /* _WINDOWS */
 
-static char * (* default_enum_settings_next)(void *, char *, int) =
+static char * (* default_enum_settings_next)(session_root_t *, void *, 
+					     char *, int) =
 #ifdef _WINDOWS
     reg_enum_settings_next;
 #endif /* _WINDOWS */
 
-static void (* default_enum_settings_finish)(void *) =
+static void (* default_enum_settings_finish)(session_root_t *, void *) =
 #ifdef _WINDOWS
     reg_enum_settings_finish;
+#endif /* _WINDOWS */
+
+static void * (* default_enum_values_start)(session_root_t *, void *) =
+#ifdef _WINDOWS
+    reg_enum_values_start;
+#endif /* _WINDOWS */
+
+static int (* default_enum_values_count)(session_root_t *, void *) =
+#ifdef _WINDOWS
+    reg_enum_values_count;
+#endif /* _WINDOWS */
+
+static int (* default_enum_values_type)(session_root_t *, void *) =
+#ifdef _WINDOWS
+    reg_enum_values_type;
+#endif /* _WINDOWS */
+
+static char * (* default_enum_values_next)(session_root_t *, void *,
+					   char *, int) =
+#ifdef _WINDOWS
+    reg_enum_values_next;
+#endif /* _WINDOWS */
+
+static void (* default_enum_values_finish)(session_root_t *, void *) =
+#ifdef _WINDOWS
+    reg_enum_values_finish;
 #endif /* _WINDOWS */
 
 char *ses_lastname(char *in)
@@ -140,17 +167,19 @@ char *ses_firstname(char *in, char *buffer, int bufsize)
 	return in;
 
     p = in;
-    e = &in[strlen(in)];
+//    e = &in[strlen(in)];
 
-    while (p <= e && *p != '\\' && *p != '\0')
+    while (/*p <= e && */*p != '\\' && *p != '\0')
 	*p++;
 
     if (p == e) {
 	strncpy(buffer, in, bufsize);
+//	buffer[bufsize] = '\0';
 	return buffer;
     } else {
 	len = (p - in);
 	strncpy(buffer, in, len < bufsize ? len : bufsize);
+//	buffer[len < bufsize ? len : bufsize] = '\0';
 	return buffer;
     };
 };
@@ -202,9 +231,9 @@ int ses_is_folder(session_root_t *root, char *path)
 
     if (!root || !root->root_type) {
 	if (default_make_path(NULL, path, ppath, BUFSIZE) &&
-	    (handle = default_open_session_r(ppath)) != NULL) {
-	    default_read_i(handle, ISFOLDER, 0, &isfolder);
-	    default_close_session(handle);
+	    (handle = default_open_session_r(root, ppath)) != NULL) {
+	    default_read_i(root, handle, ISFOLDER, 0, &isfolder);
+	    default_close_session(root, handle);
 	};
     } else {
 	switch (root->root_type) {
@@ -213,18 +242,20 @@ int ses_is_folder(session_root_t *root, char *path)
 	    if (root->root_location &&
 		reg_make_path_specific(root->root_location, NULL, 
 		    path, ppath, BUFSIZE) &&
-		(handle = default_open_session_r(ppath)) != NULL) {
-		reg_read_i(handle, ISFOLDER, 0, &isfolder);
-		reg_close_key(handle);
+		(handle = reg_open_session_r(root, ppath)) != NULL) {
+		reg_read_i(root, handle, ISFOLDER, 0, &isfolder);
+		reg_close_key(root, handle);
 	    };
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
 	    if (root->root_location &&
-		xml_make_path(NULL, path, ppath, BUFSIZE) &&
+		xml_make_path(XML_SESSIONROOT, path, ppath, BUFSIZE) &&
 		(handle = xml_open_session_r(root, ppath)) != NULL) {
-		xml_read_i(handle, ISFOLDER, 0, &isfolder);
+		xml_read_i(root, handle, ISFOLDER, 0, &isfolder);
+		xml_close_key(root, handle);
 	    };
 	    break;
 	case SES_ROOT_XMLHTTP:
@@ -233,7 +264,6 @@ int ses_is_folder(session_root_t *root, char *path)
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
@@ -250,9 +280,9 @@ int ses_make_folder(session_root_t *root, char *path) {
 
     if (!root || !root->root_type) {
 	if (default_make_path(NULL, path, ppath, BUFSIZE) &&
-	    (handle = default_open_session_w(ppath)) != NULL) {
-	    ret = default_write_i(handle, ISFOLDER, TRUE);
-	    default_close_session(handle);
+	    (handle = default_open_session_w(root, ppath)) != NULL) {
+	    ret = default_write_i(root, handle, ISFOLDER, TRUE);
+	    default_close_session(root, handle);
 	};
     } else {
 	switch (root->root_type) {
@@ -261,14 +291,21 @@ int ses_make_folder(session_root_t *root, char *path) {
 	    if (root->root_location &&
 		reg_make_path_specific(root->root_location, NULL, 
 		    path, ppath, BUFSIZE) &&
-		(handle = reg_open_session_w(ppath)) != NULL) {
-		reg_write_i(handle, ISFOLDER, TRUE);
-		reg_close_key(handle);
+		(handle = reg_open_session_w(root, ppath)) != NULL) {
+		reg_write_i(root, handle, ISFOLDER, TRUE);
+		reg_close_key(root, handle);
 	    };
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    if (root->root_location &&
+		xml_make_path(XML_SESSIONROOT, path, ppath, BUFSIZE) &&
+		(handle = xml_open_session_r(root, ppath)) != NULL) {
+		xml_write_i(root, handle, ISFOLDER, TRUE);
+		xml_close_key(root, handle);
+	    };
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -276,7 +313,6 @@ int ses_make_folder(session_root_t *root, char *path) {
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
@@ -293,7 +329,7 @@ int ses_copy_session(session_root_t *root, char *frompath, char *topath)
     if (!root || !root->root_type) {
 	if (default_make_path(NULL, frompath, fppath, BUFSIZE) &&
 	    default_make_path(NULL, topath, tppath, BUFSIZE))
-	    return default_copy_session(fppath, tppath);
+	    return default_copy_session(root, fppath, tppath);
     } else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
@@ -301,12 +337,17 @@ int ses_copy_session(session_root_t *root, char *frompath, char *topath)
 	    if (reg_make_path_specific(root->root_location,
 		    NULL, frompath, fppath, BUFSIZE) &&
 		reg_make_path_specific(root->root_location,
-		    NULL, frompath, fppath, BUFSIZE))
-		return reg_copy_session(fppath, tppath);
+		    NULL, topath, tppath, BUFSIZE))
+		return reg_copy_session(root, fppath, tppath);
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    if (root->root_location &&
+		xml_make_path(XML_SESSIONROOT, frompath, fppath, BUFSIZE) &&
+		xml_make_path(XML_SESSIONROOT, topath, tppath, BUFSIZE))
+		return xml_copy_session(root, fppath, tppath);
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -314,7 +355,6 @@ int ses_copy_session(session_root_t *root, char *frompath, char *topath)
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
@@ -421,9 +461,9 @@ int ses_delete_value(session_root_t *root, char *path, char *valname)
 
      if (!root || !root->root_type) {
 	if (default_make_path(NULL, path, ppath, BUFSIZE) &&
-	    (handle = default_open_session_w(ppath)) != NULL) {
-	    ret = default_delete_value(handle, valname);
-	    default_close_session(handle);
+	    (handle = default_open_session_w(root, ppath)) != NULL) {
+	    ret = default_delete_value(root, handle, valname);
+	    default_close_session(root, handle);
 	};
     } else {
 	switch (root->root_type) {
@@ -431,14 +471,21 @@ int ses_delete_value(session_root_t *root, char *path, char *valname)
 	case SES_ROOT_REGISTRY:
 	    if (reg_make_path_specific(root->root_location,
 		    NULL, path, ppath, BUFSIZE) &&
-		(handle = reg_open_session_w(ppath)) != NULL) {
-		ret = reg_delete_v(handle, valname);
-		reg_close_key(handle);
+		(handle = reg_open_session_w(root, ppath)) != NULL) {
+		ret = reg_delete_v(root, handle, valname);
+		reg_close_key(root, handle);
 	    };
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    if (root->root_location &&
+		xml_make_path(XML_SESSIONROOT, path, ppath, BUFSIZE) &&
+		(handle = xml_open_session_w(root, ppath)) != NULL) {
+		ret = xml_delete_v(root, handle, valname);
+		xml_close_key(root, handle);
+	    };
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -446,7 +493,6 @@ int ses_delete_value(session_root_t *root, char *path, char *valname)
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
@@ -456,24 +502,33 @@ int ses_delete_value(session_root_t *root, char *path, char *valname)
 int ses_delete_session(session_root_t *root, char *path)
 {
     char ppath[BUFSIZE];
+    void *handle;
+    int ret = FALSE;
 
     if (!path)
 	return FALSE;
 
      if (!root || !root->root_type) {
 	if (default_make_path(NULL, path, ppath, BUFSIZE))
-	    return default_delete_session(ppath);
+	    return default_delete_session(root, ppath);
     } else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
 	    if (reg_make_path_specific(root->root_location,
 		    NULL, path, ppath, BUFSIZE))
-		return reg_delete_k(ppath);
+		ret = reg_delete_k(root, ppath);
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    if (root->root_location &&
+		xml_make_path(XML_SESSIONROOT, path, ppath, BUFSIZE) &&
+		(handle = xml_open_session_w(root, ppath)) != NULL) {
+		ret = xml_delete_k(root, handle, ppath);
+		xml_close_key(root, handle);
+	    };
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -481,34 +536,42 @@ int ses_delete_session(session_root_t *root, char *path)
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
-    return FALSE;
+    return ret;
 };
 
 int ses_delete_folder(session_root_t *root, char *path)
 {
     char ppath[BUFSIZE];
+    void *handle;
+    int ret = FALSE;
 
     if (!path)
 	return FALSE;
 
      if (!root || !root->root_type) {
 	if (default_make_path(NULL, path, ppath, BUFSIZE))
-	    return default_delete_folder(ppath);
+	    return default_delete_folder(root, ppath);
     } else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
 	    if (reg_make_path_specific(root->root_location,
 		    NULL, path, ppath, BUFSIZE))
-		return reg_delete_k(ppath);
+		ret = reg_delete_k(root, ppath);
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    if (root->root_location &&
+		xml_make_path(XML_SESSIONROOT, path, ppath, BUFSIZE) &&
+		(handle = xml_open_session_w(root, ppath)) != NULL) {
+		ret = xml_delete_k(root, handle, ppath);
+		xml_close_key(root, handle);
+	    };
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -516,11 +579,10 @@ int ses_delete_folder(session_root_t *root, char *path)
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
-    return FALSE;
+    return ret;
 };
 
 static void ses_callback_delete_tree(session_callback_t *scb) {
@@ -592,9 +654,9 @@ int ses_read_i(session_root_t *root, char *path, char *valname,
 
      if (!root || !root->root_type) {
 	if (default_make_path(NULL, path, ppath, BUFSIZE) &&
-	    (handle = default_open_session_r(ppath)) != NULL) {
-	    ret = default_read_i(handle, valname, defval, value);
-	    default_close_session(handle);
+	    (handle = default_open_session_r(root, ppath)) != NULL) {
+	    ret = default_read_i(root, handle, valname, defval, value);
+	    default_close_session(root, handle);
 	};
     } else {
 	switch (root->root_type) {
@@ -602,14 +664,21 @@ int ses_read_i(session_root_t *root, char *path, char *valname,
 	case SES_ROOT_REGISTRY:
 	    if (reg_make_path_specific(root->root_location,
 		    NULL, path, ppath, BUFSIZE) &&
-		(handle = reg_open_session_r(ppath)) != NULL) {
-		ret = reg_read_i(handle, valname, defval, value);
-		reg_close_key(handle);
+		(handle = reg_open_session_r(root, ppath)) != NULL) {
+		ret = reg_read_i(root, handle, valname, defval, value);
+		reg_close_key(root, handle);
 	    };
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    if (root->root_location &&
+		xml_make_path(XML_SESSIONROOT, path, ppath, BUFSIZE) &&
+		(handle = xml_open_session_r(root, ppath)) != NULL) {
+		ret = xml_read_i(root, handle, valname, defval, value);
+		xml_close_key(root, handle);
+	    };
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -617,7 +686,6 @@ int ses_read_i(session_root_t *root, char *path, char *valname,
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
@@ -635,9 +703,9 @@ int ses_write_i(session_root_t *root, char *path, char *valname, int value)
 
      if (!root || !root->root_type) {
 	if (default_make_path(NULL, path, ppath, BUFSIZE) &&
-	    (handle = default_open_session_w(ppath)) != NULL) {
-	    ret = default_write_i(handle, valname, value);
-	    default_close_session(handle);
+	    (handle = default_open_session_w(root, ppath)) != NULL) {
+	    ret = default_write_i(root, handle, valname, value);
+	    default_close_session(root, handle);
 	};
     } else {
 	switch (root->root_type) {
@@ -645,14 +713,21 @@ int ses_write_i(session_root_t *root, char *path, char *valname, int value)
 	case SES_ROOT_REGISTRY:
 	    if (reg_make_path_specific(root->root_location,
 		    NULL, path, ppath, BUFSIZE) &&
-		(handle = reg_open_session_w(ppath)) != NULL) {
-		ret = reg_write_i(handle, valname, value);
-		reg_close_key(handle);
+		(handle = reg_open_session_w(root, ppath)) != NULL) {
+		ret = reg_write_i(root, handle, valname, value);
+		reg_close_key(root, handle);
 	    };
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    if (root->root_location &&
+		xml_make_path(XML_SESSIONROOT, path, ppath, BUFSIZE) &&
+		(handle = xml_open_session_w(root, ppath)) != NULL) {
+		ret = xml_write_i(root, handle, valname, value);
+		xml_close_key(root, handle);
+	    };
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -660,7 +735,6 @@ int ses_write_i(session_root_t *root, char *path, char *valname, int value)
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
@@ -679,9 +753,9 @@ int ses_read_s(session_root_t *root, char *path, char *valname,
 
      if (!root || !root->root_type) {
 	if (default_make_path(NULL, path, ppath, BUFSIZE) &&
-	    (handle = default_open_session_r(ppath)) != NULL) {
-	    ret = default_read_s(handle, valname, defval, buffer, bufsize);
-	    default_close_session(handle);
+	    (handle = default_open_session_r(root, ppath)) != NULL) {
+	    ret = default_read_s(root, handle, valname, defval, buffer, bufsize);
+	    default_close_session(root, handle);
 	};
     } else {
 	switch (root->root_type) {
@@ -689,14 +763,21 @@ int ses_read_s(session_root_t *root, char *path, char *valname,
 	case SES_ROOT_REGISTRY:
 	    if (reg_make_path_specific(root->root_location,
 		    NULL, path, ppath, BUFSIZE) &&
-		(handle = reg_open_session_r(ppath)) != NULL) {
-		ret = reg_read_s(handle, valname, defval, buffer, bufsize);
-		reg_close_key(handle);
+		(handle = reg_open_session_r(root, ppath)) != NULL) {
+		ret = reg_read_s(root, handle, valname, defval, buffer, bufsize);
+		reg_close_key(root, handle);
 	    };
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    if (root->root_location &&
+		xml_make_path(XML_SESSIONROOT, path, ppath, BUFSIZE) &&
+		(handle = xml_open_session_r(root, ppath)) != NULL) {
+		ret = xml_read_s(root, handle, valname, defval, buffer, bufsize);
+		xml_close_key(root, handle);
+	    };
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -704,7 +785,6 @@ int ses_read_s(session_root_t *root, char *path, char *valname,
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
@@ -723,9 +803,9 @@ int ses_write_s(session_root_t *root, char *path, char *valname,
 
      if (!root || !root->root_type) {
 	if (default_make_path(NULL, path, ppath, BUFSIZE) &&
-	    (handle = default_open_session_w(ppath)) != NULL) {
-	    ret = default_write_s(handle, valname, value);
-	    default_close_session(handle);
+	    (handle = default_open_session_w(root, ppath)) != NULL) {
+	    ret = default_write_s(root, handle, valname, value);
+	    default_close_session(root, handle);
 	};
     } else {
 	switch (root->root_type) {
@@ -733,14 +813,21 @@ int ses_write_s(session_root_t *root, char *path, char *valname,
 	case SES_ROOT_REGISTRY:
 	    if (reg_make_path_specific(root->root_location,
 		    NULL, path, ppath, BUFSIZE) &&
-		(handle = reg_open_session_w(ppath)) != NULL) {
-		ret = reg_write_s(handle, valname, value);
-		reg_close_key(handle);
+		(handle = reg_open_session_w(root, ppath)) != NULL) {
+		ret = reg_write_s(root, handle, valname, value);
+		reg_close_key(root, handle);
 	    };
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    if (root->root_location &&
+		xml_make_path(XML_SESSIONROOT, path, ppath, BUFSIZE) &&
+		(handle = xml_open_session_w(root, ppath)) != NULL) {
+		ret = xml_write_s(root, handle, valname, value);
+		xml_close_key(root, handle);
+	    };
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -748,7 +835,6 @@ int ses_write_s(session_root_t *root, char *path, char *valname,
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
@@ -1007,18 +1093,22 @@ void *ses_open_session_r(session_root_t *root, char *path)
 
      if (!root || !root->root_type) {
 	if (default_make_path(NULL, path, ppath, BUFSIZE))
-	    return default_open_session_r(ppath);
+	    return default_open_session_r(root, ppath);
     } else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
 	    if (reg_make_path_specific(root->root_location,
 		    NULL, path, ppath, BUFSIZE))
-		return reg_open_session_r(ppath);
+		return reg_open_session_r(root, ppath);
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    if (root->root_location &&
+		xml_make_path(XML_SESSIONROOT, path, ppath, BUFSIZE))
+		return xml_open_session_r(root, ppath);
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -1026,7 +1116,6 @@ void *ses_open_session_r(session_root_t *root, char *path)
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
@@ -1042,18 +1131,22 @@ void *ses_open_session_w(session_root_t *root, char *path)
 
      if (!root || !root->root_type) {
 	if (default_make_path(NULL, path, ppath, BUFSIZE))
-	    return default_open_session_w(ppath);
+	    return default_open_session_w(root, ppath);
     } else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
 	    if (reg_make_path_specific(root->root_location,
 		    NULL, path, ppath, BUFSIZE))
-		return reg_open_session_w(ppath);
+		return reg_open_session_w(root, ppath);
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    if (root->root_location &&
+		xml_make_path(XML_SESSIONROOT, path, ppath, BUFSIZE))
+		return xml_open_session_w(root, ppath);
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -1061,7 +1154,6 @@ void *ses_open_session_w(session_root_t *root, char *path)
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
@@ -1071,16 +1163,18 @@ void *ses_open_session_w(session_root_t *root, char *path)
 void ses_close_session(session_root_t *root, void *handle)
 {
      if (!root || !root->root_type)
-	default_close_session(handle);
+	default_close_session(root, handle);
     else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
-	    reg_close_key(handle);
+	    reg_close_key(root, handle);
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    xml_close_key(root, handle);
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -1088,7 +1182,6 @@ void ses_close_session(session_root_t *root, void *handle)
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 };
@@ -1097,16 +1190,18 @@ int ses_read_handle_i(session_root_t *root, void *handle, char *valname,
 		      int defval, int *value)
 {
      if (!root || !root->root_type)
-	return default_read_i(handle, valname, defval, value);
+	return default_read_i(root, handle, valname, defval, value);
     else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
-	    return reg_read_i(handle, valname, defval, value);
+	    return reg_read_i(root, handle, valname, defval, value);
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    return xml_read_i(root, handle, valname, defval, value);
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -1114,7 +1209,6 @@ int ses_read_handle_i(session_root_t *root, void *handle, char *valname,
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
@@ -1125,16 +1219,18 @@ int ses_write_handle_i(session_root_t *root, void *handle, char *valname,
 		       int value)
 {
      if (!root || !root->root_type)
-	return default_write_i(handle, valname, value);
+	return default_write_i(root, handle, valname, value);
     else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
-	    return reg_write_i(handle, valname, value);
+	    return reg_write_i(root, handle, valname, value);
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    return xml_write_i(root, handle, valname, value);
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -1142,7 +1238,6 @@ int ses_write_handle_i(session_root_t *root, void *handle, char *valname,
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
@@ -1153,16 +1248,18 @@ int ses_read_handle_s(session_root_t *root, void *handle, char *valname,
 		      char *defval, char *buffer, int bufsize)
 {
      if (!root || !root->root_type)
-	return default_read_s(handle, valname, defval, buffer, bufsize);
+	return default_read_s(root, handle, valname, defval, buffer, bufsize);
     else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
-	    return reg_read_s(handle, valname, defval, buffer, bufsize);
+	    return reg_read_s(root, handle, valname, defval, buffer, bufsize);
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    return xml_read_s(root, handle, valname, defval, buffer, bufsize);
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -1170,7 +1267,6 @@ int ses_read_handle_s(session_root_t *root, void *handle, char *valname,
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
@@ -1181,16 +1277,18 @@ int ses_write_handle_s(session_root_t *root, void *handle, char *valname,
 		       char *value)
 {
      if (!root || !root->root_type)
-	return default_write_s(handle, valname, value);
+	return default_write_s(root, handle, valname, value);
     else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
-	    return reg_write_s(handle, valname, value);
+	    return reg_write_s(root, handle, valname, value);
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    return xml_write_s(root, handle, valname, value);
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -1198,7 +1296,6 @@ int ses_write_handle_s(session_root_t *root, void *handle, char *valname,
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
@@ -1214,18 +1311,21 @@ void *ses_enum_settings_start(session_root_t *root, char *path)
 
      if (!root || !root->root_type) {
 	if (default_make_path(NULL, path, ppath, BUFSIZE))
-	    return default_enum_settings_start(ppath);
+	    return default_enum_settings_start(root, ppath);
     } else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
 	    if (reg_make_path_specific(root->root_location,
 		    NULL, path, ppath, BUFSIZE))
-		return reg_enum_settings_start(ppath);
+		return reg_enum_settings_start(root, ppath);
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    if (xml_make_path(XML_SESSIONROOT, path, ppath, BUFSIZE))
+		return xml_enum_settings_start(root, ppath);
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -1233,7 +1333,6 @@ void *ses_enum_settings_start(session_root_t *root, char *path)
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
@@ -1243,16 +1342,18 @@ void *ses_enum_settings_start(session_root_t *root, char *path)
 int ses_enum_settings_count(session_root_t *root, void *handle)
 {
      if (!root || !root->root_type) {
-	return default_enum_settings_count(handle);
+	return default_enum_settings_count(root, handle);
     } else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
-	    return reg_enum_settings_count(handle);
+	    return reg_enum_settings_count(root, handle);
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    return xml_enum_settings_count(root, handle);
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -1260,7 +1361,6 @@ int ses_enum_settings_count(session_root_t *root, void *handle)
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
@@ -1271,16 +1371,18 @@ char *ses_enum_settings_next(session_root_t *root, void *handle,
 			     char *buffer, int buflen)
 {
     if (!root || !root->root_type) {
-	return default_enum_settings_next(handle, buffer, buflen);
+	return default_enum_settings_next(root, handle, buffer, buflen);
     } else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
-	    return reg_enum_settings_next(handle, buffer, buflen);
+	    return reg_enum_settings_next(root, handle, buffer, buflen);
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    return xml_enum_settings_next(root, handle, buffer, buflen);
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -1288,7 +1390,6 @@ char *ses_enum_settings_next(session_root_t *root, void *handle,
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 
@@ -1298,16 +1399,18 @@ char *ses_enum_settings_next(session_root_t *root, void *handle,
 void ses_enum_settings_finish(session_root_t *root, void *handle)
 {
     if (!root || !root->root_type) {
-	default_enum_settings_finish(handle);
+	default_enum_settings_finish(root, handle);
     } else {
 	switch (root->root_type) {
 #ifdef _WINDOWS
 	case SES_ROOT_REGISTRY:
-	    reg_enum_settings_finish(handle);
+	    reg_enum_settings_finish(root, handle);
 	    break;
+#endif /* _WINDOWS */
 	case SES_ROOT_FILETREE:
 	    break;
 	case SES_ROOT_XMLFILE:
+	    xml_enum_settings_finish(root, handle);
 	    break;
 	case SES_ROOT_XMLHTTP:
 	    break;
@@ -1315,7 +1418,6 @@ void ses_enum_settings_finish(session_root_t *root, void *handle)
 	    break;
 	case SES_ROOT_XMLSHTTP:
 	    break;
-#endif /* _WINDOWS */
 	};
     };
 };
@@ -1553,4 +1655,158 @@ int ses_finish_session_root(session_root_t *root, char *errmsg, int errsize) {
 	free(root->root_location);
 
     return TRUE;
+};
+
+void *ses_enum_values_start(session_root_t *root, void *session)
+{
+    if (!session)
+	return FALSE;
+
+    if (!root || !root->root_type)
+	return default_enum_values_start(root, session);
+    else {
+	switch (root->root_type) {
+#ifdef _WINDOWS
+	case SES_ROOT_REGISTRY:
+	    return reg_enum_values_start(root, session);
+	    break;
+#endif /* _WINDOWS */
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    return xml_enum_settings_start(root, session);
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
+	};
+    };
+
+    return FALSE;
+};
+
+int ses_enum_values_count(session_root_t *root, void *handle)
+{
+    if (!handle)
+	return FALSE;
+
+    if (!root || !root->root_type)
+	return default_enum_values_count(root, handle);
+    else {
+	switch (root->root_type) {
+#ifdef _WINDOWS
+	case SES_ROOT_REGISTRY:
+	    return reg_enum_values_count(root, handle);
+	    break;
+#endif /* _WINDOWS */
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    return xml_enum_settings_count(root, handle);
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
+	};
+    };
+
+    return FALSE;
+};
+
+int ses_enum_values_type(session_root_t *root, void *handle)
+{
+    if (!handle)
+	return FALSE;
+
+    if (!root || !root->root_type)
+	return default_enum_values_type(root, handle);
+    else {
+	switch (root->root_type) {
+#ifdef _WINDOWS
+	case SES_ROOT_REGISTRY:
+	    return reg_enum_values_type(root, handle);
+	    break;
+#endif /* _WINDOWS */
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    return xml_enum_values_type(root, handle);
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
+	};
+    };
+
+    return FALSE;
+};
+
+char *ses_enum_values_next(session_root_t *root, void *handle, 
+			   char *buffer, int buflen)
+{
+    if (!handle)
+	return FALSE;
+
+    if (!root || !root->root_type)
+	return default_enum_values_next(root, handle, buffer, buflen);
+    else {
+	switch (root->root_type) {
+#ifdef _WINDOWS
+	case SES_ROOT_REGISTRY:
+	    return reg_enum_values_next(root, handle, buffer, buflen);
+	    break;
+#endif /* _WINDOWS */
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    return xml_enum_settings_next(root, handle, buffer, buflen);
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
+	};
+    };
+
+    return FALSE;
+};
+
+void ses_enum_values_finish(session_root_t *root, void *handle)
+{
+    if (!handle)
+	return;
+
+    if (!root || !root->root_type)
+	default_enum_values_finish(root, handle);
+    else {
+	switch (root->root_type) {
+#ifdef _WINDOWS
+	case SES_ROOT_REGISTRY:
+	    reg_enum_values_finish(root, handle);
+	    break;
+#endif /* _WINDOWS */
+	case SES_ROOT_FILETREE:
+	    break;
+	case SES_ROOT_XMLFILE:
+	    xml_enum_settings_finish(root, handle);
+	    break;
+	case SES_ROOT_XMLHTTP:
+	    break;
+	case SES_ROOT_XMLFTP:
+	    break;
+	case SES_ROOT_XMLSHTTP:
+	    break;
+	};
+    };
 };

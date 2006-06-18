@@ -14,8 +14,6 @@
 #endif
 #include "registry.h"
 
-#define BUFSIZE			512
-
 static const char hex[16] = "0123456789ABCDEF";
 
 static void mungestr(const char *in, char *out, int outlen)
@@ -99,25 +97,25 @@ int reg_make_path_specific(char *root, char *parent, char *path,
     return ret < 0 ? FALSE : TRUE;
 };
 
-void *reg_open_session_r(char *keyname)
+void *reg_open_session_r(session_root_t *root, char *keyname)
 {
     char munge[BUFSIZE];
 
     mungestr(keyname, munge, BUFSIZE);
 
-    return reg_open_key_r(munge);
+    return reg_open_key_r(root, munge);
 };
 
-void *reg_open_session_w(char *keyname)
+void *reg_open_session_w(session_root_t *root, char *keyname)
 {
     char munge[BUFSIZE];
 
     mungestr(keyname, munge, BUFSIZE);
 
-    return reg_open_key_w(munge);
+    return reg_open_key_w(root, munge);
 };
 
-void *reg_open_key_r(char *keyname)
+void *reg_open_key_r(session_root_t *root, char *keyname)
 {
     HKEY key = 0;
 
@@ -130,7 +128,7 @@ void *reg_open_key_r(char *keyname)
     return (void *) key;
 };
 
-void *reg_open_key_w(char *keyname)
+void *reg_open_key_w(session_root_t *root, char *keyname)
 {
     HKEY key = 0;
 
@@ -144,12 +142,13 @@ void *reg_open_key_w(char *keyname)
     return (void *) key;
 };
 
-void reg_close_key(void *handle)
+void reg_close_key(session_root_t *root, void *handle)
 {
     RegCloseKey((HKEY) handle);
 };
 
-int reg_read_i(void *handle, char *valname, int defval, int *value)
+int reg_read_i(session_root_t *root, void *handle, char *valname, 
+	       int defval, int *value)
 {
     DWORD type, size;
 
@@ -163,7 +162,8 @@ int reg_read_i(void *handle, char *valname, int defval, int *value)
 			    &size) == ERROR_SUCCESS;
 };
 
-int reg_write_i(void *handle, char *valname, int value)
+int reg_write_i(session_root_t *root, void *handle, char *valname, 
+		int value)
 {
     DWORD val;
 
@@ -173,8 +173,8 @@ int reg_write_i(void *handle, char *valname, int value)
 			 sizeof(DWORD)) == ERROR_SUCCESS;
 };
 
-int reg_read_s(void *handle, char *valname, char *defval, 
-	       char *buffer, int bufsize)
+int reg_read_s(session_root_t *root, void *handle, char *valname, 
+	       char *defval, char *buffer, int bufsize)
 {
     DWORD type, size;
 
@@ -186,19 +186,20 @@ int reg_read_s(void *handle, char *valname, char *defval,
 			    &size) == ERROR_SUCCESS && size > 0;
 };
 
-int reg_write_s(void *handle, char *valname, char *value)
+int reg_write_s(session_root_t *root, void *handle, char *valname, 
+		char *value)
 {
     return !RegSetValueEx((HKEY) handle, valname, 0, 
 			    REG_SZ, (LPBYTE) value, 
 			    strlen(value));
 };
 
-int reg_delete_v(void *handle, char *valname)
+int reg_delete_v(session_root_t *root, void *handle, char *valname)
 {
     return RegDeleteValue((HKEY) handle, valname) == ERROR_SUCCESS;
 };
 
-int reg_delete_k(char *keyname)
+int reg_delete_k(session_root_t *root, char *keyname)
 {
     HKEY key;
     char munge[BUFSIZE];
@@ -216,7 +217,7 @@ int reg_delete_k(char *keyname)
     return (err == ERROR_SUCCESS);
 };
 
-int reg_copy_session(char *frompath, char *topath)
+int reg_copy_session(session_root_t *root, char *frompath, char *topath)
 {
     HKEY key1, key2;
     char from[BUFSIZE], to[BUFSIZE], name[BUFSIZE];
@@ -266,14 +267,14 @@ int reg_copy_session(char *frompath, char *topath)
     return TRUE;
 };
 
-struct enumsettings {
+typedef struct _reg_enumsettings_t {
     HKEY key;
     int i;
-};
+} reg_enumsettings_t;
 
-void *reg_enum_settings_start(char *path)
+void *reg_enum_settings_start(session_root_t *root, char *path)
 {
-    struct enumsettings *ret;
+    reg_enumsettings_t *ret;
     HKEY key;
     char munge[BUFSIZE];
 
@@ -283,7 +284,7 @@ void *reg_enum_settings_start(char *path)
 	return NULL;
     };
 
-    ret = (struct enumsettings *) malloc(sizeof(struct enumsettings));
+    ret = (reg_enumsettings_t *) malloc(sizeof(reg_enumsettings_t));
     if (ret) {
 	ret->key = key;
 	ret->i = 0;
@@ -292,20 +293,21 @@ void *reg_enum_settings_start(char *path)
     return ret;
 }
 
-int reg_enum_settings_count(void *handle)
+int reg_enum_settings_count(session_root_t *root, void *handle)
 {
-    struct enumsettings *e = (struct enumsettings *)handle;
+    reg_enumsettings_t *e = (reg_enumsettings_t *)handle;
     DWORD subkeys;
 
     RegQueryInfoKey(e->key, NULL, NULL, NULL, &subkeys, NULL, NULL,
 	NULL, NULL, NULL, NULL, NULL);
 
-    return (int)subkeys;
+    return (int) subkeys;
 };
 
-char *reg_enum_settings_next(void *handle, char *buffer, int buflen)
+char *reg_enum_settings_next(session_root_t *root, void *handle, 
+			     char *buffer, int buflen)
 {
-    struct enumsettings *e = (struct enumsettings *)handle;
+    reg_enumsettings_t *e = (reg_enumsettings_t *)handle;
     char *otherbuf;
 
     otherbuf = (char *)malloc(3 * buflen);
@@ -319,10 +321,83 @@ char *reg_enum_settings_next(void *handle, char *buffer, int buflen)
     }
 }
 
-void reg_enum_settings_finish(void *handle)
+void reg_enum_settings_finish(session_root_t *root, void *handle)
 {
-    struct enumsettings *e = (struct enumsettings *) handle;
+    reg_enumsettings_t *e = (reg_enumsettings_t *) handle;
 
     RegCloseKey(e->key);
     free(e);
-}
+};
+
+typedef struct _reg_enumvalues_t {
+    HKEY key;
+    int i;
+    int type;
+} reg_enumvalues_t;
+
+void *reg_enum_values_start(session_root_t *root, void *session)
+{
+    reg_enumvalues_t *e;
+
+    if (!session)
+	return NULL;
+
+    e = (reg_enumvalues_t *) malloc(sizeof(reg_enumvalues_t));
+    memset(e, 0, sizeof(reg_enumvalues_t));
+
+    e->key = (HKEY) session;
+
+    return e;
+};
+
+int reg_enum_values_count(session_root_t *root, void *handle)
+{
+    reg_enumvalues_t *e = (reg_enumvalues_t *) handle;
+    DWORD values;
+
+    if (e && RegQueryInfoKey(e->key, NULL, NULL, NULL, NULL, NULL, NULL,
+	&values, NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
+	return values;
+    else
+	return 0;
+};
+
+int reg_enum_values_type(session_root_t *root, void *handle)
+{
+    reg_enumvalues_t *e = (reg_enumvalues_t *) handle;
+
+    return e->type;
+};
+
+char *reg_enum_values_next(session_root_t *root, void *handle,
+			   char *buffer, int buflen)
+{
+    reg_enumvalues_t *e = (reg_enumvalues_t *) handle;
+    DWORD size, type;
+
+    size = buflen;
+
+    if (e && RegEnumValue(e->key, e->i++, (LPTSTR) buffer, &size, NULL,
+	&type, NULL, NULL) == ERROR_SUCCESS) {
+	switch (type) {
+	case REG_DWORD:
+	    e->type = SES_VALUE_INTEGER;
+	    break;
+	case REG_SZ:
+	    e->type = SES_VALUE_STRING;
+	    break;
+	default:
+	    e->type = SES_VALUE_UNDEFINED;
+	};
+	return buffer;
+    } else
+	return NULL;
+};
+
+void reg_enum_values_finish(session_root_t *root, void *handle)
+{
+    reg_enumsettings_t *e = (reg_enumsettings_t *) handle;
+
+    RegCloseKey(e->key);
+    free(e);
+};

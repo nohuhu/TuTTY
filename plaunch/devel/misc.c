@@ -306,7 +306,7 @@ HMENU menu_addrunning(HMENU menu)
 {
     unsigned int i, id;
     struct windowlist wl;
-    char buf[BUFSIZE], buf2[BUFSIZE], h;
+//    char buf[BUFSIZE], buf2[BUFSIZE], h;
 
     if (!menu)
 	return menu;
@@ -532,6 +532,72 @@ int launch_autoruns(char *root, int when)
     return TRUE;
 };
 
+static void sync_callback(session_callback_t *scb)
+{
+    session_root_t *to = (session_root_t *) scb->public1;
+    int i, max, type, ivalue;
+    char name[BUFSIZE], svalue[BUFSIZE];
+    void *sfrom, *sto, *en;
+
+    if ((scb->mode == SES_MODE_PREPROCESS &&
+	!scb->session->isfolder) ||
+	(scb->mode == SES_MODE_POSTPROCESS &&
+	scb->session->isfolder))
+	return;
+
+    sfrom = ses_open_session_r(&scb->root, scb->session->path);
+    sto = ses_open_session_w(to, scb->session->path);
+
+    if (!sfrom || !sto)
+	return;
+
+    en = ses_enum_values_start(&scb->root, sfrom);
+
+    if (!en)
+	return;
+
+    max = ses_enum_values_count(&scb->root, en);
+
+    for (i = 0; i < max; i++) {
+	if (ses_enum_values_next(&scb->root, en, name, BUFSIZE)) {
+	    type = ses_enum_values_type(&scb->root, en);
+	    switch (type) {
+	    case SES_VALUE_INTEGER:
+		{
+		    ses_read_handle_i(&scb->root, sfrom, name, 0, &ivalue);
+		    ses_write_handle_i(to, sto, name, ivalue);
+		};
+		break;
+	    case SES_VALUE_STRING:
+		{
+		    ses_read_handle_s(&scb->root, sfrom, name, "", svalue, BUFSIZE);
+		    ses_write_handle_s(to, sto, name, svalue);
+		};
+		break;
+	    };
+	};
+    };
+
+    ses_close_session(&scb->root, sfrom);
+    ses_close_session(to, sto);
+};
+
+int sync_session_roots(session_root_t *from, session_root_t *to)
+{
+    session_walk_t sw;
+
+    memset(&sw, 0, sizeof(sw));
+    sw.root = *from;
+    sw.root_path = "";
+    sw.depth = SES_MAX_DEPTH;
+    sw.callback = sync_callback;
+    sw.public1 = (void *) to;
+
+    ses_walk_over_tree(&sw);
+
+    return TRUE;
+};
+
 unsigned int read_config(Config *cfg)
 {
     char buf[BUFSIZE];
@@ -541,14 +607,14 @@ unsigned int read_config(Config *cfg)
     if (!cfg)
 	return FALSE;
 
-    handle = reg_open_key_r(PLAUNCH_REGISTRY_ROOT);
+    handle = reg_open_key_r(&cfg->sessionroot, PLAUNCH_REGISTRY_ROOT);
 
-    if (reg_read_s(handle, PLAUNCH_PUTTY_PATH, NULL, buf, BUFSIZE))
+    if (reg_read_s(&cfg->sessionroot, handle, PLAUNCH_PUTTY_PATH, NULL, buf, BUFSIZE))
 	strcpy(config->putty_path, buf);
     else
 	get_putty_path(config->putty_path, BUFSIZE);
 
-    reg_read_i(handle, PLAUNCH_HOTKEY_LB, 0, &hk);
+    reg_read_i(&cfg->sessionroot, handle, PLAUNCH_HOTKEY_LB, 0, &hk);
 
     if (hk == 0)
 	hk = HOTKEY_DEFAULT_LAUNCHBOX;
@@ -557,7 +623,7 @@ unsigned int read_config(Config *cfg)
     config->hotkeys[HOTKEY_LAUNCHBOX].hotkey = hk;
     config->hotkeys[HOTKEY_LAUNCHBOX].destination = (char *) WM_LAUNCHBOX;
 
-    reg_read_i(handle, PLAUNCH_HOTKEY_WL, 0, &hk);
+    reg_read_i(&cfg->sessionroot, handle, PLAUNCH_HOTKEY_WL, 0, &hk);
 
     if (hk == 0)
 	hk = HOTKEY_DEFAULT_WINDOWLIST;
@@ -566,7 +632,7 @@ unsigned int read_config(Config *cfg)
     config->hotkeys[HOTKEY_WINDOWLIST].hotkey = hk;
     config->hotkeys[HOTKEY_WINDOWLIST].destination = (char *) WM_WINDOWLIST;
 
-    reg_read_i(handle, PLAUNCH_HOTKEY_HIDEWINDOW, 0, &hk);
+    reg_read_i(&cfg->sessionroot, handle, PLAUNCH_HOTKEY_HIDEWINDOW, 0, &hk);
 
     if (hk == 0)
 	hk = HOTKEY_DEFAULT_HIDEWINDOW;
@@ -575,7 +641,7 @@ unsigned int read_config(Config *cfg)
     config->hotkeys[HOTKEY_HIDEWINDOW].hotkey = hk;
     config->hotkeys[HOTKEY_HIDEWINDOW].destination = (char *) WM_HIDEWINDOW;
 
-    reg_read_i(handle, PLAUNCH_HOTKEY_CYCLEWINDOW, 0, &hk);
+    reg_read_i(&cfg->sessionroot, handle, PLAUNCH_HOTKEY_CYCLEWINDOW, 0, &hk);
 
     if (hk == 0)
 	hk = HOTKEY_DEFAULT_CYCLEWINDOW;
@@ -586,27 +652,27 @@ unsigned int read_config(Config *cfg)
 
     config->nhotkeys = 4;
 
-    reg_read_i(handle, PLAUNCH_ENABLEDRAGDROP, TRUE, &hk);
+    reg_read_i(&cfg->sessionroot, handle, PLAUNCH_ENABLEDRAGDROP, TRUE, &hk);
     if (hk)
 	config->options |= OPTION_ENABLEDRAGDROP;
 
-    reg_read_i(handle, PLAUNCH_ENABLESAVECURSOR, TRUE, &hk);
+    reg_read_i(&cfg->sessionroot, handle, PLAUNCH_ENABLESAVECURSOR, TRUE, &hk);
     if (hk)
 	config->options |= OPTION_ENABLESAVECURSOR;
 
-    reg_read_i(handle, PLAUNCH_SHOWONQUIT, TRUE, &hk);
+    reg_read_i(&cfg->sessionroot, handle, PLAUNCH_SHOWONQUIT, TRUE, &hk);
     if (hk)
 	config->options |= OPTION_SHOWONQUIT;
 
-    reg_read_i(handle, PLAUNCH_MENUSESSIONS, FALSE, &hk);
+    reg_read_i(&cfg->sessionroot, handle, PLAUNCH_MENUSESSIONS, FALSE, &hk);
     if (hk)
 	config->options |= OPTION_MENUSESSIONS;
 
-    reg_read_i(handle, PLAUNCH_MENURUNNING, FALSE, &hk);
+    reg_read_i(&cfg->sessionroot, handle, PLAUNCH_MENURUNNING, FALSE, &hk);
     if (hk)
 	config->options |= OPTION_MENURUNNING;
 
-    reg_close_key(handle);
+    reg_close_key(&cfg->sessionroot, handle);
 
     extract_hotkeys(cfg, "");
 
@@ -621,85 +687,85 @@ unsigned int save_config(Config *cfg, int what)
     if (!cfg || !what)
 	return FALSE;
 
-    handle = reg_open_key_w(PLAUNCH_REGISTRY_ROOT);
+    handle = reg_open_key_w(&cfg->sessionroot, PLAUNCH_REGISTRY_ROOT);
 
     if (what & CFG_SAVE_PUTTY_PATH) {
 	get_putty_path(buf, BUFSIZE);
 	if (!strcmp(buf, config->putty_path))
-	    reg_delete_v(handle, PLAUNCH_PUTTY_PATH);
+	    reg_delete_v(&cfg->sessionroot, handle, PLAUNCH_PUTTY_PATH);
 	else
-	    reg_write_s(handle, PLAUNCH_PUTTY_PATH,
+	    reg_write_s(&cfg->sessionroot, handle, PLAUNCH_PUTTY_PATH,
 			config->putty_path);
     };
 
     if (what & CFG_SAVE_HOTKEY_LB) {
 	if (config->hotkeys[HOTKEY_LAUNCHBOX].hotkey == HOTKEY_DEFAULT_LAUNCHBOX)
-	    reg_delete_v(handle, PLAUNCH_HOTKEY_LB);
+	    reg_delete_v(&cfg->sessionroot, handle, PLAUNCH_HOTKEY_LB);
 	else
-	    reg_write_i(handle, PLAUNCH_HOTKEY_LB,
+	    reg_write_i(&cfg->sessionroot, handle, PLAUNCH_HOTKEY_LB,
 			config->hotkeys[HOTKEY_LAUNCHBOX].hotkey);
     };
 
     if (what & CFG_SAVE_HOTKEY_WL) {
 	if (config->hotkeys[HOTKEY_WINDOWLIST].hotkey == HOTKEY_DEFAULT_WINDOWLIST)
-	    reg_delete_v(handle, PLAUNCH_HOTKEY_WL);
+	    reg_delete_v(&cfg->sessionroot, handle, PLAUNCH_HOTKEY_WL);
 	else
-	    reg_write_i(handle, PLAUNCH_HOTKEY_WL,
+	    reg_write_i(&cfg->sessionroot, handle, PLAUNCH_HOTKEY_WL,
 			config->hotkeys[HOTKEY_WINDOWLIST].hotkey);
     };
 
     if (what & CFG_SAVE_HOTKEY_HIDEWINDOW) {
 	if (config->hotkeys[HOTKEY_HIDEWINDOW].hotkey == HOTKEY_DEFAULT_HIDEWINDOW)
-	    reg_delete_v(handle, PLAUNCH_HOTKEY_HIDEWINDOW);
+	    reg_delete_v(&cfg->sessionroot, handle, PLAUNCH_HOTKEY_HIDEWINDOW);
 	else
-	    reg_write_i(handle, PLAUNCH_HOTKEY_HIDEWINDOW,
+	    reg_write_i(&cfg->sessionroot, handle, PLAUNCH_HOTKEY_HIDEWINDOW,
 			config->hotkeys[HOTKEY_HIDEWINDOW].hotkey);
     };
 
     if (what & CFG_SAVE_HOTKEY_CYCLEWINDOW) {
 	if (config->hotkeys[HOTKEY_CYCLEWINDOW].hotkey == HOTKEY_DEFAULT_CYCLEWINDOW)
-	    reg_delete_v(handle, PLAUNCH_HOTKEY_CYCLEWINDOW);
+	    reg_delete_v(&cfg->sessionroot, handle, PLAUNCH_HOTKEY_CYCLEWINDOW);
 	else
-	    reg_write_i(handle, PLAUNCH_HOTKEY_CYCLEWINDOW,
+	    reg_write_i(&cfg->sessionroot, handle, PLAUNCH_HOTKEY_CYCLEWINDOW,
 			config->hotkeys[HOTKEY_CYCLEWINDOW].hotkey);
     };
 
     if (what & CFG_SAVE_DRAGDROP) {
 	if (config->options & OPTION_ENABLEDRAGDROP)
-	    reg_delete_v(handle, PLAUNCH_ENABLEDRAGDROP);
+	    reg_delete_v(&cfg->sessionroot, handle, PLAUNCH_ENABLEDRAGDROP);
 	else
-	    reg_write_i(handle, PLAUNCH_ENABLEDRAGDROP, 0);
+	    reg_write_i(&cfg->sessionroot, handle, PLAUNCH_ENABLEDRAGDROP, 0);
     };
 
     if (what & CFG_SAVE_SAVECURSOR) {
 	if (config->options & OPTION_ENABLESAVECURSOR)
-	    reg_delete_v(handle, PLAUNCH_ENABLESAVECURSOR);
+	    reg_delete_v(&cfg->sessionroot, handle, PLAUNCH_ENABLESAVECURSOR);
 	else
-	    reg_write_i(handle, PLAUNCH_ENABLESAVECURSOR, 0);
+	    reg_write_i(&cfg->sessionroot, handle, PLAUNCH_ENABLESAVECURSOR, 0);
     };
 
     if (what & CFG_SAVE_SHOWONQUIT) {
 	if (config->options & OPTION_SHOWONQUIT)
-	    reg_delete_v(handle, PLAUNCH_SHOWONQUIT);
+	    reg_delete_v(&cfg->sessionroot, handle, PLAUNCH_SHOWONQUIT);
 	else
-	    reg_write_i(handle, PLAUNCH_SHOWONQUIT, 0);
+	    reg_write_i(&cfg->sessionroot, handle, PLAUNCH_SHOWONQUIT, 0);
     };
 
     if (what & CFG_SAVE_MENUSESSIONS) {
 	if (config->options & OPTION_MENUSESSIONS)
-	    reg_write_i(handle, PLAUNCH_MENUSESSIONS, 1);
+	    reg_write_i(&cfg->sessionroot, handle, PLAUNCH_MENUSESSIONS, 1);
 	else
-	    reg_delete_v(handle, PLAUNCH_MENUSESSIONS);
+	    reg_delete_v(&cfg->sessionroot, handle, PLAUNCH_MENUSESSIONS);
     };
 
     if (what & CFG_SAVE_MENURUNNING) {
 	if (config->options & OPTION_MENURUNNING)
-	    reg_write_i(handle, PLAUNCH_MENURUNNING, 1);
+	    reg_write_i(&cfg->sessionroot, handle, PLAUNCH_MENURUNNING, 1);
 	else
-	    reg_delete_v(handle, PLAUNCH_MENURUNNING);
+	    reg_delete_v(&cfg->sessionroot, handle, PLAUNCH_MENURUNNING);
     };
 
-    reg_close_key(handle);
+    reg_close_key(&cfg->sessionroot, handle);
 
     return TRUE;
 };

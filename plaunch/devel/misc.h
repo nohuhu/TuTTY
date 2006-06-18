@@ -130,8 +130,8 @@ extern char *ATNETWORKUP_STRINGS[];
 extern char *ATNETWORKDOWN_STRINGS[];
 extern char *ATSTOP_STRINGS[];
 
-int GetSystemImageLists(HMODULE * hShell32, HIMAGELIST * phLarge,
-			HIMAGELIST * phSmall);
+int GetSystemImageLists(HMODULE *hShell32, HIMAGELIST *phLarge,
+			HIMAGELIST *phSmall);
 void FreeSystemImageLists(HMODULE hShell32);
 
 HTREEITEM treeview_additem(HWND treeview, HTREEITEM parent,
@@ -158,6 +158,8 @@ void free_process_records(void);
 int work_over_actions(struct _config *cfg, char *path, char *strings[3]);
 
 int launch_autoruns(char *root, int when);
+
+int sync_session_roots(session_root_t *from, session_root_t *to);
 
 int find_existing_processes(void);
 

@@ -12,7 +12,7 @@
 
 #include "session.h"
 
-#define XML_SESSIONROOT			"Sessions"
+#define XML_SESSIONROOT			"PuTTY\\Sessions"
 #define XML_SSHHOSTKEYS			"SshHostKeys"
 #define XML_PLAUNCHROOT			"PLaunch"
 
@@ -33,24 +33,35 @@ void *xml_open_session_w(session_root_t *root, char *keyname);
 void *xml_open_key_r(session_root_t *root, char *keyname);
 void *xml_open_key_w(session_root_t *root, char *keyname);
 
-void xml_close_key(void *handle);
+void xml_close_key(session_root_t *root, void *handle);
 
-int xml_copy_session(char *from, char *to);
+int xml_copy_session(session_root_t *root, char *from, char *to);
 
-int xml_delete_v(void *handle, char *valname);
-int xml_delete_k(void *handle, char *keyname);
+int xml_delete_v(session_root_t *root, void *handle, char *valname);
+int xml_delete_k(session_root_t *root, void *handle, char *keyname);
 
-int xml_read_i(void *handle, char *valname, int defval, int *value);
-int xml_write_i(void *handle, char *valname, int value);
+int xml_read_i(session_root_t *root, void *handle, char *valname, 
+	       int defval, int *value);
+int xml_write_i(session_root_t *root, void *handle, char *valname, 
+		int value);
 
-int xml_read_s(void *handle, char *valname, char *defval, 
-	       char *buffer, int bufsize);
+int xml_read_s(session_root_t *root, void *handle, char *valname, 
+	       char *defval, char *buffer, int bufsize);
 
-int xml_write_s(void *handle, char *valname, char *value);
+int xml_write_s(session_root_t *root, void *handle, char *valname, 
+		char *value);
 
 void *xml_enum_settings_start(session_root_t *root, char *path);
-int xml_enum_settings_count(void *handle);
-char *xml_enum_settings_next(void *handle, char *buffer, int buflen);
-void xml_enum_settings_finish(void *handle);
+int xml_enum_settings_count(session_root_t *root, void *handle);
+char *xml_enum_settings_next(session_root_t *root, void *handle, 
+			     char *buffer, int buflen);
+void xml_enum_settings_finish(session_root_t *root, void *handle);
+
+void *xml_enum_values_start(session_root_t *root, void *session);
+int xml_enum_values_count(session_root_t *root, void *handle);
+int xml_enum_values_type(session_root_t *root, void *handle);
+char *xml_enum_values_next(session_root_t *root, void *handle, 
+			   char *buffer, int buflen);
+void xml_enum_values_finish(session_root_t *root, void *handle);
 
 #endif /* XMLSTORE_H */

@@ -2121,11 +2121,12 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 	    char curpos[BUFSIZE];
 	    void *handle;
 
-	    if ((handle = reg_open_key_r(PLAUNCH_REGISTRY_ROOT)) &&
-		reg_read_s(handle, PLAUNCH_SAVEDCURSORPOS, NULL, curpos, BUFSIZE)) {
+	    if ((handle = reg_open_key_r(&config->sessionroot, PLAUNCH_REGISTRY_ROOT)) &&
+		reg_read_s(&config->sessionroot, handle, PLAUNCH_SAVEDCURSORPOS, 
+		NULL, curpos, BUFSIZE)) {
 		HTREEITEM pos;
 
-		reg_close_key(handle);
+		reg_close_key(&config->sessionroot, handle);
 		pos = treeview_getitemfrompath(treeview, curpos);
 
 		if (pos && pos != TVI_ROOT) {
@@ -2148,9 +2149,9 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 	    smallpt.x = bigpt.x;
 	    smallpt.y = r2.top - r1.top;
 	    morestate = 1;
-	    handle = reg_open_key_r(PLAUNCH_REGISTRY_ROOT);
-	    reg_read_i(handle, PLAUNCH_SAVEMOREBUTTON, 0, &i);
-	    reg_close_key(handle);
+	    handle = reg_open_key_r(&config->sessionroot, PLAUNCH_REGISTRY_ROOT);
+	    reg_read_i(&config->sessionroot, handle, PLAUNCH_SAVEMOREBUTTON, 0, &i);
+	    reg_close_key(&config->sessionroot, handle);
 	    if (!i)
 		SendMessage(hwnd, WM_COMMAND, IDC_LAUNCHBOX_BUTTON_MORE, 0);
 	};
@@ -2478,9 +2479,9 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		{
 		    void *handle;
 
-		    handle = reg_open_key_w(PLAUNCH_REGISTRY_ROOT);
-		    reg_write_i(handle, PLAUNCH_SAVEMOREBUTTON, morestate);
-		    reg_close_key(handle);
+		    handle = reg_open_key_w(&config->sessionroot, PLAUNCH_REGISTRY_ROOT);
+		    reg_write_i(&config->sessionroot, handle, PLAUNCH_SAVEMOREBUTTON, morestate);
+		    reg_close_key(&config->sessionroot, handle);
 		};
 		
 		SendMessage(hwnd, WM_REFRESHBUTTONS, 0, 0);
@@ -2500,9 +2501,9 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 
 		    item = TreeView_GetSelection(treeview);
 		    treeview_getitempath(treeview, item, path);
-		    handle = reg_open_key_w(PLAUNCH_REGISTRY_ROOT);
-		    reg_write_s(handle,	PLAUNCH_SAVEDCURSORPOS, path);
-		    reg_close_key(handle);
+		    handle = reg_open_key_w(&config->sessionroot, PLAUNCH_REGISTRY_ROOT);
+		    reg_write_s(&config->sessionroot, handle,	PLAUNCH_SAVEDCURSORPOS, path);
+		    reg_close_key(&config->sessionroot, handle);
 		};
 
 	    };
