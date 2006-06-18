@@ -12,7 +12,8 @@
 
 #include "session.h"
 
-#define XML_SESSIONROOT			"PuTTY\\Sessions"
+#define XML_ROOT			"PuTTY"
+#define XML_SESSIONROOT			"Sessions"
 #define XML_SSHHOSTKEYS			"SshHostKeys"
 #define XML_PLAUNCHROOT			"PLaunch"
 

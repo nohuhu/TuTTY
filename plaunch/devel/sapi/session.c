@@ -167,7 +167,7 @@ char *ses_firstname(char *in, char *buffer, int bufsize)
 	return in;
 
     p = in;
-//    e = &in[strlen(in)];
+    e = &in[strlen(in)];
 
     while (/*p <= e && */*p != '\\' && *p != '\0')
 	*p++;

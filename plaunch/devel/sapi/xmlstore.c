@@ -64,7 +64,7 @@ char *second_name(char *in)
 ezxml_t xml_find_key(ezxml_t root_node, char *path)
 {
     ezxml_t node;
-    char name[BUFSIZE], *cpath;
+    char name[BUFSIZE], *cpath, *nname, *nattr;
 
     if (!path || !path[0])
 	return NULL;
@@ -74,10 +74,12 @@ ezxml_t xml_find_key(ezxml_t root_node, char *path)
     ses_firstname(path, name, BUFSIZE);
     cpath = second_name(path);
 
-    for (node = root_node; node; node = ezxml_next(node)) {
-	if (strcmp(ezxml_name(node), XML_NODE_KEY) == 0 &&
-	    strcmp(ezxml_attr(node, XML_ATTR_NAME), name) == 0) {
-	    if (cpath)
+    for (node = ezxml_child(root_node, XML_NODE_KEY); node; node = ezxml_next(node)) {
+	nname = ezxml_name(node);
+	nattr = (char *) ezxml_attr(node, XML_ATTR_NAME);
+	if (strcmp(nname, XML_NODE_KEY) == 0 &&
+	    strcmp(nattr, name) == 0) {
+	    if (cpath && cpath[0])
 		return xml_find_key(node, cpath);
 	    else
 		return node;
@@ -87,7 +89,19 @@ ezxml_t xml_find_key(ezxml_t root_node, char *path)
     return NULL;
 };
 
-ezxml_t xml_create_key(ezxml_t root_node, char *keyname)
+ezxml_t xml_find_value(ezxml_t node, char *valname)
+{
+    ezxml_t value;
+
+    for (value = ezxml_child(node, XML_NODE_VALUE); value; value = ezxml_next(value)) {
+	if (ezxml_attr(value, valname))
+	    return value;
+    };
+
+    return NULL;
+};
+
+ezxml_t xml_create_key(session_root_t *root, ezxml_t root_node, char *keyname)
 {
     ezxml_t node;
     char name[BUFSIZE], *cpath;
@@ -103,29 +117,29 @@ ezxml_t xml_create_key(ezxml_t root_node, char *keyname)
     node = xml_find_key(root_node, name);
 
     if (node)
-	return xml_create_key(node, cpath);
+	return xml_create_key(root, node, cpath);
     else {
-	node = ezxml_new_d(XML_NODE_KEY);
-	ezxml_set_attr(node, XML_ATTR_NAME, name);
-	return xml_create_key(node, cpath);
+	node = ezxml_add_child_d(root_node, XML_NODE_KEY, 0);
+	ezxml_set_attr_d(node, XML_ATTR_NAME, name);
+	root->modified = TRUE;
+
+	if (cpath && cpath[0])
+	    return xml_create_key(root, node, cpath);
+	else
+	    return node;
     };
 };
 
-ezxml_t xml_find_value(ezxml_t node, char *valname)
+void *xml_new(session_root_t *root)
 {
-    ezxml_t value;
+    ezxml_t node;
 
-    for (value = ezxml_child(node, XML_NODE_VALUE); value; value = ezxml_next(value)) {
-	if (ezxml_attr(value, valname))
-	    return value;
-    };
+    node = ezxml_new_d(XML_NODE_KEY);
+    ezxml_set_attr_d(node, XML_ATTR_NAME, XML_ROOT);
 
-    return NULL;
-};
+    xml_create_key(root, node, XML_SESSIONROOT);
 
-void *xml_new(void)
-{
-    return xml_create_key(NULL, XML_SESSIONROOT);
+    return node;
 };
 
 void *xml_init(session_root_t *root, char *errmsg, int errsize)
@@ -142,7 +156,7 @@ void *xml_init(session_root_t *root, char *errmsg, int errsize)
 
     if (!f) {
 	strncpy(errmsg, "Cannot open file", errsize);
-	return xml_new();
+	return xml_new(root);
     };
 
     fseek(f, 0, SEEK_END);
@@ -158,7 +172,7 @@ void *xml_init(session_root_t *root, char *errmsg, int errsize)
     if (read != bsize) {
 	free(buf);
 	strncpy(errmsg, "Cannot read from file", errsize);
-	return xml_new();
+	return xml_new(root);
     };
 
     root_node = ezxml_parse_str(buf, bsize);
@@ -219,7 +233,7 @@ void xml_finish(session_root_t *root)
 
 void *xml_open_session_r(session_root_t *root, char *keyname)
 {
-    ezxml_t root_node, sessions;
+    ezxml_t root_node;
     xml_handle_t *handle;
     
     if (!root || !root->data || !keyname)
@@ -232,9 +246,7 @@ void *xml_open_session_r(session_root_t *root, char *keyname)
 
     root_node = (ezxml_t) root->data;
 
-    sessions = ezxml_child(root_node, XML_SESSIONROOT);
-
-    handle->node = xml_find_key(sessions, keyname);
+    handle->node = xml_find_key(root_node, keyname);
 
     return handle;
 };
@@ -251,7 +263,7 @@ void *xml_open_session_w(session_root_t *root, char *keyname)
     handle->write = TRUE;
 
     if (!handle->node)
-	handle->node = xml_create_key((ezxml_t) root->data, keyname);
+	handle->node = xml_create_key(root, (ezxml_t) root->data, keyname);
 
     return handle;
 };
@@ -345,6 +357,8 @@ int xml_write_i(session_root_t *root, void *handle, char *valname,
 	ezxml_set_txt_d(val, buf);
     else {
 	val = ezxml_add_child_d(h->node, XML_NODE_VALUE, 0);
+	ezxml_set_attr_d(val, XML_ATTR_NAME, valname);
+	ezxml_set_attr_d(val, XML_ATTR_TYPE, XML_VALUE_INTEGER);
 	ezxml_set_txt_d(val, buf);
     };
 
@@ -389,6 +403,8 @@ int xml_write_s(session_root_t *root, void *handle, char *valname,
 	ezxml_set_txt_d(val, value);
     else {
 	val = ezxml_add_child_d(h->node, XML_NODE_VALUE, 0);
+	ezxml_set_attr_d(val, XML_ATTR_NAME, valname);
+	ezxml_set_attr_d(val, XML_ATTR_TYPE, XML_VALUE_STRING);
 	ezxml_set_txt_d(val, value);
     };
 

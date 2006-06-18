@@ -564,12 +564,14 @@ static void sync_callback(session_callback_t *scb)
 	    switch (type) {
 	    case SES_VALUE_INTEGER:
 		{
+		    ivalue = 0;
 		    ses_read_handle_i(&scb->root, sfrom, name, 0, &ivalue);
 		    ses_write_handle_i(to, sto, name, ivalue);
 		};
 		break;
 	    case SES_VALUE_STRING:
 		{
+		    memset(svalue, 0, BUFSIZE);
 		    ses_read_handle_s(&scb->root, sfrom, name, "", svalue, BUFSIZE);
 		    ses_write_handle_s(to, sto, name, svalue);
 		};
