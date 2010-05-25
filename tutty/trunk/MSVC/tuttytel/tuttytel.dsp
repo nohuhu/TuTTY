@@ -71,7 +71,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /Zp4 /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "UNDERLINE_COLOUR" /D "SECONDARY_SCRIPT" /D "ATT513_TERMINAL" /D "SERIAL_BACKEND" /D "SESSION_FOLDERS" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /Zp4 /W3 /Gm /GX /ZI /Od /I "..\.." /I "..\..\windows" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "UNDERLINE_COLOUR" /D "SECONDARY_SCRIPT" /D "ATT513_TERMINAL" /D "SERIAL_BACKEND" /D "SESSION_FOLDERS" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x809 /d "_DEBUG"
@@ -132,6 +132,10 @@ SOURCE=..\..\.\logging.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\minibidi.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\.\misc.c
 # End Source File
 # Begin Source File
@@ -140,11 +144,15 @@ SOURCE=..\..\.\nocproxy.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\pproxy.c
+SOURCE=..\..\windows\PickIconDialog.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\printing.c
+SOURCE=..\..\pinger.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\.\pproxy.c
 # End Source File
 # Begin Source File
 
@@ -156,15 +164,15 @@ SOURCE=..\..\.\raw.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\windows\registry.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\.\rlogin.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\serial.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\plaunch\session.c
+SOURCE=..\..\session.c
 # End Source File
 # Begin Source File
 
@@ -172,7 +180,7 @@ SOURCE=..\..\.\settings.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\sizetip.c
+SOURCE=..\..\windows\sizetip.c
 # End Source File
 # Begin Source File
 
@@ -184,11 +192,11 @@ SOURCE=..\..\.\terminal.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\tree234.c
+SOURCE=..\..\timing.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\unicode.c
+SOURCE=..\..\.\tree234.c
 # End Source File
 # Begin Source File
 
@@ -200,39 +208,59 @@ SOURCE=..\..\.\wcwidth.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\wincfg.c
+SOURCE=..\..\windows\wincfg.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\winctrls.c
+SOURCE=..\..\windows\winctrls.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\windefs.c
+SOURCE=..\..\windows\windefs.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\windlg.c
+SOURCE=..\..\windows\windlg.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\window.c
+SOURCE=..\..\windows\window.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\winmisc.c
+SOURCE=..\..\windows\winmenu.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\winnet.c
+SOURCE=..\..\windows\winmisc.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\winstore.c
+SOURCE=..\..\windows\winnet.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\winutils.c
+SOURCE=..\..\windows\winprint.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\windows\winserial.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\windows\winstore.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\windows\wintime.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\windows\winucs.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\windows\winutils.c
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -284,7 +312,7 @@ SOURCE=..\..\.\puttyps.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\plaunch\session.h
+SOURCE=..\..\session.h
 # End Source File
 # Begin Source File
 
@@ -308,15 +336,15 @@ SOURCE=..\..\unix\unix.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\win_res.h
+SOURCE=..\..\windows\win_res.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\winhelp.h
+SOURCE=..\..\windows\winhelp.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\winstuff.h
+SOURCE=..\..\windows\winstuff.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
@@ -332,7 +360,7 @@ SOURCE=..\..\.\puttycfg.ico
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\win_res.rc
+SOURCE=..\..\windows\win_res.rc
 # End Source File
 # End Group
 # End Target
