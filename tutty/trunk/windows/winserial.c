@@ -794,10 +794,10 @@ static const struct telnet_special *serial_get_specials(void *handle)
     return NULL;
 };
 
-static Socket serial_socket(void *handle)
+static int serial_connected(void *handle)
 {
     Serial sp = (Serial) handle;
-    return (Socket) sp->s;
+    return (Socket) sp->s != NULL;
 };
 
 static int serial_sendok(void *handle)
@@ -1744,7 +1744,7 @@ Backend serial_backend = {
     serial_size,
     serial_special,
     serial_get_specials,
-    serial_socket,
+    serial_connected,
     serial_exitcode,
     serial_sendok,
     serial_ldisc,
