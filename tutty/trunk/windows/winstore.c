@@ -158,7 +158,7 @@ char *read_setting_s(void *handle, const char *key, char *buffer, int buflen)
     if (!handle ||
 	RegQueryValueEx((HKEY) handle, key, 0,
 			&type, buffer, &size) != ERROR_SUCCESS ||
-	type != REG_SZ) return NULL;
+	type != REG_SZ || size == 0) return NULL;
     else
 	return buffer;
 }
