@@ -208,7 +208,7 @@ SOURCE=..\..\.\ssh.c
 
 !ELSEIF  "$(CFG)" == "tutty - Win32 Debug"
 
-# ADD CPP /Zi
+# ADD CPP /w /W0 /Zi
 
 !ENDIF 
 
