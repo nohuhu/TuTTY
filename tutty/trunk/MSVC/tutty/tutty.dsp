@@ -98,6 +98,18 @@ SOURCE=..\..\.\be_all.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\BE_ALL_S.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\BE_NONE.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\BE_NOS_S.C
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\.\cmdline.c
 # End Source File
 # Begin Source File
@@ -111,6 +123,14 @@ SOURCE=..\..\.\cproxy.c
 # Begin Source File
 
 SOURCE=..\..\.\dialog.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\IMPORT.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\INT64.C
 # End Source File
 # Begin Source File
 
@@ -199,6 +219,10 @@ SOURCE=..\..\.\sshaes.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\SSHARCF.C
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\.\sshblowf.c
 # End Source File
 # Begin Source File
@@ -227,7 +251,15 @@ SOURCE=..\..\.\sshdss.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\SSHDSSG.C
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\.\sshmd5.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\SSHPRIME.C
 # End Source File
 # Begin Source File
 
@@ -240,6 +272,14 @@ SOURCE=..\..\.\sshrand.c
 # Begin Source File
 
 SOURCE=..\..\.\sshrsa.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\SSHRSAG.C
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\SSHSH256.C
 # End Source File
 # Begin Source File
 
@@ -260,6 +300,10 @@ SOURCE=..\..\.\telnet.c
 # Begin Source File
 
 SOURCE=..\..\.\terminal.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\time.c
 # End Source File
 # Begin Source File
 
@@ -303,6 +347,10 @@ SOURCE=..\..\windows\window.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\windows\WINHELP.C
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\windows\winmenu.c
 # End Source File
 # Begin Source File
@@ -315,11 +363,19 @@ SOURCE=..\..\windows\winnet.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\windows\winnoise.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\windows\winpgntc.c
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\windows\winprint.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\windows\WINPROXY.C
 # End Source File
 # Begin Source File
 
