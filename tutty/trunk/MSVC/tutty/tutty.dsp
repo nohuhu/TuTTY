@@ -98,18 +98,6 @@ SOURCE=..\..\.\be_all.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\BE_ALL_S.C
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\BE_NONE.C
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\BE_NOS_S.C
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\.\cmdline.c
 # End Source File
 # Begin Source File
@@ -154,10 +142,6 @@ SOURCE=..\..\.\misc.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\noise.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\windows\PickIconDialog.c
 # End Source File
 # Begin Source File
@@ -167,10 +151,6 @@ SOURCE=..\..\pinger.c
 # Begin Source File
 
 SOURCE=..\..\.\portfwd.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\.\pproxy.c
 # End Source File
 # Begin Source File
 
@@ -303,10 +283,6 @@ SOURCE=..\..\.\terminal.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\time.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\timing.c
 # End Source File
 # Begin Source File
@@ -344,6 +320,10 @@ SOURCE=..\..\windows\windlg.c
 # Begin Source File
 
 SOURCE=..\..\windows\window.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\windows\WINHANDL.C
 # End Source File
 # Begin Source File
 
