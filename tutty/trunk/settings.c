@@ -2,6 +2,7 @@
  * settings.c: read and write saved sessions. (platform-independent)
  */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "putty.h"
@@ -11,25 +12,44 @@
 /*
  * Tables of string <-> enum value mappings
  */
-struct keyval {
-    char *s;
-    int v;
-};
+struct keyval { char *s; int v; };
 
 /* The cipher order given here is the default order. */
 static const struct keyval ciphernames[] = {
-    {"aes", CIPHER_AES},
-    {"blowfish", CIPHER_BLOWFISH},
-    {"3des", CIPHER_3DES},
-    {"WARN", CIPHER_WARN},
-    {"des", CIPHER_DES}
+    { "aes",	    CIPHER_AES },
+    { "blowfish",   CIPHER_BLOWFISH },
+    { "3des",	    CIPHER_3DES },
+    { "WARN",	    CIPHER_WARN },
+    { "arcfour",    CIPHER_ARCFOUR },
+    { "des",	    CIPHER_DES }
 };
 
 static const struct keyval kexnames[] = {
-    {"dh-gex-sha1", KEX_DHGEX},
-    {"dh-group14-sha1", KEX_DHGROUP14},
-    {"dh-group1-sha1", KEX_DHGROUP1},
-    {"WARN", KEX_WARN}
+    { "dh-gex-sha1",	    KEX_DHGEX },
+    { "dh-group14-sha1",    KEX_DHGROUP14 },
+    { "dh-group1-sha1",	    KEX_DHGROUP1 },
+    { "WARN",		    KEX_WARN }
+};
+
+/*
+ * All the terminal modes that we know about for the "TerminalModes"
+ * setting. (Also used by config.c for the drop-down list.)
+ * This is currently precisely the same as the set in ssh.c, but could
+ * in principle differ if other backends started to support tty modes
+ * (e.g., the pty backend).
+ */
+const char *const ttymodes[] = {
+    "INTR",	"QUIT",     "ERASE",	"KILL",     "EOF",
+    "EOL",	"EOL2",     "START",	"STOP",     "SUSP",
+    "DSUSP",	"REPRINT",  "WERASE",	"LNEXT",    "FLUSH",
+    "SWTCH",	"STATUS",   "DISCARD",	"IGNPAR",   "PARMRK",
+    "INPCK",	"ISTRIP",   "INLCR",	"IGNCR",    "ICRNL",
+    "IUCLC",	"IXON",     "IXANY",	"IXOFF",    "IMAXBEL",
+    "ISIG",	"ICANON",   "XCASE",	"ECHO",     "ECHOE",
+    "ECHOK",	"ECHONL",   "NOFLSH",	"TOSTOP",   "IEXTEN",
+    "ECHOCTL",	"ECHOKE",   "PENDIN",	"OPOST",    "OLCUC",
+    "ONLCR",	"OCRNL",    "ONOCR",	"ONLRET",   "CS7",
+    "CS8",	"PARENB",   "PARODD",	NULL
 };
 
 static void gpps(void *handle, const char *name, const char *def,
@@ -55,12 +75,12 @@ static void gpps(void *handle, const char *name, const char *def,
  * format of a Filename or Font is platform-dependent. So the
  * platform-dependent functions MUST return some sort of value.
  */
-static void gppfont(void *handle, const char *name, FontSpec * result)
+static void gppfont(void *handle, const char *name, FontSpec *result)
 {
     if (!read_setting_fontspec(handle, name, result))
 	*result = platform_default_fontspec(name);
 }
-static void gppfile(void *handle, const char *name, Filename * result)
+static void gppfile(void *handle, const char *name, Filename *result)
 {
     if (!read_setting_filename(handle, name, result))
 	*result = platform_default_filename(name);
@@ -72,22 +92,74 @@ static void gppi(void *handle, char *name, int def, int *i)
     *i = read_setting_i(handle, name, def);
 }
 
+/*
+ * Read a set of name-value pairs in the format we occasionally use:
+ *   NAME\tVALUE\0NAME\tVALUE\0\0 in memory
+ *   NAME=VALUE,NAME=VALUE, in storage
+ * `def' is in the storage format.
+ */
+static void gppmap(void *handle, char *name, char *def, char *val, int len)
+{
+    char *buf = snewn(2*len, char), *p, *q;
+    gpps(handle, name, def, buf, 2*len);
+    p = buf;
+    q = val;
+    while (*p) {
+	while (*p && *p != ',') {
+	    int c = *p++;
+	    if (c == '=')
+		c = '\t';
+	    if (c == '\\')
+		c = *p++;
+	    *q++ = c;
+	}
+	if (*p == ',')
+	    p++;
+	*q++ = '\0';
+    }
+    *q = '\0';
+    sfree(buf);
+}
+
+/*
+ * Write a set of name/value pairs in the above format.
+ */
+static void wmap(void *handle, char const *key, char const *value, int len)
+{
+    char *buf = snewn(2*len, char), *p;
+    const char *q;
+    p = buf;
+    q = value;
+    while (*q) {
+	while (*q) {
+	    int c = *q++;
+	    if (c == '=' || c == ',' || c == '\\')
+		*p++ = '\\';
+	    if (c == '\t')
+		c = '=';
+	    *p++ = c;
+	}
+	*p++ = ',';
+	q++;
+    }
+    *p = '\0';
+    write_setting_s(handle, key, buf);
+    sfree(buf);
+}
+
 static int key2val(const struct keyval *mapping, int nmaps, char *key)
 {
     int i;
     for (i = 0; i < nmaps; i++)
-	if (!strcmp(mapping[i].s, key))
-	    return mapping[i].v;
+	if (!strcmp(mapping[i].s, key)) return mapping[i].v;
     return -1;
 }
 
-static const char *val2key(const struct keyval *mapping, int nmaps,
-			   int val)
+static const char *val2key(const struct keyval *mapping, int nmaps, int val)
 {
     int i;
     for (i = 0; i < nmaps; i++)
-	if (mapping[i].v == val)
-	    return mapping[i].s;
+	if (mapping[i].v == val) return mapping[i].s;
     return NULL;
 }
 
@@ -98,11 +170,13 @@ static const char *val2key(const struct keyval *mapping, int nmaps,
  * XXX: assumes vals in 'mapping' are small +ve integers
  */
 static void gprefs(void *sesskey, char *name, char *def,
-		   const struct keyval *mapping, int nvals, int *array)
+		   const struct keyval *mapping, int nvals,
+		   int *array)
 {
     char commalist[80];
+    char *tokarg = commalist;
     int n;
-    unsigned long seen = 0;	/* bitmap for weeding dups etc */
+    unsigned long seen = 0;	       /* bitmap for weeding dups etc */
     gpps(sesskey, name, def, commalist, sizeof(commalist));
 
     /* Grotty parsing of commalist. */
@@ -110,20 +184,22 @@ static void gprefs(void *sesskey, char *name, char *def,
     do {
 	int v;
 	char *key;
-	key = strtok(n == 0 ? commalist : NULL, ",");	/* sorry */
-	if (!key)
-	    break;
-	if (((v = key2val(mapping, nvals, key)) != -1) && !(seen & 1 << v)) {
+	key = strtok(tokarg, ","); /* sorry */
+	tokarg = NULL;
+	if (!key) break;
+	if (((v = key2val(mapping, nvals, key)) != -1) &&
+	    !(seen & 1<<v)) {
 	    array[n] = v;
 	    n++;
-	    seen |= 1 << v;
+	    seen |= 1<<v;
 	}
     } while (n < nvals);
     /* Add any missing values (backward compatibility ect). */
     {
 	int i;
 	for (i = 0; i < nvals; i++) {
-	    if (!(seen & 1 << mapping[i].v)) {
+	    assert(mapping[i].v < 32);
+	    if (!(seen & 1<<mapping[i].v)) {
 		array[n] = mapping[i].v;
 		n++;
 	    }
@@ -135,10 +211,11 @@ static void gprefs(void *sesskey, char *name, char *def,
  * Write out a preference list.
  */
 static void wprefs(void *sesskey, char *name,
-		   const struct keyval *mapping, int nvals, int *array)
+		   const struct keyval *mapping, int nvals,
+		   int *array)
 {
-    char buf[80] = "";		/* XXX assumed big enough */
-    int l = sizeof(buf) - 1, i;
+    char buf[80] = "";	/* XXX assumed big enough */
+    int l = sizeof(buf)-1, i;
     buf[l] = '\0';
     for (i = 0; l > 0 && i < nvals; i++) {
 	const char *s = val2key(mapping, nvals, array[i]);
@@ -155,7 +232,7 @@ static void wprefs(void *sesskey, char *name,
     write_setting_s(sesskey, name, buf);
 }
 
-char *save_settings(char *section, int do_host, Config * cfg)
+char *save_settings(char *section, Config * cfg)
 {
     void *sesskey;
     char *errmsg;
@@ -163,20 +240,18 @@ char *save_settings(char *section, int do_host, Config * cfg)
     sesskey = open_settings_w(section, &errmsg);
     if (!sesskey)
 	return errmsg;
-    save_open_settings(sesskey, do_host, cfg);
+    save_open_settings(sesskey, cfg);
     close_settings_w(sesskey);
     return NULL;
 }
 
-void save_open_settings(void *sesskey, int do_host, Config * cfg)
+void save_open_settings(void *sesskey, Config *cfg)
 {
     int i;
     char *p;
 
     write_setting_i(sesskey, "Present", 1);
-    if (do_host) {
-	write_setting_s(sesskey, "HostName", cfg->host);
-    }
+    write_setting_s(sesskey, "HostName", cfg->host);
     write_setting_filename(sesskey, "LogFileName", cfg->logfilename);
     write_setting_i(sesskey, "LogType", cfg->logtype);
     write_setting_i(sesskey, "LogFileClash", cfg->logxfovr);
@@ -193,7 +268,7 @@ void save_open_settings(void *sesskey, int do_host, Config * cfg)
     write_setting_i(sesskey, "PortNumber", cfg->port);
     /* The CloseOnExit numbers are arranged in a different order from
      * the standard FORCE_ON / FORCE_OFF / AUTO. */
-    write_setting_i(sesskey, "CloseOnExit", (cfg->close_on_exit + 2) % 3);
+    write_setting_i(sesskey, "CloseOnExit", (cfg->close_on_exit+2)%3);
     write_setting_i(sesskey, "WarnOnClose", !!cfg->warn_on_close);
     write_setting_i(sesskey, "PingInterval", cfg->ping_interval / 60);	/* minutes */
     write_setting_i(sesskey, "PingIntervalSecs", cfg->ping_interval % 60);	/* seconds */
@@ -203,45 +278,27 @@ void save_open_settings(void *sesskey, int do_host, Config * cfg)
     write_setting_s(sesskey, "SecondaryLoginScript", cfg->secondaryscript);
     write_setting_s(sesskey, "TerminalType", cfg->termtype);
     write_setting_s(sesskey, "TerminalSpeed", cfg->termspeed);
+    wmap(sesskey, "TerminalModes", cfg->ttymodes, lenof(cfg->ttymodes));
 
     /* Address family selection */
     write_setting_i(sesskey, "AddressFamily", cfg->addressfamily);
 
     /* proxy settings */
     write_setting_s(sesskey, "ProxyExcludeList", cfg->proxy_exclude_list);
-    write_setting_i(sesskey, "ProxyDNS", (cfg->proxy_dns + 2) % 3);
+    write_setting_i(sesskey, "ProxyDNS", (cfg->proxy_dns+2)%3);
     write_setting_i(sesskey, "ProxyLocalhost", cfg->even_proxy_localhost);
     write_setting_i(sesskey, "ProxyMethod", cfg->proxy_type);
     write_setting_s(sesskey, "ProxyHost", cfg->proxy_host);
     write_setting_i(sesskey, "ProxyPort", cfg->proxy_port);
     write_setting_s(sesskey, "ProxyUsername", cfg->proxy_username);
     write_setting_s(sesskey, "ProxyPassword", cfg->proxy_password);
-    write_setting_s(sesskey, "ProxyTelnetCommand",
-		    cfg->proxy_telnet_command);
-
-    {
-	char buf[2 * sizeof(cfg->environmt)], *p, *q;
-	p = buf;
-	q = cfg->environmt;
-	while (*q) {
-	    while (*q) {
-		int c = *q++;
-		if (c == '=' || c == ',' || c == '\\')
-		    *p++ = '\\';
-		if (c == '\t')
-		    c = '=';
-		*p++ = c;
-	    }
-	    *p++ = ',';
-	    q++;
-	}
-	*p = '\0';
-	write_setting_s(sesskey, "Environment", buf);
-    }
+    write_setting_s(sesskey, "ProxyTelnetCommand", cfg->proxy_telnet_command);
+    wmap(sesskey, "Environment", cfg->environmt, lenof(cfg->environmt));
     write_setting_s(sesskey, "UserName", cfg->username);
     write_setting_s(sesskey, "LocalUserName", cfg->localusername);
     write_setting_i(sesskey, "NoPTY", cfg->nopty);
     write_setting_i(sesskey, "Compression", cfg->compression);
+    write_setting_i(sesskey, "TryAgent", cfg->tryagent);
     write_setting_i(sesskey, "AgentFwd", cfg->agentfwd);
     write_setting_i(sesskey, "ChangeUsername", cfg->change_username);
     wprefs(sesskey, "Cipher", ciphernames, CIPHER_MAX,
@@ -249,6 +306,7 @@ void save_open_settings(void *sesskey, int do_host, Config * cfg)
     wprefs(sesskey, "KEX", kexnames, KEX_MAX, cfg->ssh_kexlist);
     write_setting_i(sesskey, "RekeyTime", cfg->ssh_rekey_time);
     write_setting_s(sesskey, "RekeyBytes", cfg->ssh_rekey_data);
+    write_setting_i(sesskey, "SshNoAuth", cfg->ssh_no_userauth);
     write_setting_i(sesskey, "AuthTIS", cfg->try_tis_auth);
     write_setting_i(sesskey, "AuthKI", cfg->try_ki_auth);
     write_setting_i(sesskey, "SshNoShell", cfg->ssh_no_shell);
@@ -267,7 +325,7 @@ void save_open_settings(void *sesskey, int do_host, Config * cfg)
     write_setting_i(sesskey, "NoRemoteResize", cfg->no_remote_resize);
     write_setting_i(sesskey, "NoAltScreen", cfg->no_alt_screen);
     write_setting_i(sesskey, "NoRemoteWinTitle", cfg->no_remote_wintitle);
-    write_setting_i(sesskey, "NoRemoteQTitle", cfg->no_remote_qtitle);
+    write_setting_i(sesskey, "RemoteQTitleAction", cfg->remote_qtitle_action);
     write_setting_i(sesskey, "NoDBackspace", cfg->no_dbackspace);
     write_setting_i(sesskey, "NoRemoteCharset", cfg->no_remote_charset);
     write_setting_i(sesskey, "ApplicationCursorKeys", cfg->app_cursor);
@@ -284,8 +342,7 @@ void save_open_settings(void *sesskey, int do_host, Config * cfg)
     write_setting_i(sesskey, "LocalEdit", cfg->localedit);
     write_setting_s(sesskey, "Answerback", cfg->answerback);
     write_setting_i(sesskey, "AlwaysOnTop", cfg->alwaysontop);
-    write_setting_i(sesskey, "FullScreenOnAltEnter",
-		    cfg->fullscreenonaltenter);
+    write_setting_i(sesskey, "FullScreenOnAltEnter", cfg->fullscreenonaltenter);
     write_setting_i(sesskey, "HideMousePtr", cfg->hide_mouseptr);
     write_setting_i(sesskey, "SunkenEdge", cfg->sunken_edge);
     write_setting_i(sesskey, "WindowBorder", cfg->window_border);
@@ -319,6 +376,7 @@ void save_open_settings(void *sesskey, int do_host, Config * cfg)
     write_setting_i(sesskey, "TermWidth", cfg->width);
     write_setting_i(sesskey, "TermHeight", cfg->height);
     write_setting_fontspec(sesskey, "Font", cfg->font);
+    write_setting_i(sesskey, "FontQuality", cfg->font_quality);
     write_setting_i(sesskey, "FontVTMode", cfg->vtmode);
     write_setting_i(sesskey, "UseSystemColours", cfg->system_colour);
     write_setting_i(sesskey, "TryPalette", cfg->try_palette);
@@ -356,12 +414,10 @@ void save_open_settings(void *sesskey, int do_host, Config * cfg)
     write_setting_s(sesskey, "Printer", cfg->printer);
     write_setting_i(sesskey, "CapsLockCyr", cfg->xlat_capslockcyr);
     write_setting_i(sesskey, "ScrollBar", cfg->scrollbar);
-    write_setting_i(sesskey, "ScrollBarFullScreen",
-		    cfg->scrollbar_in_fullscreen);
+    write_setting_i(sesskey, "ScrollBarFullScreen", cfg->scrollbar_in_fullscreen);
     write_setting_i(sesskey, "ScrollOnKey", cfg->scroll_on_key);
     write_setting_i(sesskey, "ScrollOnDisp", cfg->scroll_on_disp);
-    write_setting_i(sesskey, "EraseToScrollback",
-		    cfg->erase_to_scrollback);
+    write_setting_i(sesskey, "EraseToScrollback", cfg->erase_to_scrollback);
     write_setting_i(sesskey, "LockSize", cfg->resize_action);
     write_setting_i(sesskey, "BCE", cfg->bce);
     write_setting_i(sesskey, "BlinkText", cfg->blinktext);
@@ -370,32 +426,15 @@ void save_open_settings(void *sesskey, int do_host, Config * cfg)
     write_setting_i(sesskey, "X11AuthType", cfg->x11_auth);
     write_setting_i(sesskey, "LocalPortAcceptAll", cfg->lport_acceptall);
     write_setting_i(sesskey, "RemotePortAcceptAll", cfg->rport_acceptall);
-    {
-	char buf[2 * sizeof(cfg->portfwd)], *p, *q;
-	p = buf;
-	q = cfg->portfwd;
-	while (*q) {
-	    while (*q) {
-		int c = *q++;
-		if (c == '=' || c == ',' || c == '\\')
-		    *p++ = '\\';
-		if (c == '\t')
-		    c = '=';
-		*p++ = c;
-	    }
-	    *p++ = ',';
-	    q++;
-	}
-	*p = '\0';
-	write_setting_s(sesskey, "PortForwardings", buf);
-    }
-    write_setting_i(sesskey, "BugIgnore1", 2 - cfg->sshbug_ignore1);
-    write_setting_i(sesskey, "BugPlainPW1", 2 - cfg->sshbug_plainpw1);
-    write_setting_i(sesskey, "BugRSA1", 2 - cfg->sshbug_rsa1);
-    write_setting_i(sesskey, "BugHMAC2", 2 - cfg->sshbug_hmac2);
-    write_setting_i(sesskey, "BugDeriveKey2", 2 - cfg->sshbug_derivekey2);
-    write_setting_i(sesskey, "BugRSAPad2", 2 - cfg->sshbug_rsapad2);
-    write_setting_i(sesskey, "BugPKSessID2", 2 - cfg->sshbug_pksessid2);
+    wmap(sesskey, "PortForwardings", cfg->portfwd, lenof(cfg->portfwd));
+    write_setting_i(sesskey, "BugIgnore1", 2-cfg->sshbug_ignore1);
+    write_setting_i(sesskey, "BugPlainPW1", 2-cfg->sshbug_plainpw1);
+    write_setting_i(sesskey, "BugRSA1", 2-cfg->sshbug_rsa1);
+    write_setting_i(sesskey, "BugHMAC2", 2-cfg->sshbug_hmac2);
+    write_setting_i(sesskey, "BugDeriveKey2", 2-cfg->sshbug_derivekey2);
+    write_setting_i(sesskey, "BugRSAPad2", 2-cfg->sshbug_rsapad2);
+    write_setting_i(sesskey, "BugPKSessID2", 2-cfg->sshbug_pksessid2);
+    write_setting_i(sesskey, "BugRekey2", 2-cfg->sshbug_rekey2);
     write_setting_i(sesskey, "StampUtmp", cfg->stamp_utmp);
     write_setting_i(sesskey, "LoginShell", cfg->login_shell);
     write_setting_i(sesskey, "ScrollbarOnLeft", cfg->scrollbar_on_left);
@@ -443,29 +482,26 @@ void save_open_settings(void *sesskey, int do_host, Config * cfg)
 		    cfg->ser_modem_connect);
 }
 
-void load_settings(char *section, int do_host, Config * cfg)
+void load_settings(char *section, Config * cfg)
 {
     void *sesskey;
 
     sesskey = open_settings_r(section);
-    load_open_settings(sesskey, do_host, cfg);
+    load_open_settings(sesskey, cfg);
     close_settings_r(sesskey);
 }
 
-void load_open_settings(void *sesskey, int do_host, Config * cfg)
+void load_open_settings(void *sesskey, Config *cfg)
 {
     int i;
     char prot[10];
 
-    cfg->ssh_subsys = 0;	/* FIXME: load this properly */
+    cfg->ssh_subsys = 0;	       /* FIXME: load this properly */
     cfg->remote_cmd_ptr = NULL;
     cfg->remote_cmd_ptr2 = NULL;
+    cfg->ssh_nc_host[0] = '\0';
 
-    if (do_host) {
-	gpps(sesskey, "HostName", "", cfg->host, sizeof(cfg->host));
-    } else {
-	cfg->host[0] = '\0';	/* blank hostname */
-    }
+    gpps(sesskey, "HostName", "", cfg->host, sizeof(cfg->host));
     gppfile(sesskey, "LogFileName", &cfg->logfilename);
     gppi(sesskey, "LogType", 0, &cfg->logtype);
     gppi(sesskey, "LogFileClash", LGXF_ASK, &cfg->logxfovr);
@@ -488,8 +524,7 @@ void load_open_settings(void *sesskey, int do_host, Config * cfg)
 
     /* The CloseOnExit numbers are arranged in a different order from
      * the standard FORCE_ON / FORCE_OFF / AUTO. */
-    gppi(sesskey, "CloseOnExit", 1, &i);
-    cfg->close_on_exit = (i + 1) % 3;
+    gppi(sesskey, "CloseOnExit", 1, &i); cfg->close_on_exit = (i+1)%3;
     gppi(sesskey, "WarnOnClose", 1, &cfg->warn_on_close);
     {
 	/* This is two values for backward compatibility with 0.50/0.51 */
@@ -507,12 +542,26 @@ void load_open_settings(void *sesskey, int do_host, Config * cfg)
 	 sizeof(cfg->termtype));
     gpps(sesskey, "TerminalSpeed", "38400,38400", cfg->termspeed,
 	 sizeof(cfg->termspeed));
+    {
+	/* This hardcodes a big set of defaults in any new saved
+	 * sessions. Let's hope we don't change our mind. */
+	int i;
+	char *def = dupstr("");
+	/* Default: all set to "auto" */
+	for (i = 0; ttymodes[i]; i++) {
+	    char *def2 = dupprintf("%s%s=A,", def, ttymodes[i]);
+	    sfree(def);
+	    def = def2;
+	}
+	gppmap(sesskey, "TerminalModes", def,
+	       cfg->ttymodes, lenof(cfg->ttymodes));
+	sfree(def);
+    }
 
     /* proxy settings */
     gpps(sesskey, "ProxyExcludeList", "", cfg->proxy_exclude_list,
 	 sizeof(cfg->proxy_exclude_list));
-    gppi(sesskey, "ProxyDNS", 1, &i);
-    cfg->proxy_dns = (i + 1) % 3;
+    gppi(sesskey, "ProxyDNS", 1, &i); cfg->proxy_dns = (i+1)%3;
     gppi(sesskey, "ProxyLocalhost", 0, &cfg->even_proxy_localhost);
     gppi(sesskey, "ProxyMethod", -1, &cfg->proxy_type);
     if (cfg->proxy_type == -1) {
@@ -543,32 +592,13 @@ void load_open_settings(void *sesskey, int do_host, Config * cfg)
 	 sizeof(cfg->proxy_password));
     gpps(sesskey, "ProxyTelnetCommand", "connect %host %port\\n",
 	 cfg->proxy_telnet_command, sizeof(cfg->proxy_telnet_command));
-
-    {
-	char buf[2 * sizeof(cfg->environmt)], *p, *q;
-	gpps(sesskey, "Environment", "", buf, sizeof(buf));
-	p = buf;
-	q = cfg->environmt;
-	while (*p) {
-	    while (*p && *p != ',') {
-		int c = *p++;
-		if (c == '=')
-		    c = '\t';
-		if (c == '\\')
-		    c = *p++;
-		*q++ = c;
-	    }
-	    if (*p == ',')
-		p++;
-	    *q++ = '\0';
-	}
-	*q = '\0';
-    }
+    gppmap(sesskey, "Environment", "", cfg->environmt, lenof(cfg->environmt));
     gpps(sesskey, "UserName", "", cfg->username, sizeof(cfg->username));
     gpps(sesskey, "LocalUserName", "", cfg->localusername,
 	 sizeof(cfg->localusername));
     gppi(sesskey, "NoPTY", 0, &cfg->nopty);
     gppi(sesskey, "Compression", 0, &cfg->compression);
+    gppi(sesskey, "TryAgent", 1, &cfg->tryagent);
     gppi(sesskey, "AgentFwd", 0, &cfg->agentfwd);
     gppi(sesskey, "ChangeUsername", 0, &cfg->change_username);
     gprefs(sesskey, "Cipher", "\0",
@@ -582,19 +612,18 @@ void load_open_settings(void *sesskey, int do_host, Config * cfg)
 	gppi(sesskey, "BugDHGEx2", 0, &i);
 	i = 2 - i;
 	if (i == FORCE_ON)
-	    default_kexes =
-		"dh-group14-sha1,dh-group1-sha1,WARN,dh-gex-sha1";
+	    default_kexes = "dh-group14-sha1,dh-group1-sha1,WARN,dh-gex-sha1";
 	else
-	    default_kexes =
-		"dh-gex-sha1,dh-group14-sha1,dh-group1-sha1,WARN";
-	gprefs(sesskey, "KEX", default_kexes, kexnames, KEX_MAX,
-	       cfg->ssh_kexlist);
+	    default_kexes = "dh-gex-sha1,dh-group14-sha1,dh-group1-sha1,WARN";
+	gprefs(sesskey, "KEX", default_kexes,
+	       kexnames, KEX_MAX, cfg->ssh_kexlist);
     }
     gppi(sesskey, "RekeyTime", 60, &cfg->ssh_rekey_time);
     gpps(sesskey, "RekeyBytes", "1G", cfg->ssh_rekey_data,
 	 sizeof(cfg->ssh_rekey_data));
     gppi(sesskey, "SshProt", 2, &cfg->sshprot);
     gppi(sesskey, "SSH2DES", 0, &cfg->ssh2_des_cbc);
+    gppi(sesskey, "SshNoAuth", 0, &cfg->ssh_no_userauth);
     gppi(sesskey, "AuthTIS", 0, &cfg->try_tis_auth);
     gppi(sesskey, "AuthKI", 1, &cfg->try_ki_auth);
     gppi(sesskey, "SshNoShell", 0, &cfg->ssh_no_shell);
@@ -612,7 +641,17 @@ void load_open_settings(void *sesskey, int do_host, Config * cfg)
     gppi(sesskey, "NoRemoteResize", 0, &cfg->no_remote_resize);
     gppi(sesskey, "NoAltScreen", 0, &cfg->no_alt_screen);
     gppi(sesskey, "NoRemoteWinTitle", 0, &cfg->no_remote_wintitle);
-    gppi(sesskey, "NoRemoteQTitle", 1, &cfg->no_remote_qtitle);
+    {
+	/* Backward compatibility */
+	int no_remote_qtitle;
+	gppi(sesskey, "NoRemoteQTitle", 1, &no_remote_qtitle);
+	/* We deliberately interpret the old setting of "no response" as
+	 * "empty string". This changes the behaviour, but hopefully for
+	 * the better; the user can always recover the old behaviour. */
+	gppi(sesskey, "RemoteQTitleAction",
+	     no_remote_qtitle ? TITLE_EMPTY : TITLE_REAL,
+	     &cfg->remote_qtitle_action);
+    }
     gppi(sesskey, "NoDBackspace", 0, &cfg->no_dbackspace);
     gppi(sesskey, "NoRemoteCharset", 0, &cfg->no_remote_charset);
     gppi(sesskey, "ApplicationCursorKeys", 0, &cfg->app_cursor);
@@ -642,13 +681,13 @@ void load_open_settings(void *sesskey, int do_host, Config * cfg)
     gppfile(sesskey, "BellWaveFile", &cfg->bell_wavefile);
     gppi(sesskey, "BellOverload", 1, &cfg->bellovl);
     gppi(sesskey, "BellOverloadN", 5, &cfg->bellovl_n);
-    gppi(sesskey, "BellOverloadT", 2 * TICKSPERSEC, &i);
+    gppi(sesskey, "BellOverloadT", 2*TICKSPERSEC, &i);
     cfg->bellovl_t = i
 #ifdef PUTTY_UNIX_H
 	/ 1000
 #endif
 	;
-    gppi(sesskey, "BellOverloadS", 5 * TICKSPERSEC, &i);
+    gppi(sesskey, "BellOverloadS", 5*TICKSPERSEC, &i);
     cfg->bellovl_s = i
 #ifdef PUTTY_UNIX_H
 	/ 1000
@@ -667,6 +706,7 @@ void load_open_settings(void *sesskey, int do_host, Config * cfg)
     gppi(sesskey, "TermWidth", 80, &cfg->width);
     gppi(sesskey, "TermHeight", 24, &cfg->height);
     gppfont(sesskey, "Font", &cfg->font);
+    gppi(sesskey, "FontQuality", FQ_DEFAULT, &cfg->font_quality);
     gppi(sesskey, "FontVTMode", VT_UNICODE, (int *) &cfg->vtmode);
     gppi(sesskey, "UseSystemColours", 0, &cfg->system_colour);
     gppi(sesskey, "TryPalette", 0, &cfg->try_palette);
@@ -735,7 +775,7 @@ void load_open_settings(void *sesskey, int do_host, Config * cfg)
     gppi(sesskey, "CJKAmbigWide", 0, &cfg->cjk_ambig_wide);
     gppi(sesskey, "UTF8Override", 1, &cfg->utf8_override);
     gpps(sesskey, "Printer", "", cfg->printer, sizeof(cfg->printer));
-    gppi(sesskey, "CapsLockCyr", 0, &cfg->xlat_capslockcyr);
+    gppi (sesskey, "CapsLockCyr", 0, &cfg->xlat_capslockcyr);
     gppi(sesskey, "ScrollBar", 1, &cfg->scrollbar);
     gppi(sesskey, "ScrollBarFullScreen", 0, &cfg->scrollbar_in_fullscreen);
     gppi(sesskey, "ScrollOnKey", 0, &cfg->scroll_on_key);
@@ -752,49 +792,18 @@ void load_open_settings(void *sesskey, int do_host, Config * cfg)
     gppi(sesskey, "LocalPortAcceptAll", 0, &cfg->lport_acceptall);
     gppi(sesskey, "RemotePortAcceptAll", 0, &cfg->rport_acceptall);
     {
-	char buf[2 * sizeof(cfg->portfwd)], *p, *q;
-	gpps(sesskey, "PortForwardings", "", buf, sizeof(buf));
-	p = buf;
-	q = cfg->portfwd;
-	while (*p) {
-	    while (*p && *p != ',') {
-		int c = *p++;
-		if (c == '=')
-		    c = '\t';
-		if (c == '\\')
-		    c = *p++;
-		*q++ = c;
-	    }
-	    if (*p == ',')
-		p++;
-	    *q++ = '\0';
-	}
-	*q = '\0';
-    }
-    gppi(sesskey, "BugIgnore1", 0, &i);
-    cfg->sshbug_ignore1 = 2 - i;
-    gppi(sesskey, "BugPlainPW1", 0, &i);
-    cfg->sshbug_plainpw1 = 2 - i;
-    gppi(sesskey, "BugRSA1", 0, &i);
-    cfg->sshbug_rsa1 = 2 - i;
-    {
 	int i;
-	gppi(sesskey, "BugHMAC2", 0, &i);
-	cfg->sshbug_hmac2 = 2 - i;
+	gppi(sesskey, "BugHMAC2", 0, &i); cfg->sshbug_hmac2 = 2-i;
 	if (cfg->sshbug_hmac2 == AUTO) {
 	    gppi(sesskey, "BuggyMAC", 0, &i);
 	    if (i == 1)
 		cfg->sshbug_hmac2 = FORCE_ON;
 	}
     }
-    gppi(sesskey, "BugDeriveKey2", 0, &i);
-    cfg->sshbug_derivekey2 = 2 - i;
-    gppi(sesskey, "BugRSAPad2", 0, &i);
-    cfg->sshbug_rsapad2 = 2 - i;
-    gppi(sesskey, "BugPKSessID2", 0, &i);
-    cfg->sshbug_pksessid2 = 2 - i;
-    gppi(sesskey, "BugRekey2", 0, &i);
-    cfg->sshbug_rekey2 = 2 - i;
+    gppi(sesskey, "BugDeriveKey2", 0, &i); cfg->sshbug_derivekey2 = 2-i;
+    gppi(sesskey, "BugRSAPad2", 0, &i); cfg->sshbug_rsapad2 = 2-i;
+    gppi(sesskey, "BugPKSessID2", 0, &i); cfg->sshbug_pksessid2 = 2-i;
+    gppi(sesskey, "BugRekey2", 0, &i); cfg->sshbug_rekey2 = 2-i;
     gppi(sesskey, "StampUtmp", 1, &cfg->stamp_utmp);
     gppi(sesskey, "LoginShell", 1, &cfg->login_shell);
     gppi(sesskey, "ScrollbarOnLeft", 0, &cfg->scrollbar_on_left);
@@ -841,7 +850,7 @@ void load_open_settings(void *sesskey, int do_host, Config * cfg)
 
 void do_defaults(char *session, Config * cfg)
 {
-    load_settings(session, (session != NULL && *session), cfg);
+    load_settings(session, cfg);
 }
 
 static int sessioncmp(const void *av, const void *bv)
@@ -856,9 +865,9 @@ static int sessioncmp(const void *av, const void *bv)
      * special case and comes first.
      */
     if (!strcmp(a, "Default Settings"))
-	return -1;		/* a comes first */
+	return -1;		       /* a comes first */
     if (!strcmp(b, "Default Settings"))
-	return +1;		/* b comes first */
+	return +1;		       /* b comes first */
     /*
      * Next step: determine if one (or both) of the compared items
      * is a folder. If one, a folder has precedence, if both, comparing
@@ -880,7 +889,7 @@ static int sessioncmp(const void *av, const void *bv)
      * FIXME: perhaps we should ignore the first & in determining
      * sort order.
      */
-    return strcmp(a, b);	/* otherwise, compare normally */
+    return strcmp(a, b);	       /* otherwise, compare normally */
 }
 
 void get_sesslist(struct sesslist *list, char *path, int allocate)
@@ -897,8 +906,7 @@ void get_sesslist(struct sesslist *list, char *path, int allocate)
 	list->buffer = NULL;
 	if ((handle = enum_settings_start(path)) != NULL) {
 	    do {
-		ret =
-		    enum_settings_next(handle, otherbuf, sizeof(otherbuf));
+		ret = enum_settings_next(handle, otherbuf, sizeof(otherbuf));
 		if (ret) {
 		    int len;
 
@@ -909,8 +917,7 @@ void get_sesslist(struct sesslist *list, char *path, int allocate)
 		    len = strlen(otherbuf) + 1;
 		    if (bufsize < buflen + len) {
 			bufsize = buflen + len + 2048;
-			list->buffer =
-			    sresize(list->buffer, bufsize, char);
+			list->buffer = sresize(list->buffer, bufsize, char);
 		    }
 		    strcpy(list->buffer + buflen, otherbuf);
 		    buflen += strlen(list->buffer + buflen) + 1;
@@ -929,7 +936,7 @@ void get_sesslist(struct sesslist *list, char *path, int allocate)
 
 	p = list->buffer;
 	if (!path || !path[0]) {
-	    list->nsessions = 1;	/* "Default Settings" counts as one */
+	list->nsessions = 1;	       /* "Default Settings" counts as one */
 	    while (*p) {
 		if (strcmp(p, "Default Settings"))
 		    list->nsessions++;
@@ -970,5 +977,7 @@ void get_sesslist(struct sesslist *list, char *path, int allocate)
     } else {
 	sfree(list->buffer);
 	sfree(list->sessions);
+	list->buffer = NULL;
+	list->sessions = NULL;
     }
 }

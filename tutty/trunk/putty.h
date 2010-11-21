@@ -807,7 +807,7 @@ char *save_settings(char *section, Config * cfg);
 void save_open_settings(void *sesskey, Config *cfg);
 void load_settings(char *section, Config * cfg);
 void load_open_settings(void *sesskey, Config *cfg);
-void get_sesslist(struct sesslist *, int allocate);
+void get_sesslist(struct sesslist *, char *path, int allocate);
 void do_defaults(char *, Config *);
 void registry_cleanup(void);
 
