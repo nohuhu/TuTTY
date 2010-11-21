@@ -19,28 +19,28 @@ struct printer_job_tag {
 };
 
 static char *printer_add_enum(int param, DWORD level, char *buffer,
-			      int offset, int *nprinters_ptr)
+                              int offset, int *nprinters_ptr)
 {
     DWORD needed, nprinters;
 
-    buffer = sresize(buffer, offset + 512, char);
+    buffer = sresize(buffer, offset+512, char);
 
     /*
      * Exploratory call to EnumPrinters to determine how much space
      * we'll need for the output. Discard the return value since it
      * will almost certainly be a failure due to lack of space.
      */
-    EnumPrinters(param, NULL, level, buffer + offset, 512,
+    EnumPrinters(param, NULL, level, buffer+offset, 512,
 		 &needed, &nprinters);
 
     if (needed < 512)
-	needed = 512;
+        needed = 512;
 
-    buffer = sresize(buffer, offset + needed, char);
+    buffer = sresize(buffer, offset+needed, char);
 
-    if (EnumPrinters(param, NULL, level, buffer + offset,
-		     needed, &needed, &nprinters) == 0)
-	return NULL;
+    if (EnumPrinters(param, NULL, level, buffer+offset,
+                     needed, &needed, &nprinters) == 0)
+        return NULL;
 
     *nprinters_ptr += nprinters;
 
@@ -52,7 +52,7 @@ printer_enum *printer_start_enum(int *nprinters_ptr)
     printer_enum *ret = snew(printer_enum);
     char *buffer = NULL, *retval;
 
-    *nprinters_ptr = 0;		/* default return value */
+    *nprinters_ptr = 0;		       /* default return value */
     buffer = snewn(512, char);
 
     /*
@@ -71,58 +71,57 @@ printer_enum *printer_start_enum(int *nprinters_ptr)
 	ret->enum_level = 4;
     }
 
-    retval =
-	printer_add_enum(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS,
-			 ret->enum_level, buffer, 0, nprinters_ptr);
+    retval = printer_add_enum(PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS,
+			      ret->enum_level, buffer, 0, nprinters_ptr);
     if (!retval)
-	goto error;
+        goto error;
     else
-	buffer = retval;
+        buffer = retval;
 
     switch (ret->enum_level) {
-    case 4:
-	ret->info.i4 = (LPPRINTER_INFO_4) buffer;
+      case 4:
+	ret->info.i4 = (LPPRINTER_INFO_4)buffer;
 	break;
-    case 5:
-	ret->info.i5 = (LPPRINTER_INFO_5) buffer;
+      case 5:
+	ret->info.i5 = (LPPRINTER_INFO_5)buffer;
 	break;
     }
     ret->nprinters = *nprinters_ptr;
-
+    
     return ret;
 
-  error:
+    error:
     sfree(buffer);
     sfree(ret);
     *nprinters_ptr = 0;
     return NULL;
 }
 
-char *printer_get_name(printer_enum * pe, int i)
+char *printer_get_name(printer_enum *pe, int i)
 {
     if (!pe)
 	return NULL;
     if (i < 0 || i >= pe->nprinters)
 	return NULL;
     switch (pe->enum_level) {
-    case 4:
+      case 4:
 	return pe->info.i4[i].pPrinterName;
-    case 5:
+      case 5:
 	return pe->info.i5[i].pPrinterName;
-    default:
+      default:
 	return NULL;
     }
 }
 
-void printer_finish_enum(printer_enum * pe)
+void printer_finish_enum(printer_enum *pe)
 {
     if (!pe)
 	return;
     switch (pe->enum_level) {
-    case 4:
+      case 4:
 	sfree(pe->info.i4);
 	break;
-    case 5:
+      case 5:
 	sfree(pe->info.i5);
 	break;
     }
@@ -143,7 +142,7 @@ printer_job *printer_start_job(char *printer)
     docinfo.pOutputFile = NULL;
     docinfo.pDatatype = "RAW";
 
-    if (!StartDocPrinter(ret->hprinter, 1, (LPSTR) & docinfo))
+    if (!StartDocPrinter(ret->hprinter, 1, (LPSTR)&docinfo))
 	goto error;
     jobstarted = 1;
 
@@ -153,7 +152,7 @@ printer_job *printer_start_job(char *printer)
 
     return ret;
 
-  error:
+    error:
     if (pagestarted)
 	EndPagePrinter(ret->hprinter);
     if (jobstarted)
@@ -164,7 +163,7 @@ printer_job *printer_start_job(char *printer)
     return NULL;
 }
 
-void printer_job_data(printer_job * pj, void *data, int len)
+void printer_job_data(printer_job *pj, void *data, int len)
 {
     DWORD written;
 
@@ -174,7 +173,7 @@ void printer_job_data(printer_job * pj, void *data, int len)
     WritePrinter(pj->hprinter, data, len, &written);
 }
 
-void printer_finish_job(printer_job * pj)
+void printer_finish_job(printer_job *pj)
 {
     if (!pj)
 	return;

@@ -26,16 +26,16 @@
 #define NO_SHORTCUT '\0'
 
 enum {
-    CTRL_TEXT,			/* just a static line of text */
-    CTRL_EDITBOX,		/* label plus edit box */
-    CTRL_RADIO,			/* label plus radio buttons */
-    CTRL_CHECKBOX,		/* checkbox (contains own label) */
-    CTRL_BUTTON,		/* simple push button (no label) */
-    CTRL_LISTBOX,		/* label plus list box */
-    CTRL_COLUMNS,		/* divide window into columns */
-    CTRL_FILESELECT,		/* label plus filename selector */
-    CTRL_FONTSELECT,		/* label plus font selector */
-    CTRL_TABDELAY		/* see `tabdelay' below */
+    CTRL_TEXT,			       /* just a static line of text */
+    CTRL_EDITBOX,		       /* label plus edit box */
+    CTRL_RADIO,			       /* label plus radio buttons */
+    CTRL_CHECKBOX,		       /* checkbox (contains own label) */
+    CTRL_BUTTON,		       /* simple push button (no label) */
+    CTRL_LISTBOX,		       /* label plus list box */
+    CTRL_COLUMNS,		       /* divide window into columns */
+    CTRL_FILESELECT,		       /* label plus filename selector */
+    CTRL_FONTSELECT,		       /* label plus font selector */
+    CTRL_TABDELAY		       /* see `tabdelay' below */
 	, CTRL_SPECIALEDIT	/* edit box and combo box in one control */
 	, CTRL_ICON		/* static icon without label */
 	, CTRL_PATH,		/* static line of text displaying paths */
@@ -53,10 +53,7 @@ enum {
  * included with DEFINE_INTORPTR_FNS defined. This is a total pain,
  * but such is life.
  */
-typedef union {
-    void *p;
-    int i;
-} intorptr;
+typedef union { void *p; int i; } intorptr;
 
 #ifndef INLINE
 intorptr I(int i);
@@ -69,19 +66,8 @@ intorptr P(void *p);
 #else
 #define PREFIX
 #endif
-PREFIX intorptr I(int i)
-{
-    intorptr ret;
-    ret.i = i;
-    return ret;
-}
-PREFIX intorptr P(void *p)
-{
-    intorptr ret;
-    ret.p = p;
-    return ret;
-}
-
+PREFIX intorptr I(int i) { intorptr ret; ret.i = i; return ret; }
+PREFIX intorptr P(void *p) { intorptr ret; ret.p = p; return ret; }
 #undef PREFIX
 #endif
 
@@ -127,7 +113,7 @@ enum {
     EVENT_SELCHANGE,
     EVENT_CALLBACK
 };
-typedef void (*handler_fn) (union control * ctrl, void *dlg,
+typedef void (*handler_fn)(union control *ctrl, void *dlg,
 			    void *data, int event);
 
 #define STANDARD_PREFIX \
@@ -213,7 +199,7 @@ union control {
     } text;
     struct {
 	STANDARD_PREFIX;
-	char shortcut;		/* keyboard shortcut */
+	char shortcut;		       /* keyboard shortcut */
 	/*
 	 * Percentage of the dialog-box width used by the edit box.
 	 * If this is set to 100, the label is on its own line;
@@ -221,7 +207,7 @@ union control {
 	 * itself.
 	 */
 	int percentwidth;
-	int password;		/* details of input are hidden */
+	int password;		       /* details of input are hidden */
 	/*
 	 * A special case of the edit box is the combo box, which
 	 * has a drop-down list built in. (Note that a _non_-
@@ -274,18 +260,18 @@ union control {
 	 * pointers, each of which points to a dynamically
 	 * allocated string.
 	 */
-	char **buttons;		/* `nbuttons' button labels */
+	char **buttons;		       /* `nbuttons' button labels */
 	/*
 	 * This points to a dynamically allocated array of `char'
 	 * giving the individual keyboard shortcuts for each radio
 	 * button. The array may be NULL if none are required.
 	 */
-	char *shortcuts;	/* `nbuttons' shortcuts; may be NULL */
+	char *shortcuts;	       /* `nbuttons' shortcuts; may be NULL */
 	/*
 	 * This points to a dynamically allocated array of
 	 * intorptr, giving helpful data for each button.
 	 */
-	intorptr *buttondata;	/* `nbuttons' entries; may be NULL */
+	intorptr *buttondata;	       /* `nbuttons' entries; may be NULL */
     } radio;
     struct {
 	STANDARD_PREFIX;
@@ -308,12 +294,12 @@ union control {
     } button;
     struct {
 	STANDARD_PREFIX;
-	char shortcut;		/* keyboard shortcut */
+	char shortcut;		       /* keyboard shortcut */
 	/*
 	 * Height of the list box, in approximate number of lines.
 	 * If this is zero, the list is a drop-down list.
 	 */
-	int height;		/* height in lines */
+	int height;		       /* height in lines */
 	/*
 	 * If this is set, the list elements can be reordered by
 	 * the user (by drag-and-drop or by Up and Down buttons,
@@ -352,8 +338,8 @@ union control {
 	 * will exactly fit the width of the list box. Otherwise
 	 * `percentages' must be NULL.
 	 */
-	int ncols;		/* number of columns */
-	int *percentages;	/* % width of each column */
+	int ncols;		       /* number of columns */
+	int *percentages;	       /* % width of each column */
     } listbox;
     struct {
 	STANDARD_PREFIX;
@@ -395,8 +381,8 @@ union control {
     struct {
 	/* In this variant, `label' MUST be NULL. */
 	STANDARD_PREFIX;
-	int ncols;		/* number of columns */
-	int *percentages;	/* % width of each column */
+	int ncols;		       /* number of columns */
+	int *percentages;	       /* % width of each column */
 	/*
 	 * Every time this control type appears, exactly one of
 	 * `ncols' and the previous number of columns MUST be one.
@@ -431,13 +417,13 @@ union control {
  * overall title for an entire panel of controls.
  */
 struct controlset {
-    char *pathname;		/* panel path, e.g. "SSH/Tunnels" */
-    char *boxname;		/* internal short name of controlset */
-    char *boxtitle;		/* title of container box */
-    int ncolumns;		/* current no. of columns at bottom */
-    int ncontrols;		/* number of `union control' in array */
-    int ctrlsize;		/* allocated size of array */
-    union control **ctrls;	/* actual array */
+    char *pathname;		       /* panel path, e.g. "SSH/Tunnels" */
+    char *boxname;		       /* internal short name of controlset */
+    char *boxtitle;		       /* title of container box */
+    int ncolumns;		       /* current no. of columns at bottom */
+    int ncontrols;		       /* number of `union control' in array */
+    int ctrlsize;		       /* allocated size of array */
+    union control **ctrls;	       /* actual array */
 };
 
 /*
@@ -445,12 +431,12 @@ struct controlset {
  * controls.
  */
 struct controlbox {
-    int nctrlsets;		/* number of ctrlsets */
-    int ctrlsetsize;		/* ctrlset size */
-    struct controlset **ctrlsets;	/* actual array of ctrlsets */
+    int nctrlsets;		       /* number of ctrlsets */
+    int ctrlsetsize;		       /* ctrlset size */
+    struct controlset **ctrlsets;      /* actual array of ctrlsets */
     int nfrees;
     int freesize;
-    void **frees;		/* array of aux data areas to free */
+    void **frees;		       /* array of aux data areas to free */
 };
 
 struct controlbox *ctrl_new_box(void);
@@ -491,13 +477,13 @@ void *ctrl_alloc(struct controlbox *b, size_t size);
 
 /* `ncolumns' is followed by that many percentages, as integers. */
 union control *ctrl_columns(struct controlset *, int ncolumns, ...);
-union control *ctrl_editbox(struct controlset *, char *label,
-			    char shortcut, int percentage,
-			    intorptr helpctx, handler_fn handler,
+union control *ctrl_editbox(struct controlset *, char *label, char shortcut,
+			    int percentage, intorptr helpctx,
+			    handler_fn handler,
 			    intorptr context, intorptr context2);
-union control *ctrl_combobox(struct controlset *, char *label,
-			     char shortcut, int percentage,
-			     intorptr helpctx, handler_fn handler,
+union control *ctrl_combobox(struct controlset *, char *label, char shortcut,
+			     int percentage, intorptr helpctx,
+			     handler_fn handler,
 			     intorptr context, intorptr context2);
 /*
  * `ncolumns' is followed by (alternately) radio button titles and
@@ -508,13 +494,12 @@ union control *ctrl_combobox(struct controlset *, char *label,
 union control *ctrl_radiobuttons(struct controlset *, char *label,
 				 char shortcut, int ncolumns,
 				 intorptr helpctx,
-				 handler_fn handler, intorptr context,
-				 ...);
-union control *ctrl_pushbutton(struct controlset *, char *label,
-			       char shortcut, intorptr helpctx,
+				 handler_fn handler, intorptr context, ...);
+union control *ctrl_pushbutton(struct controlset *,char *label,char shortcut,
+			       intorptr helpctx,
 			       handler_fn handler, intorptr context);
-union control *ctrl_listbox(struct controlset *, char *label,
-			    char shortcut, intorptr helpctx,
+union control *ctrl_listbox(struct controlset *,char *label,char shortcut,
+			    intorptr helpctx,
 			    handler_fn handler, intorptr context);
 union control *ctrl_droplist(struct controlset *, char *label,
 			     char shortcut, int percentage,
@@ -547,6 +532,7 @@ union control *ctrl_path(struct controlset *, char *text,
 union control *ctrl_sessionlistbox(struct controlset *, char *label,
 				   char shortcut, intorptr helpctx,
 				   handler_fn handler, intorptr context);
+union control *ctrl_tabdelay(struct controlset *, union control *);
 
 /*
  * Standard handler routines to cover most of the common cases in
@@ -611,8 +597,7 @@ int dlg_radiobutton_get(union control *ctrl, void *dlg);
 void dlg_checkbox_set(union control *ctrl, void *dlg, int checked);
 int dlg_checkbox_get(union control *ctrl, void *dlg);
 void dlg_editbox_set(union control *ctrl, void *dlg, char const *text);
-void dlg_editbox_get(union control *ctrl, void *dlg, char *buffer,
-		     int length);
+void dlg_editbox_get(union control *ctrl, void *dlg, char *buffer, int length);
 /* The `listbox' functions can also apply to combo boxes. */
 void dlg_listbox_clear(union control *ctrl, void *dlg);
 void dlg_listbox_del(union control *ctrl, void *dlg, int index);
@@ -634,9 +619,9 @@ void dlg_listbox_select(union control *ctrl, void *dlg, int index);
 void dlg_text_set(union control *ctrl, void *dlg, char const *text);
 void dlg_icon_set(union control *ctrl, void *dlg, char const *icon);
 void dlg_filesel_set(union control *ctrl, void *dlg, Filename fn);
-void dlg_filesel_get(union control *ctrl, void *dlg, Filename * fn);
+void dlg_filesel_get(union control *ctrl, void *dlg, Filename *fn);
 void dlg_fontsel_set(union control *ctrl, void *dlg, FontSpec fn);
-void dlg_fontsel_get(union control *ctrl, void *dlg, FontSpec * fn);
+void dlg_fontsel_get(union control *ctrl, void *dlg, FontSpec *fn);
 /*
  * Bracketing a large set of updates in these two functions will
  * cause the front end (if possible) to delay updating the screen
@@ -648,6 +633,10 @@ void dlg_update_done(union control *ctrl, void *dlg);
  * Set input focus into a particular control.
  */
 void dlg_set_focus(union control *ctrl, void *dlg);
+/*
+ * Change the label text on a control.
+ */
+void dlg_label_change(union control *ctrl, void *dlg, char const *text);
 /*
  * Return the `ctrl' structure for the most recent control that had
  * the input focus apart from the one mentioned. This is NOT

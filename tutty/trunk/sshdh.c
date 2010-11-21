@@ -1,3 +1,7 @@
+/*
+ * Diffie-Hellman implementation for PuTTY.
+ */
+
 #include "ssh.h"
 
 /*
@@ -46,19 +50,52 @@ static const unsigned char P14[] = {
  */
 static const unsigned char G[] = { 2 };
 
-const struct ssh_kex ssh_diffiehellman_group1 = {
+static const struct ssh_kex ssh_diffiehellman_group1_sha1 = {
     "diffie-hellman-group1-sha1", "group1",
-    P1, G, lenof(P1), lenof(G)
+    P1, G, lenof(P1), lenof(G), &ssh_sha1
 };
 
-const struct ssh_kex ssh_diffiehellman_group14 = {
+static const struct ssh_kex *const group1_list[] = {
+    &ssh_diffiehellman_group1_sha1
+};
+
+const struct ssh_kexes ssh_diffiehellman_group1 = {
+    sizeof(group1_list) / sizeof(*group1_list),
+    group1_list
+};
+
+static const struct ssh_kex ssh_diffiehellman_group14_sha1 = {
     "diffie-hellman-group14-sha1", "group14",
-    P14, G, lenof(P14), lenof(G)
+    P14, G, lenof(P14), lenof(G), &ssh_sha1
 };
 
-const struct ssh_kex ssh_diffiehellman_gex = {
+static const struct ssh_kex *const group14_list[] = {
+    &ssh_diffiehellman_group14_sha1
+};
+
+const struct ssh_kexes ssh_diffiehellman_group14 = {
+    sizeof(group14_list) / sizeof(*group14_list),
+    group14_list
+};
+
+static const struct ssh_kex ssh_diffiehellman_gex_sha256 = {
+    "diffie-hellman-group-exchange-sha256", NULL,
+    NULL, NULL, 0, 0, &ssh_sha256
+};
+
+static const struct ssh_kex ssh_diffiehellman_gex_sha1 = {
     "diffie-hellman-group-exchange-sha1", NULL,
-    NULL, NULL, 0, 0
+    NULL, NULL, 0, 0, &ssh_sha1
+};
+
+static const struct ssh_kex *const gex_list[] = {
+    &ssh_diffiehellman_gex_sha256,
+    &ssh_diffiehellman_gex_sha1
+};
+
+const struct ssh_kexes ssh_diffiehellman_gex = {
+    sizeof(gex_list) / sizeof(*gex_list),
+    gex_list
 };
 
 /*
@@ -107,7 +144,7 @@ void *dh_setup_gex(Bignum pval, Bignum gval)
  */
 void dh_cleanup(void *handle)
 {
-    struct dh_ctx *ctx = (struct dh_ctx *) handle;
+    struct dh_ctx *ctx = (struct dh_ctx *)handle;
     freebn(ctx->x);
     freebn(ctx->e);
     freebn(ctx->p);
@@ -134,7 +171,7 @@ void dh_cleanup(void *handle)
  */
 Bignum dh_create_e(void *handle, int nbits)
 {
-    struct dh_ctx *ctx = (struct dh_ctx *) handle;
+    struct dh_ctx *ctx = (struct dh_ctx *)handle;
     int i;
 
     int nbytes;
@@ -154,7 +191,7 @@ Bignum dh_create_e(void *handle, int nbits)
 	    ssh1_write_bignum(buf, ctx->qmask);
 	    for (i = 2; i < nbytes; i++)
 		buf[i] &= random_byte();
-	    ssh1_read_bignum(buf, nbytes, &ctx->x);	/* can't fail */
+	    ssh1_read_bignum(buf, nbytes, &ctx->x);   /* can't fail */
 	} else {
 	    int b, nb;
 	    ctx->x = bn_power_2(nbits);
@@ -169,8 +206,7 @@ Bignum dh_create_e(void *handle, int nbits)
 		nb--;
 	    }
 	}
-    } while (bignum_cmp(ctx->x, One) <= 0
-	     || bignum_cmp(ctx->x, ctx->q) >= 0);
+    } while (bignum_cmp(ctx->x, One) <= 0 || bignum_cmp(ctx->x, ctx->q) >= 0);
 
     sfree(buf);
 
@@ -187,7 +223,7 @@ Bignum dh_create_e(void *handle, int nbits)
  */
 Bignum dh_find_K(void *handle, Bignum f)
 {
-    struct dh_ctx *ctx = (struct dh_ctx *) handle;
+    struct dh_ctx *ctx = (struct dh_ctx *)handle;
     Bignum ret;
     ret = modpow(f, ctx->x, ctx->p);
     return ret;

@@ -1,10 +1,20 @@
+/*
+ * window.c - the PuTTY(tel) main program, which runs a PuTTY terminal
+ * emulator and backend in a window.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <time.h>
+#include <limits.h>
 #include <assert.h>
 
-#define PUTTY_DO_GLOBALS	/* actually _define_ globals */
+#ifndef NO_MULTIMON
+#define COMPILE_MULTIMON_STUBS
+#endif
+
+#define PUTTY_DO_GLOBALS	       /* actually _define_ globals */
 #include "putty.h"
 #include "terminal.h"
 #include "storage.h"
@@ -42,6 +52,7 @@
 #define IDM_COPYALL   0x0170
 #define IDM_FULLSCREEN	0x0180
 #define IDM_PASTE     0x0190
+#define IDM_SPECIALSEP 0x0200
 
 #define IDM_UPLOAD    0x0300
 #define IDM_DOWNLOAD  0x0310
@@ -57,9 +68,9 @@
 /* Maximum number of sessions on saved-session submenu */
 #define MENU_SAVED_MAX ((IDM_SAVED_MAX-IDM_SAVED_MIN) / MENU_SAVED_STEP)
 
-#define WM_IGNORE_CLIP (WM_XUSER + 2)
-#define WM_FULLSCR_ON_MAX (WM_XUSER + 3)
-#define WM_AGENT_CALLBACK (WM_XUSER + 4)
+#define WM_IGNORE_CLIP (WM_APP + 2)
+#define WM_FULLSCR_ON_MAX (WM_APP + 3)
+#define WM_AGENT_CALLBACK (WM_APP + 4)
 
 /* Needed for Chinese support and apparently not always defined. */
 #ifndef VK_PROCESSKEY
@@ -68,7 +79,7 @@
 
 /* Mouse wheel support. */
 #ifndef WM_MOUSEWHEEL
-#define WM_MOUSEWHEEL 0x020A	/* not defined in earlier SDKs */
+#define WM_MOUSEWHEEL 0x020A	       /* not defined in earlier SDKs */
 #endif
 #ifndef WHEEL_DELTA
 #define WHEEL_DELTA 120
@@ -87,6 +98,8 @@ static void init_fonts(int, int);
 static void another_font(int);
 static void deinit_fonts(void);
 static void set_input_locale(HKL);
+static void update_savedsess_menu(void);
+static void init_flashwindow(void);
 
 static int is_full_screen(void);
 static void make_full_screen(void);
@@ -100,8 +113,11 @@ static int font_width, font_height, font_dualwidth;
 static int offset_width, offset_height;
 static int was_zoomed = 0;
 static int prev_rows, prev_cols;
-
-static void enact_netevent(WPARAM, LPARAM);
+  
+static int pending_netevent = 0;
+static WPARAM pend_netevent_wParam = 0;
+static LPARAM pend_netevent_lParam = 0;
+static void enact_pending_netevent(void);
 static void flash_window(int mode);
 static void sys_cursor_update(void);
 static int is_shift_pressed(void);
@@ -116,29 +132,30 @@ static Backend *back;
 static void *backhandle;
 
 static struct unicode_data ucsdata;
-static int session_closed;
+static int must_close_session, session_closed;
 static int reconfiguring = FALSE;
 
-static const struct telnet_special *specials;
-static int n_specials;
+static const struct telnet_special *specials = NULL;
+static HMENU specials_menu = NULL;
+static int n_specials = 0;
 
 #define TIMING_TIMER_ID 1234
 static long timing_next_time;
 
 static struct {
     HMENU menu;
-    int specials_submenu_pos;
 } popup_menus[2];
 enum { SYSMENU, CTXMENU };
+static HMENU savedsess_menu;
 
-Config cfg;			/* exported to windlg.c */
+Config cfg;			       /* exported to windlg.c */
 
-extern struct sesslist sesslist;	/* imported from windlg.c */
+static struct sesslist sesslist;       /* for saved-session menu */
 
 extern void do_serial_processing(void);
 
 struct agent_callback {
-    void (*callback) (void *, void *, int);
+    void (*callback)(void *, void *, int);
     void *callback_ctx;
     void *data;
     int len;
@@ -200,6 +217,11 @@ void ldisc_update(void *frontend, int echo, int edit)
 {
 }
 
+char *get_ttymode(void *frontend, const char *mode)
+{
+    return term_get_ttymode(term, mode);
+}
+
 static void start_backend(void)
 {
     const char *error;
@@ -232,7 +254,7 @@ static void start_backend(void)
     if (error) {
 	char *str = dupprintf("%s Error", appname);
 	sprintf(msg, "Unable to open connection to\n"
-		"%.800s\n" "%s", cfg.host, error);
+		"%.800s\n" "%s", cfg_dest(&cfg), error);
 	MessageBox(NULL, msg, str, MB_ICONERROR | MB_OK);
 	sfree(str);
 	exit(0);
@@ -269,6 +291,7 @@ static void start_backend(void)
 	DeleteMenu(popup_menus[i].menu, IDM_RESTART, MF_BYCOMMAND);
     }
 
+    must_close_session = FALSE;
     session_closed = FALSE;
 }
 
@@ -290,6 +313,7 @@ static void close_session(void)
 	back->free(backhandle);
 	backhandle = NULL;
 	back = NULL;
+        term_provide_resize_fn(term, NULL, NULL);
 	update_specials_menu(NULL);
     }
 
@@ -299,9 +323,8 @@ static void close_session(void)
      */
     for (i = 0; i < lenof(popup_menus); i++) {
 	DeleteMenu(popup_menus[i].menu, IDM_RESTART, MF_BYCOMMAND);
-	InsertMenu(popup_menus[i].menu, IDM_DUPSESS,
-		   MF_BYCOMMAND | MF_ENABLED, IDM_RESTART,
-		   "&Restart Session");
+	InsertMenu(popup_menus[i].menu, IDM_DUPSESS, MF_BYCOMMAND | MF_ENABLED,
+		   IDM_RESTART, "&Restart Session");
     }
 }
 
@@ -398,7 +421,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
      * config box. */
     defuse_showwindow();
 
-    if (!init_winver()) {
+    if (!init_winver())
+    {
 	char *str = dupprintf("%s Fatal Error", appname);
 	MessageBox(NULL, "Windows refuses to report a version",
 		   str, MB_OK | MB_ICONEXCLAMATION);
@@ -412,37 +436,13 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
      * using instead.
      */
     if (osVersion.dwMajorVersion < 4 ||
-	(osVersion.dwMajorVersion == 4 &&
+	(osVersion.dwMajorVersion == 4 && 
 	 osVersion.dwPlatformId != VER_PLATFORM_WIN32_NT))
 	wm_mousewheel = RegisterWindowMessage("MSWHEEL_ROLLMSG");
 
-    /*
-     * See if we can find our Help file.
-     */
-    {
-	char b[2048], *p, *q, *r;
-	FILE *fp;
-	GetModuleFileName(NULL, b, sizeof(b) - 1);
-	r = b;
-	p = strrchr(b, '\\');
-	if (p && p >= r)
-	    r = p + 1;
-	q = strrchr(b, ':');
-	if (q && q >= r)
-	    r = q + 1;
-	strcpy(r, PUTTY_HELP_FILE);
-	if ((fp = fopen(b, "r")) != NULL) {
-	    help_path = dupstr(b);
-	    fclose(fp);
-	} else
-	    help_path = NULL;
-	strcpy(r, PUTTY_HELP_CONTENTS);
-	if ((fp = fopen(b, "r")) != NULL) {
-	    help_has_contents = TRUE;
-	    fclose(fp);
-	} else
-	    help_has_contents = FALSE;
-    }
+    init_help();
+
+    init_flashwindow();
 
     /*
      * Process the command line.
@@ -450,6 +450,10 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
     {
 	char *p;
 	int got_host = 0;
+	/* By default, we bring up the config dialog, rather than launching
+	 * a session. This gets set to TRUE if something happens to change
+	 * that (e.g., a hostname is specified on the command-line). */
+	int allow_launch = FALSE;
 
 	memset(loaded_session_name, 0, sizeof(loaded_session_name));
 
@@ -457,7 +461,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	/* Find the appropriate default port. */
 	{
 	    int i;
-	    default_port = 0;	/* illegal */
+	    default_port = 0; /* illegal */
 	    for (i = 0; backends[i].backend != NULL; i++)
 		if (backends[i].protocol == default_protocol) {
 		    default_port = backends[i].backend->default_port;
@@ -485,9 +489,10 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 		i--;
 	    p[i] = '\0';
 	    do_defaults(p + 1, &cfg);
-	    if (!*cfg.host && !do_config()) {
+	    if (!cfg_launchable(&cfg) && !do_config()) {
 		cleanup_exit(0);
 	    }
+	    allow_launch = TRUE;    /* allow it to be launched directly */
 	} else if (*p == '&') {
 	    /*
 	     * An initial & means we've been given a command line
@@ -506,6 +511,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	    } else if (!do_config()) {
 		cleanup_exit(0);
 	    }
+	    allow_launch = TRUE;
 	} else {
 	    /*
 	     * Otherwise, break up the command line and deal with
@@ -513,24 +519,21 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	     */
 	    int argc, i;
 	    char **argv;
-
+	    
 	    split_into_argv(cmdline, &argc, &argv, NULL);
 
 	    for (i = 0; i < argc; i++) {
 		char *p = argv[i];
 		int ret;
 
-		ret =
-		    cmdline_process_param(p,
-					  i + 1 <
-					  argc ? argv[i + 1] : NULL, 1,
-					  &cfg);
+		ret = cmdline_process_param(p, i+1<argc?argv[i+1]:NULL,
+					    1, &cfg);
 		if (ret == -2) {
 		    cmdline_error("option \"%s\" requires an argument", p);
 		} else if (ret == 2) {
-		    i++;	/* skip next argument */
+		    i++;	       /* skip next argument */
 		} else if (ret == 1) {
-		    continue;	/* nothing further needs doing */
+		    continue;	       /* nothing further needs doing */
 		} else if (!strcmp(p, "-cleanup") ||
 			   !strcmp(p, "-cleanup-during-uninstall")) {
 		    /*
@@ -541,8 +544,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 		    char *s1, *s2;
 		    /* Are we being invoked from an uninstaller? */
 		    if (!strcmp(p, "-cleanup-during-uninstall")) {
-			s1 = dupprintf
-			    ("Remove saved sessions and random seed file?\n"
+			s1 = dupprintf("Remove saved sessions and random seed file?\n"
 			     "\n"
 			     "If you hit Yes, ALL Registry entries associated\n"
 			     "with %s will be removed, as well as the\n"
@@ -555,19 +557,18 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 			     appname);
 			s2 = dupprintf("%s Uninstallation", appname);
 		    } else {
-			s1 = dupprintf
-			    ("This procedure will remove ALL Registry entries\n"
+			s1 = dupprintf("This procedure will remove ALL Registry entries\n"
 			     "associated with %s, and will also remove\n"
 			     "the random seed file. (This only affects the\n"
-			     "currently logged-in user.)\n" "\n"
+				       "currently logged-in user.)\n"
+				       "\n"
 			     "THIS PROCESS WILL DESTROY YOUR SAVED SESSIONS.\n"
 			     "Are you really sure you want to continue?",
 			     appname);
 			s2 = dupprintf("%s Warning", appname);
 		    }
 		    if (message_box(s1, s2,
-				    MB_YESNO | MB_ICONWARNING |
-				    MB_DEFBUTTON2,
+				    MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON2,
 				    HELPCTXID(option_cleanup)) == IDYES) {
 			cleanup_all();
 		    }
@@ -639,17 +640,21 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 
 	cmdline_run_saved(&cfg);
 
-	if (cfg.protocol != PROT_SERIAL && (!*cfg.host && !do_config())) {
+    if (cfg.protocol == PROT_SERIAL) allow_launch = TRUE;
+
+	if (loaded_session || got_host)
+	    allow_launch = TRUE;
+
+	if ((!allow_launch || !cfg_launchable(&cfg)) && !do_config()) {
 	    cleanup_exit(0);
-	};
+	}
 
 	/*
 	 * Trim leading whitespace off the hostname if it's there.
 	 */
 	{
 	    int space = strspn(cfg.host, " \t");
-	    memmove(cfg.host, cfg.host + space,
-		    1 + strlen(cfg.host) - space);
+	    memmove(cfg.host, cfg.host+space, 1+strlen(cfg.host)-space);
 	}
 
 	/* See if host is of the form user@host */
@@ -675,7 +680,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	    char *c = strchr(cfg.host, ':');
 
 	    if (c) {
-		char *d = strchr(c + 1, ':');
+		char *d = strchr(c+1, ':');
 		if (!d)
 		    *c = '\0';
 	    }
@@ -835,7 +840,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
      * Initialise the fonts, simultaneously correcting the guesses
      * for font_{width,height}.
      */
-    init_fonts(0, 0);
+    init_fonts(0,0);
 
     /*
      * Correct the guesses for extra_{width,height}.
@@ -845,10 +850,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	GetWindowRect(hwnd, &wr);
 	GetClientRect(hwnd, &cr);
 	offset_width = offset_height = cfg.window_border;
-	extra_width =
-	    wr.right - wr.left - cr.right + cr.left + offset_width * 2;
-	extra_height =
-	    wr.bottom - wr.top - cr.bottom + cr.top + offset_height * 2;
+	extra_width = wr.right - wr.left - cr.right + cr.left + offset_width*2;
+	extra_height = wr.bottom - wr.top - cr.bottom + cr.top +offset_height*2;
 	extra_height += BOTTOM_BUTTON_HEIGHT;
     }
 
@@ -900,17 +903,16 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
      * Set up the session-control options on the system menu.
      */
     {
-	HMENU s, m;
+	HMENU m;
 	HMENU f;
 	int i, j;
 	char *str;
 
 	popup_menus[SYSMENU].menu = GetSystemMenu(hwnd, FALSE);
 	popup_menus[CTXMENU].menu = CreatePopupMenu();
-	AppendMenu(popup_menus[CTXMENU].menu, MF_ENABLED, IDM_PASTE,
-		   "&Paste");
+	AppendMenu(popup_menus[CTXMENU].menu, MF_ENABLED, IDM_PASTE, "&Paste");
 
-	s = CreateMenu();
+	savedsess_menu = CreateMenu();
 	/* 
 	 * Completely different method of adding saved sessions tree to the menu.
 	 */

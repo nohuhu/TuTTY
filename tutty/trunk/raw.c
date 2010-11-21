@@ -1,3 +1,7 @@
+/*
+ * "Raw" backend.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -51,15 +55,15 @@ static int raw_closing(Plug plug, const char *error_msg, int error_code,
     Raw raw = (Raw) plug;
 
     if (raw->s) {
-	sk_close(raw->s);
-	raw->s = NULL;
+        sk_close(raw->s);
+        raw->s = NULL;
 	notify_remote_exit(raw->frontend);
     }
     if (error_msg) {
 	/* A socket error has occurred. */
 	logevent(raw->frontend, error_msg);
 	connection_fatal(raw->frontend, "%s", error_msg);
-    }				/* Otherwise, the remote side closed the connection normally. */
+    }				       /* Otherwise, the remote side closed the connection normally. */
     return 0;
 }
 
@@ -85,9 +89,9 @@ static void raw_sent(Plug plug, int bufsize)
  * freed by the caller.
  */
 static const char *raw_init(void *frontend_handle, void **backend_handle,
-			    Config * cfg,
-			    char *host, int port, char **realhost,
-			    int nodelay, int keepalive)
+			    Config *cfg,
+			    char *host, int port, char **realhost, int nodelay,
+			    int keepalive)
 {
     static const struct plug_function_table fn_table = {
 	raw_log,
@@ -125,14 +129,13 @@ static const char *raw_init(void *frontend_handle, void **backend_handle,
     }
 
     if (port < 0)
-	port = 23;		/* default telnet port */
+	port = 23;		       /* default telnet port */
 
     /*
      * Open socket.
      */
-    raw->s =
-	new_connection(addr, *realhost, port, 0, 1, nodelay, keepalive,
-		       (Plug) raw, cfg);
+    raw->s = new_connection(addr, *realhost, port, 0, 1, nodelay, keepalive,
+			    (Plug) raw, cfg);
     if ((err = sk_socket_error(raw->s)) != NULL)
 	return err;
 
@@ -151,7 +154,7 @@ static void raw_free(void *handle)
 /*
  * Stub routine (we don't have any need to reconfigure this backend).
  */
-static void raw_reconfig(void *handle, Config * cfg)
+static void raw_reconfig(void *handle, Config *cfg)
 {
 }
 
@@ -206,10 +209,10 @@ static const struct telnet_special *raw_get_specials(void *handle)
     return NULL;
 }
 
-static Socket raw_socket(void *handle)
+static int raw_connected(void *handle)
 {
     Raw raw = (Raw) handle;
-    return raw->s;
+    return raw->s != NULL;
 }
 
 static int raw_sendok(void *handle)
@@ -244,10 +247,10 @@ static int raw_exitcode(void *handle)
 {
     Raw raw = (Raw) handle;
     if (raw->s != NULL)
-	return -1;		/* still connected */
+        return -1;                     /* still connected */
     else
-	/* Exit codes are a meaningless concept in the Raw protocol */
-	return 0;
+        /* Exit codes are a meaningless concept in the Raw protocol */
+        return 0;
 }
 
 /*
@@ -267,7 +270,7 @@ Backend raw_backend = {
     raw_size,
     raw_special,
     raw_get_specials,
-    raw_socket,
+    raw_connected,
     raw_exitcode,
     raw_sendok,
     raw_ldisc,

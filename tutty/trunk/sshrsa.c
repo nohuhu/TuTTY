@@ -10,18 +10,6 @@
 #include "ssh.h"
 #include "misc.h"
 
-#define GET_32BIT(cp) \
-    (((unsigned long)(unsigned char)(cp)[0] << 24) | \
-    ((unsigned long)(unsigned char)(cp)[1] << 16) | \
-    ((unsigned long)(unsigned char)(cp)[2] << 8) | \
-    ((unsigned long)(unsigned char)(cp)[3]))
-
-#define PUT_32BIT(cp, value) { \
-    (cp)[0] = (unsigned char)((value) >> 24); \
-    (cp)[1] = (unsigned char)((value) >> 16); \
-    (cp)[2] = (unsigned char)((value) >> 8); \
-    (cp)[3] = (unsigned char)(value); }
-
 int makekey(unsigned char *data, int len, struct RSAKey *result,
 	    unsigned char **keystr, int order)
 {
@@ -48,15 +36,13 @@ int makekey(unsigned char *data, int len, struct RSAKey *result,
 
     if (order == 0) {
 	n = ssh1_read_bignum(p, len, result ? &result->exponent : NULL);
-	if (n < 0)
-	    return -1;
+	if (n < 0) return -1;
 	p += n;
 	len -= n;
     }
 
     n = ssh1_read_bignum(p, len, result ? &result->modulus : NULL);
-    if (n < 0 || (result && bignum_bitcount(result->modulus) == 0))
-	return -1;
+    if (n < 0 || (result && bignum_bitcount(result->modulus) == 0)) return -1;
     if (result)
 	result->bytes = n - 2;
     if (keystr)
@@ -66,8 +52,7 @@ int makekey(unsigned char *data, int len, struct RSAKey *result,
 
     if (order == 1) {
 	n = ssh1_read_bignum(p, len, result ? &result->exponent : NULL);
-	if (n < 0)
-	    return -1;
+	if (n < 0) return -1;
 	p += n;
 	len -= n;
     }
@@ -86,7 +71,7 @@ int rsaencrypt(unsigned char *data, int length, struct RSAKey *key)
     unsigned char *p;
 
     if (key->bytes < length + 4)
-	return 0;		/* RSA key too short! */
+	return 0;		       /* RSA key too short! */
 
     memmove(data + key->bytes - length, data, length);
     data[0] = 0;
@@ -236,8 +221,7 @@ static Bignum rsa_privkey_op(Bignum input, struct RSAKey *key)
     random_encrypted = modpow(random, key->exponent, key->modulus);
     random_inverse = modinv(random, key->modulus);
     input_blinded = modmul(input, random_encrypted, key->modulus);
-    ret_blinded =
-	modpow(input_blinded, key->private_exponent, key->modulus);
+    ret_blinded = modpow(input_blinded, key->private_exponent, key->modulus);
     ret = modmul(ret_blinded, random_inverse, key->modulus);
 
     freebn(ret_blinded);
@@ -249,7 +233,7 @@ static Bignum rsa_privkey_op(Bignum input, struct RSAKey *key)
     return ret;
 }
 
-Bignum rsadecrypt(Bignum input, struct RSAKey * key)
+Bignum rsadecrypt(Bignum input, struct RSAKey *key)
 {
     return rsa_privkey_op(input, key);
 }
@@ -406,25 +390,25 @@ unsigned char *rsa_public_blob(struct RSAKey *key, int *len)
 /* Given a public blob, determine its length. */
 int rsa_public_blob_len(void *data, int maxlen)
 {
-    unsigned char *p = (unsigned char *) data;
+    unsigned char *p = (unsigned char *)data;
     int n;
 
     if (maxlen < 4)
 	return -1;
-    p += 4;			/* length word */
+    p += 4;			       /* length word */
     maxlen -= 4;
 
-    n = ssh1_read_bignum(p, maxlen, NULL);	/* exponent */
+    n = ssh1_read_bignum(p, maxlen, NULL);    /* exponent */
     if (n < 0)
 	return -1;
     p += n;
 
-    n = ssh1_read_bignum(p, maxlen, NULL);	/* modulus */
+    n = ssh1_read_bignum(p, maxlen, NULL);    /* modulus */
     if (n < 0)
 	return -1;
     p += n;
 
-    return p - (unsigned char *) data;
+    return p - (unsigned char *)data;
 }
 
 void freersakey(struct RSAKey *key)
@@ -466,7 +450,7 @@ static Bignum getmp(char **data, int *datalen)
     getstring(data, datalen, &p, &length);
     if (!p)
 	return NULL;
-    b = bignum_from_bytes((unsigned char *) p, length);
+    b = bignum_from_bytes((unsigned char *)p, length);
     return b;
 }
 
@@ -689,7 +673,7 @@ static char *rsa2_fingerprint(void *key)
     int numlen, i;
 
     MD5Init(&md5c);
-    MD5Update(&md5c, (unsigned char *) "\0\0\0\7ssh-rsa", 11);
+    MD5Update(&md5c, (unsigned char *)"\0\0\0\7ssh-rsa", 11);
 
 #define ADD_BIGNUM(bignum) \
     numlen = (bignum_bitcount(bignum)+8)/8; \
@@ -765,7 +749,7 @@ static int rsa2_verifysig(void *key, char *sig, int siglen,
 
     ret = 1;
 
-    bytes = (bignum_bitcount(rsa->modulus) + 7) / 8;
+    bytes = (bignum_bitcount(rsa->modulus)+7) / 8;
     /* Top (partial) byte should be zero. */
     if (bignum_byte(out, bytes - 1) != 0)
 	ret = 0;

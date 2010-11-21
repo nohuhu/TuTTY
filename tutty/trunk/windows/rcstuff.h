@@ -18,7 +18,7 @@
 #endif
 #endif
 
-#endif				/* end #ifdef __LCC__ */
+#endif /* end #ifdef __LCC__ */
 
 /* Some systems don't define this, so I do it myself if necessary */
 #ifndef TCS_MULTILINE
@@ -30,4 +30,21 @@
 #define RT_MANIFEST 24
 #endif
 
-#endif				/* PUTTY_RCSTUFF_H */
+/* LCC is the offender here. */
+#ifndef VS_FF_DEBUG
+#define VS_FF_DEBUG        1
+#endif
+#ifndef VS_FF_PRERELEASE
+#define VS_FF_PRERELEASE   2
+#endif
+#ifndef VS_FF_PRIVATEBUILD
+#define VS_FF_PRIVATEBUILD 8
+#endif
+#ifndef VOS__WINDOWS32
+#define VOS__WINDOWS32     4
+#endif
+#ifndef VFT_APP
+#define VFT_APP            1
+#endif
+
+#endif /* PUTTY_RCSTUFF_H */

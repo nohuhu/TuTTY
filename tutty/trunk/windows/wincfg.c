@@ -13,7 +13,7 @@
 static void about_handler(union control *ctrl, void *dlg,
 			  void *data, int event)
 {
-    HWND *hwndp = (HWND *) ctrl->generic.context.p;
+    HWND *hwndp = (HWND *)ctrl->generic.context.p;
 
     if (event == EVENT_ACTION) {
 	modal_about_box(*hwndp);
@@ -23,15 +23,15 @@ static void about_handler(union control *ctrl, void *dlg,
 static void help_handler(union control *ctrl, void *dlg,
 			 void *data, int event)
 {
-    HWND *hwndp = (HWND *) ctrl->generic.context.p;
+    HWND *hwndp = (HWND *)ctrl->generic.context.p;
 
     if (event == EVENT_ACTION) {
 	show_help(*hwndp);
     }
 }
 
-void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
-			  int midsession)
+void win_setup_config_box(struct controlbox *b, HWND *hwndp, int has_help,
+			  int midsession, int protocol)
 {
     struct controlset *s;
     union control *c;
@@ -61,7 +61,7 @@ void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
     ctrl_checkbox(s, "Display scrollbar in full screen mode", 'i',
 		  HELPCTX(window_scrollback),
 		  dlg_stdcheckbox_handler,
-		  I(offsetof(Config, scrollbar_in_fullscreen)));
+		  I(offsetof(Config,scrollbar_in_fullscreen)));
     /*
      * Really this wants to go just after `Display scrollbar'. See
      * if we can find that control, and do some shuffling.
@@ -71,17 +71,16 @@ void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
 	for (i = 0; i < s->ncontrols; i++) {
 	    c = s->ctrls[i];
 	    if (c->generic.type == CTRL_CHECKBOX &&
-		c->generic.context.i == offsetof(Config, scrollbar)) {
+                c->generic.context.i == offsetof(Config,scrollbar)) {
 		/*
 		 * Control i is the scrollbar checkbox.
 		 * Control s->ncontrols-1 is the scrollbar-in-FS one.
 		 */
-		if (i < s->ncontrols - 2) {
-		    c = s->ctrls[s->ncontrols - 1];
-		    memmove(s->ctrls + i + 2, s->ctrls + i + 1,
-			    (s->ncontrols - i -
-			     2) * sizeof(union control *));
-		    s->ctrls[i + 1] = c;
+                if (i < s->ncontrols-2) {
+                    c = s->ctrls[s->ncontrols-1];
+                    memmove(s->ctrls+i+2, s->ctrls+i+1,
+                            (s->ncontrols-i-2)*sizeof(union control *));
+                    s->ctrls[i+1] = c;
 		}
 		break;
 	    }
@@ -96,11 +95,10 @@ void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
 		    "Enable extra keyboard features:");
     ctrl_checkbox(s, "AltGr acts as Compose key", 't',
 		  HELPCTX(keyboard_compose),
-		  dlg_stdcheckbox_handler,
-		  I(offsetof(Config, compose_key)));
+		  dlg_stdcheckbox_handler, I(offsetof(Config,compose_key)));
     ctrl_checkbox(s, "Control-Alt is different from AltGr", 'd',
-		  HELPCTX(keyboard_ctrlalt), dlg_stdcheckbox_handler,
-		  I(offsetof(Config, ctrlaltkeys)));
+		  HELPCTX(keyboard_ctrlalt),
+		  dlg_stdcheckbox_handler, I(offsetof(Config,ctrlaltkeys)));
 
     /*
      * Windows allows an arbitrary .WAV to be played as a bell, and
@@ -130,25 +128,19 @@ void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
 		c->radio.nbuttons += 2;
 		c->radio.buttons =
 		    sresize(c->radio.buttons, c->radio.nbuttons, char *);
-		c->radio.buttons[c->radio.nbuttons - 1] =
+		c->radio.buttons[c->radio.nbuttons-1] =
 		    dupstr("Play a custom sound file");
-		c->radio.buttons[c->radio.nbuttons - 2] =
+		c->radio.buttons[c->radio.nbuttons-2] =
 		    dupstr("Beep using the PC speaker");
 		c->radio.buttondata =
-		    sresize(c->radio.buttondata, c->radio.nbuttons,
-			    intorptr);
-		c->radio.buttondata[c->radio.nbuttons - 1] =
-		    I(BELL_WAVEFILE);
-		c->radio.buttondata[c->radio.nbuttons - 2] =
-		    I(BELL_PCSPEAKER);
+		    sresize(c->radio.buttondata, c->radio.nbuttons, intorptr);
+		c->radio.buttondata[c->radio.nbuttons-1] = I(BELL_WAVEFILE);
+		c->radio.buttondata[c->radio.nbuttons-2] = I(BELL_PCSPEAKER);
 		if (c->radio.shortcuts) {
 		    c->radio.shortcuts =
-			sresize(c->radio.shortcuts, c->radio.nbuttons,
-				char);
-		    c->radio.shortcuts[c->radio.nbuttons - 1] =
-			NO_SHORTCUT;
-		    c->radio.shortcuts[c->radio.nbuttons - 2] =
-			NO_SHORTCUT;
+			sresize(c->radio.shortcuts, c->radio.nbuttons, char);
+		    c->radio.shortcuts[c->radio.nbuttons-1] = NO_SHORTCUT;
+		    c->radio.shortcuts[c->radio.nbuttons-2] = NO_SHORTCUT;
 		}
 		break;
 	    }
@@ -157,8 +149,7 @@ void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
     ctrl_filesel(s, "Custom sound file to play as a bell:", NO_SHORTCUT,
 		 FILTER_WAVE_FILES, FALSE, "Select bell sound file",
 		 HELPCTX(bell_style),
-		 dlg_stdfilesel_handler,
-		 I(offsetof(Config, bell_wavefile)));
+		 dlg_stdfilesel_handler, I(offsetof(Config, bell_wavefile)));
 
     /*
      * While we've got this box open, taskbar flashing on a bell is
@@ -179,8 +170,21 @@ void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
 		    "Adjust the window border");
     ctrl_checkbox(s, "Sunken-edge border (slightly thicker)", 's',
 		  HELPCTX(appearance_border),
-		  dlg_stdcheckbox_handler,
-		  I(offsetof(Config, sunken_edge)));
+		  dlg_stdcheckbox_handler, I(offsetof(Config,sunken_edge)));
+
+    /*
+     * Configurable font quality settings for Windows.
+     */
+    s = ctrl_getset(b, "Window/Appearance", "font",
+		    "Font settings");
+    ctrl_radiobuttons(s, "Font quality:", 'q', 2,
+		      HELPCTX(appearance_font),
+		      dlg_stdradiobutton_handler,
+		      I(offsetof(Config, font_quality)),
+		      "Antialiased", I(FQ_ANTIALIASED),
+		      "Non-Antialiased", I(FQ_NONANTIALIASED),
+		      "ClearType", I(FQ_CLEARTYPE),
+		      "Default", I(FQ_DEFAULT), NULL);
 
     /*
      * Cyrillic Lock is a horrid misfeature even on Windows, and
@@ -191,7 +195,7 @@ void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
     ctrl_checkbox(s, "Caps Lock acts as Cyrillic switch", 's',
 		  HELPCTX(translation_cyrillic),
 		  dlg_stdcheckbox_handler,
-		  I(offsetof(Config, xlat_capslockcyr)));
+		  I(offsetof(Config,xlat_capslockcyr)));
 
     /*
      * On Windows we can use but not enumerate translation tables
@@ -208,9 +212,7 @@ void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
      * additional options when working with line-drawing
      * characters.
      */
-    str =
-	dupprintf("Adjust how %s displays line drawing characters",
-		  appname);
+    str = dupprintf("Adjust how %s displays line drawing characters", appname);
     s = ctrl_getset(b, "Window/Translation", "linedraw", str);
     sfree(str);
     {
@@ -223,19 +225,17 @@ void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
 		c->radio.nbuttons += 3;
 		c->radio.buttons =
 		    sresize(c->radio.buttons, c->radio.nbuttons, char *);
-		c->radio.buttons[c->radio.nbuttons - 3] =
+		c->radio.buttons[c->radio.nbuttons-3] =
 		    dupstr("Font has XWindows encoding");
-		c->radio.buttons[c->radio.nbuttons - 2] =
+		c->radio.buttons[c->radio.nbuttons-2] =
 		    dupstr("Use font in both ANSI and OEM modes");
-		c->radio.buttons[c->radio.nbuttons - 1] =
+		c->radio.buttons[c->radio.nbuttons-1] =
 		    dupstr("Use font in OEM mode only");
 		c->radio.buttondata =
-		    sresize(c->radio.buttondata, c->radio.nbuttons,
-			    intorptr);
-		c->radio.buttondata[c->radio.nbuttons - 3] =
-		    I(VT_XWINDOWS);
-		c->radio.buttondata[c->radio.nbuttons - 2] = I(VT_OEMANSI);
-		c->radio.buttondata[c->radio.nbuttons - 1] = I(VT_OEMONLY);
+		    sresize(c->radio.buttondata, c->radio.nbuttons, intorptr);
+		c->radio.buttondata[c->radio.nbuttons-3] = I(VT_XWINDOWS);
+		c->radio.buttondata[c->radio.nbuttons-2] = I(VT_OEMANSI);
+		c->radio.buttondata[c->radio.nbuttons-1] = I(VT_OEMONLY);
 		if (!c->radio.shortcuts) {
 		    int j;
 		    c->radio.shortcuts = snewn(c->radio.nbuttons, char);
@@ -245,9 +245,9 @@ void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
 		    c->radio.shortcuts = sresize(c->radio.shortcuts,
 						 c->radio.nbuttons, char);
 		}
-		c->radio.shortcuts[c->radio.nbuttons - 3] = 'x';
-		c->radio.shortcuts[c->radio.nbuttons - 2] = 'b';
-		c->radio.shortcuts[c->radio.nbuttons - 1] = 'e';
+		c->radio.shortcuts[c->radio.nbuttons-3] = 'x';
+		c->radio.shortcuts[c->radio.nbuttons-2] = 'b';
+		c->radio.shortcuts[c->radio.nbuttons-1] = 'e';
 		break;
 	    }
 	}
@@ -258,9 +258,9 @@ void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
      */
     s = ctrl_getset(b, "Window/Selection", "format",
 		    "Formatting of pasted characters");
-    ctrl_checkbox(s, "Paste to clipboard in RTF as well as plain text",
-		  'f', HELPCTX(selection_rtf), dlg_stdcheckbox_handler,
-		  I(offsetof(Config, rtf_paste)));
+    ctrl_checkbox(s, "Paste to clipboard in RTF as well as plain text", 'f',
+		  HELPCTX(selection_rtf),
+		  dlg_stdcheckbox_handler, I(offsetof(Config,rtf_paste)));
 
     /*
      * Windows often has no middle button, so we supply a selection
@@ -273,18 +273,16 @@ void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
 		      HELPCTX(selection_buttons),
 		      dlg_stdradiobutton_handler,
 		      I(offsetof(Config, mouse_is_xterm)),
-		      "Windows (Middle extends, Right brings up menu)",
-		      I(2), "Compromise (Middle extends, Right pastes)",
-		      I(0), "xterm (Right extends, Middle pastes)", I(1),
-		      NULL);
+		      "Windows (Middle extends, Right brings up menu)", I(2),
+		      "Compromise (Middle extends, Right pastes)", I(0),
+		      "xterm (Right extends, Middle pastes)", I(1), NULL);
     /*
      * This really ought to go at the _top_ of its box, not the
      * bottom, so we'll just do some shuffling now we've set it
      * up...
      */
-    c = s->ctrls[s->ncontrols - 1];	/* this should be the new control */
-    memmove(s->ctrls + 1, s->ctrls,
-	    (s->ncontrols - 1) * sizeof(union control *));
+    c = s->ctrls[s->ncontrols-1];      /* this should be the new control */
+    memmove(s->ctrls+1, s->ctrls, (s->ncontrols-1)*sizeof(union control *));
     s->ctrls[0] = c;
 
     /*
@@ -294,11 +292,10 @@ void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
 		    "General options for colour usage");
     ctrl_checkbox(s, "Attempt to use logical palettes", 'l',
 		  HELPCTX(colours_logpal),
-		  dlg_stdcheckbox_handler,
-		  I(offsetof(Config, try_palette)));
-    ctrl_checkbox(s, "Use system colours", 's', HELPCTX(colours_system),
-		  dlg_stdcheckbox_handler,
-		  I(offsetof(Config, system_colour)));
+		  dlg_stdcheckbox_handler, I(offsetof(Config,try_palette)));
+    ctrl_checkbox(s, "Use system colours", 's',
+                  HELPCTX(colours_system),
+                  dlg_stdcheckbox_handler, I(offsetof(Config,system_colour)));
 
 
     /*
@@ -309,12 +306,10 @@ void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
 		      HELPCTX(window_resize),
 		      dlg_stdradiobutton_handler,
 		      I(offsetof(Config, resize_action)),
-		      "Change the number of rows and columns",
-		      I(RESIZE_TERM), "Change the size of the font",
-		      I(RESIZE_FONT),
-		      "Change font size only when maximised",
-		      I(RESIZE_EITHER), "Forbid resizing completely",
-		      I(RESIZE_DISABLED), NULL);
+		      "Change the number of rows and columns", I(RESIZE_TERM),
+		      "Change the size of the font", I(RESIZE_FONT),
+		      "Change font size only when maximised", I(RESIZE_EITHER),
+		      "Forbid resizing completely", I(RESIZE_DISABLED), NULL);
 
     /*
      * Most of the Window/Behaviour stuff is there to mimic Windows
@@ -324,13 +319,13 @@ void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
     s = ctrl_getset(b, "Window/Behaviour", "main", NULL);
     ctrl_checkbox(s, "Window closes on ALT-F4", '4',
 		  HELPCTX(behaviour_altf4),
-		  dlg_stdcheckbox_handler, I(offsetof(Config, alt_f4)));
+		  dlg_stdcheckbox_handler, I(offsetof(Config,alt_f4)));
     ctrl_checkbox(s, "System menu appears on ALT-Space", 'y',
 		  HELPCTX(behaviour_altspace),
-		  dlg_stdcheckbox_handler, I(offsetof(Config, alt_space)));
+		  dlg_stdcheckbox_handler, I(offsetof(Config,alt_space)));
     ctrl_checkbox(s, "System menu appears on ALT alone", 'l',
 		  HELPCTX(behaviour_altonly),
-		  dlg_stdcheckbox_handler, I(offsetof(Config, alt_only)));
+		  dlg_stdcheckbox_handler, I(offsetof(Config,alt_only)));
     ctrl_checkbox(s, "Ensure window is always on top", 'e',
 		  HELPCTX(behaviour_alwaysontop),
 		  dlg_stdcheckbox_handler,
@@ -338,4 +333,42 @@ void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
     ctrl_checkbox(s, "Full screen on Alt-Enter", 'f',
 		  HELPCTX(behaviour_altenter), dlg_stdcheckbox_handler,
 		  I(offsetof(Config, fullscreenonaltenter)));
+
+    /*
+     * Windows supports a local-command proxy. This also means we
+     * must adjust the text on the `Telnet command' control.
+     */
+    if (!midsession) {
+	int i;
+        s = ctrl_getset(b, "Connection/Proxy", "basics", NULL);
+	for (i = 0; i < s->ncontrols; i++) {
+	    c = s->ctrls[i];
+	    if (c->generic.type == CTRL_RADIO &&
+		c->generic.context.i == offsetof(Config, proxy_type)) {
+		assert(c->generic.handler == dlg_stdradiobutton_handler);
+		c->radio.nbuttons++;
+		c->radio.buttons =
+		    sresize(c->radio.buttons, c->radio.nbuttons, char *);
+		c->radio.buttons[c->radio.nbuttons-1] =
+		    dupstr("Local");
+		c->radio.buttondata =
+		    sresize(c->radio.buttondata, c->radio.nbuttons, intorptr);
+		c->radio.buttondata[c->radio.nbuttons-1] = I(PROXY_CMD);
+		break;
+	    }
+	}
+
+	for (i = 0; i < s->ncontrols; i++) {
+	    c = s->ctrls[i];
+	    if (c->generic.type == CTRL_EDITBOX &&
+		c->generic.context.i ==
+		offsetof(Config, proxy_telnet_command)) {
+		assert(c->generic.handler == dlg_stdeditbox_handler);
+		sfree(c->generic.label);
+		c->generic.label = dupstr("Telnet command, or local"
+					  " proxy command");
+		break;
+	    }
+	}
+    }
 }

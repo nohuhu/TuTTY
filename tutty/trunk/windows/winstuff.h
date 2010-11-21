@@ -9,7 +9,7 @@
 #include <winsock2.h>
 #endif
 #include <windows.h>
-#include <stdio.h>		/* for FILENAME_MAX */
+#include <stdio.h>		       /* for FILENAME_MAX */
 
 #include "tree234.h"
 
@@ -18,7 +18,7 @@
 struct Filename {
     char path[FILENAME_MAX];
 };
-#define f_open(filename, mode) ( fopen((filename).path, (mode)) )
+#define f_open(filename, mode, isprivate) ( fopen((filename).path, (mode)) )
 
 struct FontSpec {
     char name[64];
@@ -27,8 +27,47 @@ struct FontSpec {
     int charset;
 };
 
+#ifndef CLEARTYPE_QUALITY
+#define CLEARTYPE_QUALITY 5
+#endif
+#define FONT_QUALITY(fq) ( \
+    (fq) == FQ_DEFAULT ? DEFAULT_QUALITY : \
+    (fq) == FQ_ANTIALIASED ? ANTIALIASED_QUALITY : \
+    (fq) == FQ_NONANTIALIASED ? NONANTIALIASED_QUALITY : \
+    CLEARTYPE_QUALITY)
+
+/*
+ * Where we can, we use GetWindowLongPtr and friends because they're
+ * more useful on 64-bit platforms, but they're a relatively recent
+ * innovation, missing from VC++ 6 and older MinGW.  Degrade nicely.
+ * (NB that on some systems, some of these things are available but
+ * not others...)
+ */
+
+#ifndef GCLP_HCURSOR
+/* GetClassLongPtr and friends */
+#undef  GetClassLongPtr
+#define GetClassLongPtr GetClassLong
+#undef  SetClassLongPtr
+#define SetClassLongPtr SetClassLong
+#define GCLP_HCURSOR GCL_HCURSOR
+/* GetWindowLongPtr and friends */
+#undef  GetWindowLongPtr
+#define GetWindowLongPtr GetWindowLong
+#undef  SetWindowLongPtr
+#define SetWindowLongPtr SetWindowLong
+#undef  GWLP_USERDATA
+#define GWLP_USERDATA GWL_USERDATA
+#undef  DWLP_MSGRESULT
+#define DWLP_MSGRESULT DWL_MSGRESULT
+/* Since we've clobbered the above functions, we should clobber the
+ * associated type regardless of whether it's defined. */
+#undef LONG_PTR
+#define LONG_PTR LONG
+#endif
+
 #define BOXFLAGS DLGWINDOWEXTRA
-#define BOXRESULT DLGWINDOWEXTRA + 4
+#define BOXRESULT (DLGWINDOWEXTRA + sizeof(LONG_PTR))
 #define DF_END 0x0001
 
 /*
@@ -58,11 +97,12 @@ typedef struct terminal_tag Terminal;
 #define PUTTY_REG_GPARENT_CHILD "SimonTatham"
 
 #define PUTTY_HELP_FILE "tutty.hlp"
+#define PUTTY_CHM_FILE "tutty.chm"
 #define PUTTY_HELP_CONTENTS "tutty.cnt"
 
 #define GETTICKCOUNT GetTickCount
 #define CURSORBLINK GetCaretBlinkTime()
-#define TICKSPERSEC 1000	/* GetTickCount returns milliseconds */
+#define TICKSPERSEC 1000	       /* GetTickCount returns milliseconds */
 
 #define DEFAULT_CODEPAGE CP_ACP
 
@@ -72,7 +112,7 @@ typedef HDC Context;
  * Window handles for the windows that can be running during a
  * PuTTY session.
  */
-GLOBAL HWND hwnd;		/* the main terminal window */
+GLOBAL HWND hwnd;	/* the main terminal window */
 GLOBAL HWND logbox;
 
 /*
@@ -81,11 +121,13 @@ GLOBAL HWND logbox;
 GLOBAL HINSTANCE hinst;
 
 /*
- * Details of the help file.
+ * Help file stuff in winhelp.c.
  */
-GLOBAL char *help_path;
-GLOBAL int help_has_contents;
-GLOBAL int requested_help;
+void init_help(void);
+void shutdown_help(void);
+int has_help(void);
+void launch_help(HWND hwnd, const char *topic);
+void quit_help(HWND hwnd);
 
 /*
  * The terminal and logging context are notionally local to the
@@ -95,15 +137,8 @@ GLOBAL int requested_help;
 GLOBAL Terminal *term;
 GLOBAL void *logctx;
 
+#define WM_NETEVENT  (WM_APP + 5)
 GLOBAL HICON fldr_open, fldr_closed, main_icon;
-
-/*
- * I've just looked in the windows standard headr files for WM_USER, there
- * are hundreds of flags defined using the form WM_USER+123 so I've 
- * renumbered this NETEVENT value and the two in window.c
- */
-#define WM_XUSER     (WM_USER + 0x2000)
-#define WM_NETEVENT  (WM_XUSER + 5)
 
 /*
  * On Windows, we send MA_2CLK as the only event marking the second
@@ -155,18 +190,20 @@ GLOBAL HICON fldr_open, fldr_closed, main_icon;
  * that module must be exported from it as function pointers. So
  * here they are.
  */
-extern int (WINAPI * p_WSAAsyncSelect)
- (SOCKET s, HWND hWnd, u_int wMsg, long lEvent);
-extern int (WINAPI * p_WSAEventSelect)
- (SOCKET s, WSAEVENT hEventObject, long lNetworkEvents);
-extern int (WINAPI * p_select)
- (int nfds, fd_set FAR * readfds, fd_set FAR * writefds,
-  fd_set FAR * exceptfds, const struct timeval FAR * timeout);
-extern int (WINAPI * p_WSAGetLastError) (void);
-extern int (WINAPI * p_WSAEnumNetworkEvents)
- (SOCKET s, WSAEVENT hEventObject, LPWSANETWORKEVENTS lpNetworkEvents);
+extern int (WINAPI *p_WSAAsyncSelect)
+    (SOCKET s, HWND hWnd, u_int wMsg, long lEvent);
+extern int (WINAPI *p_WSAEventSelect)
+    (SOCKET s, WSAEVENT hEventObject, long lNetworkEvents);
+extern int (WINAPI *p_select)
+    (int nfds, fd_set FAR * readfds, fd_set FAR * writefds,
+     fd_set FAR *exceptfds, const struct timeval FAR * timeout);
+extern int (WINAPI *p_WSAGetLastError)(void);
+extern int (WINAPI *p_WSAEnumNetworkEvents)
+    (SOCKET s, WSAEVENT hEventObject, LPWSANETWORKEVENTS lpNetworkEvents);
 
 extern int socket_writable(SOCKET skt);
+
+extern void socket_reselect_all(void);
 
 /*
  * Exports from winctrls.c.
@@ -185,13 +222,11 @@ struct ctlpos {
 /*
  * Exports from winutils.c.
  */
-typedef struct filereq_tag filereq;	/* cwd for file requester */
-BOOL request_file(filereq * state, OPENFILENAME * of, int preserve,
-		  int save);
+typedef struct filereq_tag filereq; /* cwd for file requester */
+BOOL request_file(filereq *state, OPENFILENAME *of, int preserve, int save);
 filereq *filereq_new(void);
-void filereq_free(filereq * state);
-int message_box(LPCTSTR text, LPCTSTR caption, DWORD style,
-		DWORD helpctxid);
+void filereq_free(filereq *state);
+int message_box(LPCTSTR text, LPCTSTR caption, DWORD style, DWORD helpctxid);
 void split_into_argv(char *, int *, char ***, char ***);
 
 /*
@@ -210,21 +245,19 @@ struct prefslist {
  * parameter, and hence is passed back to winctrls access functions.
  */
 struct dlgparam {
-    HWND hwnd;			/* the hwnd of the dialog box */
-    struct winctrls *controltrees[8];	/* can have several of these */
+    HWND hwnd;			       /* the hwnd of the dialog box */
+    struct winctrls *controltrees[8];  /* can have several of these */
     int nctrltrees;
-    char *wintitle;		/* title of actual window */
-    char *errtitle;		/* title of error sub-messageboxes */
-    void *data;			/* data to pass in refresh events */
-    union control *focused, *lastfocused;	/* which ctrl has focus now/before */
-    char shortcuts[128];	/* track which shortcuts in use */
-    int coloursel_wanted;	/* has an event handler asked for
+    char *wintitle;		       /* title of actual window */
+    char *errtitle;		       /* title of error sub-messageboxes */
+    void *data;			       /* data to pass in refresh events */
+    union control *focused, *lastfocused; /* which ctrl has focus now/before */
+    char shortcuts[128];	       /* track which shortcuts in use */
+    int coloursel_wanted;	       /* has an event handler asked for
 				 * a colour selector? */
-    struct {
-	unsigned char r, g, b, ok;
-    } coloursel_result;		/* 0-255 */
-    tree234 *privdata;		/* stores per-control private data */
-    int ended, endresult;	/* has the dialog been ended? */
+    struct { unsigned char r, g, b, ok; } coloursel_result;   /* 0-255 */
+    tree234 *privdata;		       /* stores per-control private data */
+    int ended, endresult;	       /* has the dialog been ended? */
 };
 
 /*
@@ -237,7 +270,8 @@ HWND doctl(struct ctlpos *cp, RECT r,
 void bartitle(struct ctlpos *cp, char *name, int id);
 void beginbox(struct ctlpos *cp, char *name, int idbox);
 void endbox(struct ctlpos *cp);
-void multiedit(struct ctlpos *cp, int password, ...);
+void editboxfw(struct ctlpos *cp, int password, char *text,
+	       int staticid, int editid);
 void radioline(struct ctlpos *cp, char *text, int id, int nacross, ...);
 void bareradioline(struct ctlpos *cp, int nacross, ...);
 void radiobig(struct ctlpos *cp, char *text, int id, ...);
@@ -344,8 +378,8 @@ void dp_cleanup(struct dlgparam *dp);
 /*
  * Exports from wincfg.c.
  */
-void win_setup_config_box(struct controlbox *b, HWND * hwndp, int has_help,
-			  int midsession);
+void win_setup_config_box(struct controlbox *b, HWND *hwndp, int has_help,
+			  int midsession, int protocol);
 
 /*
  * Exports from windlg.c.
@@ -386,7 +420,7 @@ void init_ucs(Config *, struct unicode_data *);
  * Also, we supply FLAG_SYNCAGENT to force agent requests to be
  * synchronous in pscp and psftp.
  */
-void agent_schedule_callback(void (*callback) (void *, void *, int),
+void agent_schedule_callback(void (*callback)(void *, void *, int),
 			     void *callback_ctx, void *data, int len);
 #define FLAG_SYNCAGENT 0x1000
 

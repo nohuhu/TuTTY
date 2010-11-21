@@ -1,3 +1,7 @@
+/*
+ * Rlogin backend.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -20,6 +24,7 @@ typedef struct rlogin_tag {
     Socket s;
     int bufsize;
     int firstbyte;
+    int cansize;
     int term_width, term_height;
     void *frontend;
 } *Rlogin;
@@ -53,15 +58,15 @@ static int rlogin_closing(Plug plug, const char *error_msg, int error_code,
 {
     Rlogin rlogin = (Rlogin) plug;
     if (rlogin->s) {
-	sk_close(rlogin->s);
-	rlogin->s = NULL;
+        sk_close(rlogin->s);
+        rlogin->s = NULL;
 	notify_remote_exit(rlogin->frontend);
     }
     if (error_msg) {
 	/* A socket error has occurred. */
 	logevent(rlogin->frontend, error_msg);
 	connection_fatal(rlogin->frontend, "%s", error_msg);
-    }				/* Otherwise, the remote side closed the connection normally. */
+    }				       /* Otherwise, the remote side closed the connection normally. */
     return 0;
 }
 
@@ -73,8 +78,10 @@ static int rlogin_receive(Plug plug, int urgent, char *data, int len)
 
 	c = *data++;
 	len--;
-	if (c == '\x80')
+	if (c == '\x80') {
+	    rlogin->cansize = 1;
 	    rlogin_size(rlogin, rlogin->term_width, rlogin->term_height);
+        }
 	/*
 	 * We should flush everything (aka Telnet SYNCH) if we see
 	 * 0x02, and we should turn off and on _local_ flow control
@@ -95,7 +102,7 @@ static int rlogin_receive(Plug plug, int urgent, char *data, int len)
 	    rlogin->firstbyte = 0;
 	}
 	if (len > 0)
-	    c_write(rlogin, data, len);
+            c_write(rlogin, data, len);
     }
     return 1;
 }
@@ -114,8 +121,8 @@ static void rlogin_sent(Plug plug, int bufsize)
  * Also places the canonical host name into `realhost'. It must be
  * freed by the caller.
  */
-static const char *rlogin_init(void *frontend_handle,
-			       void **backend_handle, Config * cfg,
+static const char *rlogin_init(void *frontend_handle, void **backend_handle,
+			       Config *cfg,
 			       char *host, int port, char **realhost,
 			       int nodelay, int keepalive)
 {
@@ -136,6 +143,7 @@ static const char *rlogin_init(void *frontend_handle,
     rlogin->term_width = cfg->width;
     rlogin->term_height = cfg->height;
     rlogin->firstbyte = 1;
+    rlogin->cansize = 0;
     *backend_handle = rlogin;
 
     /*
@@ -157,7 +165,7 @@ static const char *rlogin_init(void *frontend_handle,
     }
 
     if (port < 0)
-	port = 513;		/* default rlogin port */
+	port = 513;		       /* default rlogin port */
 
     /*
      * Open socket.
@@ -178,12 +186,13 @@ static const char *rlogin_init(void *frontend_handle,
 	sk_write(rlogin->s, cfg->localusername,
 		 strlen(cfg->localusername));
 	sk_write(rlogin->s, &z, 1);
-	sk_write(rlogin->s, cfg->username, strlen(cfg->username));
+	sk_write(rlogin->s, cfg->username,
+		 strlen(cfg->username));
 	sk_write(rlogin->s, &z, 1);
-	sk_write(rlogin->s, cfg->termtype, strlen(cfg->termtype));
+	sk_write(rlogin->s, cfg->termtype,
+		 strlen(cfg->termtype));
 	sk_write(rlogin->s, "/", 1);
-	for (p = cfg->termspeed; isdigit((unsigned char) *p); p++)
-	    continue;
+	for (p = cfg->termspeed; isdigit((unsigned char)*p); p++) continue;
 	sk_write(rlogin->s, cfg->termspeed, p - cfg->termspeed);
 	rlogin->bufsize = sk_write(rlogin->s, &z, 1);
     }
@@ -203,7 +212,7 @@ static void rlogin_free(void *handle)
 /*
  * Stub routine (we don't have any need to reconfigure this backend).
  */
-static void rlogin_reconfig(void *handle, Config * cfg)
+static void rlogin_reconfig(void *handle, Config *cfg)
 {
 }
 
@@ -242,7 +251,7 @@ static void rlogin_size(void *handle, int width, int height)
     rlogin->term_width = width;
     rlogin->term_height = height;
 
-    if (rlogin->s == NULL)
+    if (rlogin->s == NULL || !rlogin->cansize)
 	return;
 
     b[6] = rlogin->term_width >> 8;
@@ -271,10 +280,10 @@ static const struct telnet_special *rlogin_get_specials(void *handle)
     return NULL;
 }
 
-static Socket rlogin_socket(void *handle)
+static int rlogin_connected(void *handle)
 {
     Rlogin rlogin = (Rlogin) handle;
-    return rlogin->s;
+    return rlogin->s != NULL;
 }
 
 static int rlogin_sendok(void *handle)
@@ -309,10 +318,10 @@ static int rlogin_exitcode(void *handle)
 {
     Rlogin rlogin = (Rlogin) handle;
     if (rlogin->s != NULL)
-	return -1;		/* still connected */
+        return -1;                     /* still connected */
     else
-	/* If we ever implement RSH, we'll probably need to do this properly */
-	return 0;
+        /* If we ever implement RSH, we'll probably need to do this properly */
+        return 0;
 }
 
 /*
@@ -332,7 +341,7 @@ Backend rlogin_backend = {
     rlogin_size,
     rlogin_special,
     rlogin_get_specials,
-    rlogin_socket,
+    rlogin_connected,
     rlogin_exitcode,
     rlogin_sendok,
     rlogin_ldisc,

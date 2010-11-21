@@ -35,10 +35,9 @@ struct filereq_tag {
  * save==1 -> GetSaveFileName; save==0 -> GetOpenFileName
  * `state' is optional.
  */
-BOOL request_file(filereq * state, OPENFILENAME * of, int preserve,
-		  int save)
+BOOL request_file(filereq *state, OPENFILENAME *of, int preserve, int save)
 {
-    TCHAR cwd[MAX_PATH];	/* process CWD */
+    TCHAR cwd[MAX_PATH]; /* process CWD */
     BOOL ret;
 
     /* Get process CWD */
@@ -68,7 +67,7 @@ BOOL request_file(filereq * state, OPENFILENAME * of, int preserve,
 	    /* Didn't work, oh well. */
 	    state->cwd[0] = '\0';
     }
-
+    
     /* Restore process CWD */
     if (preserve)
 	/* If it fails, there's not much we can do. */
@@ -84,7 +83,7 @@ filereq *filereq_new(void)
     return ret;
 }
 
-void filereq_free(filereq * state)
+void filereq_free(filereq *state)
 {
     sfree(state);
 }
@@ -96,7 +95,6 @@ void filereq_free(filereq * state)
 /* Callback function to launch context help. */
 static VOID CALLBACK message_box_help_callback(LPHELPINFO lpHelpInfo)
 {
-    if (help_path) {
 	char *context = NULL;
 #define CHECK_CTX(name) \
 	do { \
@@ -109,22 +107,14 @@ static VOID CALLBACK message_box_help_callback(LPHELPINFO lpHelpInfo)
 	CHECK_CTX(option_cleanup);
 	CHECK_CTX(pgp_fingerprints);
 #undef CHECK_CTX
-	if (context) {
-	    /* We avoid using malloc, in case we're in a situation where
-	     * it would be awkward to do so. */
-	    char cmd[WINHELP_CTX_MAXLEN + 10];
-	    sprintf(cmd, "JI(`',`%.*s')", WINHELP_CTX_MAXLEN, context);
-	    WinHelp(hwnd, help_path, HELP_COMMAND, (DWORD) cmd);
-	    requested_help = TRUE;
-	}
-    }
+    if (context)
+	launch_help(hwnd, context);
 }
 
-int message_box(LPCTSTR text, LPCTSTR caption, DWORD style,
-		DWORD helpctxid)
+int message_box(LPCTSTR text, LPCTSTR caption, DWORD style, DWORD helpctxid)
 {
     MSGBOXPARAMS mbox;
-
+    
     /*
      * We use MessageBoxIndirect() because it allows us to specify a
      * callback function for the Help button.
@@ -139,8 +129,7 @@ int message_box(LPCTSTR text, LPCTSTR caption, DWORD style,
     mbox.lpszCaption = caption;
     mbox.dwContextHelpId = helpctxid;
     mbox.dwStyle = style;
-    if (helpctxid != 0 && help_path)
-	mbox.dwStyle |= MB_HELP;
+    if (helpctxid != 0 && has_help()) mbox.dwStyle |= MB_HELP;
     return MessageBoxIndirect(&mbox);
 }
 
@@ -149,15 +138,17 @@ int message_box(LPCTSTR text, LPCTSTR caption, DWORD style,
  */
 void pgp_fingerprints(void)
 {
-    message_box
-	("These are the fingerprints of the PuTTY PGP Master Keys. They can\n"
+    message_box("These are the fingerprints of the PuTTY PGP Master Keys. They can\n"
 	 "be used to establish a trust path from this executable to another\n"
 	 "one. See the manual for more information.\n"
-	 "(Note: these fingerprints have nothing to do with SSH!)\n" "\n"
-	 "PuTTY Master Key (RSA), 1024-bit:\n" "  " PGP_RSA_MASTER_KEY_FP
-	 "\n" "PuTTY Master Key (DSA), 1024-bit:\n" "  "
-	 PGP_DSA_MASTER_KEY_FP, "PGP fingerprints",
-	 MB_ICONINFORMATION | MB_OK, HELPCTXID(pgp_fingerprints));
+		"(Note: these fingerprints have nothing to do with SSH!)\n"
+		"\n"
+		"PuTTY Master Key (RSA), 1024-bit:\n"
+		"  " PGP_RSA_MASTER_KEY_FP "\n"
+		"PuTTY Master Key (DSA), 1024-bit:\n"
+		"  " PGP_DSA_MASTER_KEY_FP,
+		"PGP fingerprints", MB_ICONINFORMATION | MB_OK,
+		HELPCTXID(pgp_fingerprints));
 }
 
 /*
@@ -281,15 +272,11 @@ void split_into_argv(char *cmdline, int *argc, char ***argv,
      * First deal with the simplest of all special cases: if there
      * aren't any arguments, return 0,NULL,NULL.
      */
-    while (*cmdline && isspace(*cmdline))
-	cmdline++;
+    while (*cmdline && isspace(*cmdline)) cmdline++;
     if (!*cmdline) {
-	if (argc)
-	    *argc = 0;
-	if (argv)
-	    *argv = NULL;
-	if (argstart)
-	    *argstart = NULL;
+	if (argc) *argc = 0;
+	if (argv) *argv = NULL;
+	if (argstart) *argstart = NULL;
 	return;
     }
 
@@ -297,22 +284,18 @@ void split_into_argv(char *cmdline, int *argc, char ***argv,
      * This will guaranteeably be big enough; we can realloc it
      * down later.
      */
-    outputline = snewn(1 + strlen(cmdline), char);
-    outputargv = snewn(strlen(cmdline) + 1 / 2, char *);
-    outputargstart = snewn(strlen(cmdline) + 1 / 2, char *);
+    outputline = snewn(1+strlen(cmdline), char);
+    outputargv = snewn(strlen(cmdline)+1 / 2, char *);
+    outputargstart = snewn(strlen(cmdline)+1 / 2, char *);
 
-    p = cmdline;
-    q = outputline;
-    outputargc = 0;
+    p = cmdline; q = outputline; outputargc = 0;
 
     while (*p) {
 	int quote;
 
 	/* Skip whitespace searching for start of argument. */
-	while (*p && isspace(*p))
-	    p++;
-	if (!*p)
-	    break;
+	while (*p && isspace(*p)) p++;
+	if (!*p) break;
 
 	/* We have an argument; start it. */
 	outputargv[outputargc] = q;
@@ -323,7 +306,7 @@ void split_into_argv(char *cmdline, int *argc, char ***argv,
 	/* Copy data into the argument until it's finished. */
 	while (*p) {
 	    if (!quote && isspace(*p))
-		break;		/* argument is finished */
+		break;		       /* argument is finished */
 
 	    if (*p == '"' || *p == '\\') {
 		/*
@@ -333,10 +316,8 @@ void split_into_argv(char *cmdline, int *argc, char ***argv,
 		 * them as appropriate.
 		 */
 		int i, slashes = 0, quotes = 0;
-		while (*p == '\\')
-		    slashes++, p++;
-		while (*p == '"')
-		    quotes++, p++;
+		while (*p == '\\') slashes++, p++;
+		while (*p == '"') quotes++, p++;
 
 		if (!quotes) {
 		    /*
@@ -344,25 +325,20 @@ void split_into_argv(char *cmdline, int *argc, char ***argv,
 		     * slashes are not special at all, so just copy
 		     * n slashes to the output string.
 		     */
-		    while (slashes--)
-			*q++ = '\\';
+		    while (slashes--) *q++ = '\\';
 		} else {
 		    /* Slashes annihilate in pairs. */
-		    while (slashes >= 2)
-			slashes -= 2, *q++ = '\\';
+		    while (slashes >= 2) slashes -= 2, *q++ = '\\';
 
 		    /* One remaining slash takes out the first quote. */
-		    if (slashes)
-			quotes--, *q++ = '"';
+		    if (slashes) quotes--, *q++ = '"';
 
 		    if (quotes > 0) {
 			/* Outside a quote segment, a quote starts one. */
-			if (!quote)
-			    quotes--, quote = 1;
+			if (!quote) quotes--, quote = 1;
 
 			/* Now we produce (n+1)/3 literal quotes... */
-			for (i = 3; i <= quotes + 1; i += 3)
-			    *q++ = '"';
+			for (i = 3; i <= quotes+1; i += 3) *q++ = '"';
 
 			/* ... and end in a quote segment iff 3 divides n. */
 			quote = (quotes % 3 == 0);
@@ -380,16 +356,9 @@ void split_into_argv(char *cmdline, int *argc, char ***argv,
     outputargv = sresize(outputargv, outputargc, char *);
     outputargstart = sresize(outputargstart, outputargc, char *);
 
-    if (argc)
-	*argc = outputargc;
-    if (argv)
-	*argv = outputargv;
-    else
-	sfree(outputargv);
-    if (argstart)
-	*argstart = outputargstart;
-    else
-	sfree(outputargstart);
+    if (argc) *argc = outputargc;
+    if (argv) *argv = outputargv; else sfree(outputargv);
+    if (argstart) *argstart = outputargstart; else sfree(outputargstart);
 }
 
 #ifdef TESTMODE
@@ -402,187 +371,97 @@ const struct argv_test {
      * We generate this set of tests by invoking ourself with
      * `-generate'.
      */
-    {
-	"ab c\" d", {
-    "ab", "c d", NULL}}, {
-	"a\"b c\" d", {
-    "ab c", "d", NULL}}, {
-	"a\"\"b c\" d", {
-    "ab", "c d", NULL}}, {
-	"a\"\"\"b c\" d", {
-    "a\"b", "c d", NULL}}, {
-	"a\"\"\"\"b c\" d", {
-    "a\"b c", "d", NULL}}, {
-	"a\"\"\"\"\"b c\" d", {
-    "a\"b", "c d", NULL}}, {
-	"a\"\"\"\"\"\"b c\" d", {
-    "a\"\"b", "c d", NULL}}, {
-	"a\"\"\"\"\"\"\"b c\" d", {
-    "a\"\"b c", "d", NULL}}, {
-	"a\"\"\"\"\"\"\"\"b c\" d", {
-    "a\"\"b", "c d", NULL}}, {
-	"a\\b c\" d", {
-    "a\\b", "c d", NULL}}, {
-	"a\\\"b c\" d", {
-    "a\"b", "c d", NULL}}, {
-	"a\\\"\"b c\" d", {
-    "a\"b c", "d", NULL}}, {
-	"a\\\"\"\"b c\" d", {
-    "a\"b", "c d", NULL}}, {
-	"a\\\"\"\"\"b c\" d", {
-    "a\"\"b", "c d", NULL}}, {
-	"a\\\"\"\"\"\"b c\" d", {
-    "a\"\"b c", "d", NULL}}, {
-	"a\\\"\"\"\"\"\"b c\" d", {
-    "a\"\"b", "c d", NULL}}, {
-	"a\\\"\"\"\"\"\"\"b c\" d", {
-    "a\"\"\"b", "c d", NULL}}, {
-	"a\\\"\"\"\"\"\"\"\"b c\" d", {
-    "a\"\"\"b c", "d", NULL}}, {
-	"a\\\\b c\" d", {
-    "a\\\\b", "c d", NULL}}, {
-	"a\\\\\"b c\" d", {
-    "a\\b c", "d", NULL}}, {
-	"a\\\\\"\"b c\" d", {
-    "a\\b", "c d", NULL}}, {
-	"a\\\\\"\"\"b c\" d", {
-    "a\\\"b", "c d", NULL}}, {
-	"a\\\\\"\"\"\"b c\" d", {
-    "a\\\"b c", "d", NULL}}, {
-	"a\\\\\"\"\"\"\"b c\" d", {
-    "a\\\"b", "c d", NULL}}, {
-	"a\\\\\"\"\"\"\"\"b c\" d", {
-    "a\\\"\"b", "c d", NULL}}, {
-	"a\\\\\"\"\"\"\"\"\"b c\" d", {
-    "a\\\"\"b c", "d", NULL}}, {
-	"a\\\\\"\"\"\"\"\"\"\"b c\" d", {
-    "a\\\"\"b", "c d", NULL}}, {
-	"a\\\\\\b c\" d", {
-    "a\\\\\\b", "c d", NULL}}, {
-	"a\\\\\\\"b c\" d", {
-    "a\\\"b", "c d", NULL}}, {
-	"a\\\\\\\"\"b c\" d", {
-    "a\\\"b c", "d", NULL}}, {
-	"a\\\\\\\"\"\"b c\" d", {
-    "a\\\"b", "c d", NULL}}, {
-	"a\\\\\\\"\"\"\"b c\" d", {
-    "a\\\"\"b", "c d", NULL}}, {
-	"a\\\\\\\"\"\"\"\"b c\" d", {
-    "a\\\"\"b c", "d", NULL}}, {
-	"a\\\\\\\"\"\"\"\"\"b c\" d", {
-    "a\\\"\"b", "c d", NULL}}, {
-	"a\\\\\\\"\"\"\"\"\"\"b c\" d", {
-    "a\\\"\"\"b", "c d", NULL}}, {
-	"a\\\\\\\"\"\"\"\"\"\"\"b c\" d", {
-    "a\\\"\"\"b c", "d", NULL}}, {
-	"a\\\\\\\\b c\" d", {
-    "a\\\\\\\\b", "c d", NULL}}, {
-	"a\\\\\\\\\"b c\" d", {
-    "a\\\\b c", "d", NULL}}, {
-	"a\\\\\\\\\"\"b c\" d", {
-    "a\\\\b", "c d", NULL}}, {
-	"a\\\\\\\\\"\"\"b c\" d", {
-    "a\\\\\"b", "c d", NULL}}, {
-	"a\\\\\\\\\"\"\"\"b c\" d", {
-    "a\\\\\"b c", "d", NULL}}, {
-	"a\\\\\\\\\"\"\"\"\"b c\" d", {
-    "a\\\\\"b", "c d", NULL}}, {
-	"a\\\\\\\\\"\"\"\"\"\"b c\" d", {
-    "a\\\\\"\"b", "c d", NULL}}, {
-	"a\\\\\\\\\"\"\"\"\"\"\"b c\" d", {
-    "a\\\\\"\"b c", "d", NULL}}, {
-	"a\\\\\\\\\"\"\"\"\"\"\"\"b c\" d", {
-    "a\\\\\"\"b", "c d", NULL}}, {
-	"\"ab c\" d", {
-    "ab c", "d", NULL}}, {
-	"\"a\"b c\" d", {
-    "ab", "c d", NULL}}, {
-	"\"a\"\"b c\" d", {
-    "a\"b", "c d", NULL}}, {
-	"\"a\"\"\"b c\" d", {
-    "a\"b c", "d", NULL}}, {
-	"\"a\"\"\"\"b c\" d", {
-    "a\"b", "c d", NULL}}, {
-	"\"a\"\"\"\"\"b c\" d", {
-    "a\"\"b", "c d", NULL}}, {
-	"\"a\"\"\"\"\"\"b c\" d", {
-    "a\"\"b c", "d", NULL}}, {
-	"\"a\"\"\"\"\"\"\"b c\" d", {
-    "a\"\"b", "c d", NULL}}, {
-	"\"a\"\"\"\"\"\"\"\"b c\" d", {
-    "a\"\"\"b", "c d", NULL}}, {
-	"\"a\\b c\" d", {
-    "a\\b c", "d", NULL}}, {
-	"\"a\\\"b c\" d", {
-    "a\"b c", "d", NULL}}, {
-	"\"a\\\"\"b c\" d", {
-    "a\"b", "c d", NULL}}, {
-	"\"a\\\"\"\"b c\" d", {
-    "a\"\"b", "c d", NULL}}, {
-	"\"a\\\"\"\"\"b c\" d", {
-    "a\"\"b c", "d", NULL}}, {
-	"\"a\\\"\"\"\"\"b c\" d", {
-    "a\"\"b", "c d", NULL}}, {
-	"\"a\\\"\"\"\"\"\"b c\" d", {
-    "a\"\"\"b", "c d", NULL}}, {
-	"\"a\\\"\"\"\"\"\"\"b c\" d", {
-    "a\"\"\"b c", "d", NULL}}, {
-	"\"a\\\"\"\"\"\"\"\"\"b c\" d", {
-    "a\"\"\"b", "c d", NULL}}, {
-	"\"a\\\\b c\" d", {
-    "a\\\\b c", "d", NULL}}, {
-	"\"a\\\\\"b c\" d", {
-    "a\\b", "c d", NULL}}, {
-	"\"a\\\\\"\"b c\" d", {
-    "a\\\"b", "c d", NULL}}, {
-	"\"a\\\\\"\"\"b c\" d", {
-    "a\\\"b c", "d", NULL}}, {
-	"\"a\\\\\"\"\"\"b c\" d", {
-    "a\\\"b", "c d", NULL}}, {
-	"\"a\\\\\"\"\"\"\"b c\" d", {
-    "a\\\"\"b", "c d", NULL}}, {
-	"\"a\\\\\"\"\"\"\"\"b c\" d", {
-    "a\\\"\"b c", "d", NULL}}, {
-	"\"a\\\\\"\"\"\"\"\"\"b c\" d", {
-    "a\\\"\"b", "c d", NULL}}, {
-	"\"a\\\\\"\"\"\"\"\"\"\"b c\" d", {
-    "a\\\"\"\"b", "c d", NULL}}, {
-	"\"a\\\\\\b c\" d", {
-    "a\\\\\\b c", "d", NULL}}, {
-	"\"a\\\\\\\"b c\" d", {
-    "a\\\"b c", "d", NULL}}, {
-	"\"a\\\\\\\"\"b c\" d", {
-    "a\\\"b", "c d", NULL}}, {
-	"\"a\\\\\\\"\"\"b c\" d", {
-    "a\\\"\"b", "c d", NULL}}, {
-	"\"a\\\\\\\"\"\"\"b c\" d", {
-    "a\\\"\"b c", "d", NULL}}, {
-	"\"a\\\\\\\"\"\"\"\"b c\" d", {
-    "a\\\"\"b", "c d", NULL}}, {
-	"\"a\\\\\\\"\"\"\"\"\"b c\" d", {
-    "a\\\"\"\"b", "c d", NULL}}, {
-	"\"a\\\\\\\"\"\"\"\"\"\"b c\" d", {
-    "a\\\"\"\"b c", "d", NULL}}, {
-	"\"a\\\\\\\"\"\"\"\"\"\"\"b c\" d", {
-    "a\\\"\"\"b", "c d", NULL}}, {
-	"\"a\\\\\\\\b c\" d", {
-    "a\\\\\\\\b c", "d", NULL}}, {
-	"\"a\\\\\\\\\"b c\" d", {
-    "a\\\\b", "c d", NULL}}, {
-	"\"a\\\\\\\\\"\"b c\" d", {
-    "a\\\\\"b", "c d", NULL}}, {
-	"\"a\\\\\\\\\"\"\"b c\" d", {
-    "a\\\\\"b c", "d", NULL}}, {
-	"\"a\\\\\\\\\"\"\"\"b c\" d", {
-    "a\\\\\"b", "c d", NULL}}, {
-	"\"a\\\\\\\\\"\"\"\"\"b c\" d", {
-    "a\\\\\"\"b", "c d", NULL}}, {
-	"\"a\\\\\\\\\"\"\"\"\"\"b c\" d", {
-    "a\\\\\"\"b c", "d", NULL}}, {
-	"\"a\\\\\\\\\"\"\"\"\"\"\"b c\" d", {
-    "a\\\\\"\"b", "c d", NULL}}, {
-	"\"a\\\\\\\\\"\"\"\"\"\"\"\"b c\" d", {
-"a\\\\\"\"\"b", "c d", NULL}},};
+    {"ab c\" d", {"ab", "c d", NULL}},
+    {"a\"b c\" d", {"ab c", "d", NULL}},
+    {"a\"\"b c\" d", {"ab", "c d", NULL}},
+    {"a\"\"\"b c\" d", {"a\"b", "c d", NULL}},
+    {"a\"\"\"\"b c\" d", {"a\"b c", "d", NULL}},
+    {"a\"\"\"\"\"b c\" d", {"a\"b", "c d", NULL}},
+    {"a\"\"\"\"\"\"b c\" d", {"a\"\"b", "c d", NULL}},
+    {"a\"\"\"\"\"\"\"b c\" d", {"a\"\"b c", "d", NULL}},
+    {"a\"\"\"\"\"\"\"\"b c\" d", {"a\"\"b", "c d", NULL}},
+    {"a\\b c\" d", {"a\\b", "c d", NULL}},
+    {"a\\\"b c\" d", {"a\"b", "c d", NULL}},
+    {"a\\\"\"b c\" d", {"a\"b c", "d", NULL}},
+    {"a\\\"\"\"b c\" d", {"a\"b", "c d", NULL}},
+    {"a\\\"\"\"\"b c\" d", {"a\"\"b", "c d", NULL}},
+    {"a\\\"\"\"\"\"b c\" d", {"a\"\"b c", "d", NULL}},
+    {"a\\\"\"\"\"\"\"b c\" d", {"a\"\"b", "c d", NULL}},
+    {"a\\\"\"\"\"\"\"\"b c\" d", {"a\"\"\"b", "c d", NULL}},
+    {"a\\\"\"\"\"\"\"\"\"b c\" d", {"a\"\"\"b c", "d", NULL}},
+    {"a\\\\b c\" d", {"a\\\\b", "c d", NULL}},
+    {"a\\\\\"b c\" d", {"a\\b c", "d", NULL}},
+    {"a\\\\\"\"b c\" d", {"a\\b", "c d", NULL}},
+    {"a\\\\\"\"\"b c\" d", {"a\\\"b", "c d", NULL}},
+    {"a\\\\\"\"\"\"b c\" d", {"a\\\"b c", "d", NULL}},
+    {"a\\\\\"\"\"\"\"b c\" d", {"a\\\"b", "c d", NULL}},
+    {"a\\\\\"\"\"\"\"\"b c\" d", {"a\\\"\"b", "c d", NULL}},
+    {"a\\\\\"\"\"\"\"\"\"b c\" d", {"a\\\"\"b c", "d", NULL}},
+    {"a\\\\\"\"\"\"\"\"\"\"b c\" d", {"a\\\"\"b", "c d", NULL}},
+    {"a\\\\\\b c\" d", {"a\\\\\\b", "c d", NULL}},
+    {"a\\\\\\\"b c\" d", {"a\\\"b", "c d", NULL}},
+    {"a\\\\\\\"\"b c\" d", {"a\\\"b c", "d", NULL}},
+    {"a\\\\\\\"\"\"b c\" d", {"a\\\"b", "c d", NULL}},
+    {"a\\\\\\\"\"\"\"b c\" d", {"a\\\"\"b", "c d", NULL}},
+    {"a\\\\\\\"\"\"\"\"b c\" d", {"a\\\"\"b c", "d", NULL}},
+    {"a\\\\\\\"\"\"\"\"\"b c\" d", {"a\\\"\"b", "c d", NULL}},
+    {"a\\\\\\\"\"\"\"\"\"\"b c\" d", {"a\\\"\"\"b", "c d", NULL}},
+    {"a\\\\\\\"\"\"\"\"\"\"\"b c\" d", {"a\\\"\"\"b c", "d", NULL}},
+    {"a\\\\\\\\b c\" d", {"a\\\\\\\\b", "c d", NULL}},
+    {"a\\\\\\\\\"b c\" d", {"a\\\\b c", "d", NULL}},
+    {"a\\\\\\\\\"\"b c\" d", {"a\\\\b", "c d", NULL}},
+    {"a\\\\\\\\\"\"\"b c\" d", {"a\\\\\"b", "c d", NULL}},
+    {"a\\\\\\\\\"\"\"\"b c\" d", {"a\\\\\"b c", "d", NULL}},
+    {"a\\\\\\\\\"\"\"\"\"b c\" d", {"a\\\\\"b", "c d", NULL}},
+    {"a\\\\\\\\\"\"\"\"\"\"b c\" d", {"a\\\\\"\"b", "c d", NULL}},
+    {"a\\\\\\\\\"\"\"\"\"\"\"b c\" d", {"a\\\\\"\"b c", "d", NULL}},
+    {"a\\\\\\\\\"\"\"\"\"\"\"\"b c\" d", {"a\\\\\"\"b", "c d", NULL}},
+    {"\"ab c\" d", {"ab c", "d", NULL}},
+    {"\"a\"b c\" d", {"ab", "c d", NULL}},
+    {"\"a\"\"b c\" d", {"a\"b", "c d", NULL}},
+    {"\"a\"\"\"b c\" d", {"a\"b c", "d", NULL}},
+    {"\"a\"\"\"\"b c\" d", {"a\"b", "c d", NULL}},
+    {"\"a\"\"\"\"\"b c\" d", {"a\"\"b", "c d", NULL}},
+    {"\"a\"\"\"\"\"\"b c\" d", {"a\"\"b c", "d", NULL}},
+    {"\"a\"\"\"\"\"\"\"b c\" d", {"a\"\"b", "c d", NULL}},
+    {"\"a\"\"\"\"\"\"\"\"b c\" d", {"a\"\"\"b", "c d", NULL}},
+    {"\"a\\b c\" d", {"a\\b c", "d", NULL}},
+    {"\"a\\\"b c\" d", {"a\"b c", "d", NULL}},
+    {"\"a\\\"\"b c\" d", {"a\"b", "c d", NULL}},
+    {"\"a\\\"\"\"b c\" d", {"a\"\"b", "c d", NULL}},
+    {"\"a\\\"\"\"\"b c\" d", {"a\"\"b c", "d", NULL}},
+    {"\"a\\\"\"\"\"\"b c\" d", {"a\"\"b", "c d", NULL}},
+    {"\"a\\\"\"\"\"\"\"b c\" d", {"a\"\"\"b", "c d", NULL}},
+    {"\"a\\\"\"\"\"\"\"\"b c\" d", {"a\"\"\"b c", "d", NULL}},
+    {"\"a\\\"\"\"\"\"\"\"\"b c\" d", {"a\"\"\"b", "c d", NULL}},
+    {"\"a\\\\b c\" d", {"a\\\\b c", "d", NULL}},
+    {"\"a\\\\\"b c\" d", {"a\\b", "c d", NULL}},
+    {"\"a\\\\\"\"b c\" d", {"a\\\"b", "c d", NULL}},
+    {"\"a\\\\\"\"\"b c\" d", {"a\\\"b c", "d", NULL}},
+    {"\"a\\\\\"\"\"\"b c\" d", {"a\\\"b", "c d", NULL}},
+    {"\"a\\\\\"\"\"\"\"b c\" d", {"a\\\"\"b", "c d", NULL}},
+    {"\"a\\\\\"\"\"\"\"\"b c\" d", {"a\\\"\"b c", "d", NULL}},
+    {"\"a\\\\\"\"\"\"\"\"\"b c\" d", {"a\\\"\"b", "c d", NULL}},
+    {"\"a\\\\\"\"\"\"\"\"\"\"b c\" d", {"a\\\"\"\"b", "c d", NULL}},
+    {"\"a\\\\\\b c\" d", {"a\\\\\\b c", "d", NULL}},
+    {"\"a\\\\\\\"b c\" d", {"a\\\"b c", "d", NULL}},
+    {"\"a\\\\\\\"\"b c\" d", {"a\\\"b", "c d", NULL}},
+    {"\"a\\\\\\\"\"\"b c\" d", {"a\\\"\"b", "c d", NULL}},
+    {"\"a\\\\\\\"\"\"\"b c\" d", {"a\\\"\"b c", "d", NULL}},
+    {"\"a\\\\\\\"\"\"\"\"b c\" d", {"a\\\"\"b", "c d", NULL}},
+    {"\"a\\\\\\\"\"\"\"\"\"b c\" d", {"a\\\"\"\"b", "c d", NULL}},
+    {"\"a\\\\\\\"\"\"\"\"\"\"b c\" d", {"a\\\"\"\"b c", "d", NULL}},
+    {"\"a\\\\\\\"\"\"\"\"\"\"\"b c\" d", {"a\\\"\"\"b", "c d", NULL}},
+    {"\"a\\\\\\\\b c\" d", {"a\\\\\\\\b c", "d", NULL}},
+    {"\"a\\\\\\\\\"b c\" d", {"a\\\\b", "c d", NULL}},
+    {"\"a\\\\\\\\\"\"b c\" d", {"a\\\\\"b", "c d", NULL}},
+    {"\"a\\\\\\\\\"\"\"b c\" d", {"a\\\\\"b c", "d", NULL}},
+    {"\"a\\\\\\\\\"\"\"\"b c\" d", {"a\\\\\"b", "c d", NULL}},
+    {"\"a\\\\\\\\\"\"\"\"\"b c\" d", {"a\\\\\"\"b", "c d", NULL}},
+    {"\"a\\\\\\\\\"\"\"\"\"\"b c\" d", {"a\\\\\"\"b c", "d", NULL}},
+    {"\"a\\\\\\\\\"\"\"\"\"\"\"b c\" d", {"a\\\\\"\"b", "c d", NULL}},
+    {"\"a\\\\\\\\\"\"\"\"\"\"\"\"b c\" d", {"a\\\\\"\"\"b", "c d", NULL}},
+};
 
 int main(int argc, char **argv)
 {
@@ -631,22 +510,10 @@ int main(int argc, char **argv)
 	    printf("    {\"");
 	    for (p = argv[2]; *p; p++, q++) {
 		switch (*p) {
-		case '/':
-		    printf("\\\\");
-		    *q = '\\';
-		    break;
-		case '\'':
-		    printf("\\\"");
-		    *q = '"';
-		    break;
-		case '_':
-		    printf(" ");
-		    *q = ' ';
-		    break;
-		default:
-		    putchar(*p);
-		    *q = *p;
-		    break;
+		  case '/':  printf("\\\\"); *q = '\\'; break;
+		  case '\'': printf("\\\""); *q = '"';  break;
+		  case '_':  printf(" ");    *q = ' ';  break;
+		  default:   putchar(*p);    *q = *p;   break;
 		}
 	    }
 	    *p = '\0';
@@ -669,15 +536,11 @@ int main(int argc, char **argv)
 	    for (initialquote = 0; initialquote <= 1; initialquote++) {
 		for (backslashes = 0; backslashes < 5; backslashes++) {
 		    for (quotes = 0; quotes < 9; quotes++) {
-			p = teststr + sprintf(teststr, "%s -split ",
-					      argv[0]);
-			if (initialquote)
-			    *p++ = '\'';
+			p = teststr + sprintf(teststr, "%s -split ", argv[0]);
+			if (initialquote) *p++ = '\'';
 			*p++ = 'a';
-			for (i = 0; i < backslashes; i++)
-			    *p++ = '/';
-			for (i = 0; i < quotes; i++)
-			    *p++ = '\'';
+			for (i = 0; i < backslashes; i++) *p++ = '/';
+			for (i = 0; i < quotes; i++) *p++ = '\'';
 			*p++ = 'b';
 			*p++ = '_';
 			*p++ = 'c';
@@ -710,10 +573,9 @@ int main(int argc, char **argv)
 
 	for (j = 0; j < ac && argv_tests[i].argv[j]; j++) {
 	    if (strcmp(av[j], argv_tests[i].argv[j])) {
-		printf
-		    ("failed test %d (|%s|) arg %d: |%s| should be |%s|\n",
-		     i, argv_tests[i].cmdline, j, av[j],
-		     argv_tests[i].argv[j]);
+		printf("failed test %d (|%s|) arg %d: |%s| should be |%s|\n",
+		       i, argv_tests[i].cmdline,
+		       j, av[j], argv_tests[i].argv[j]);
 	    }
 #ifdef VERBOSE
 	    else {
@@ -724,12 +586,10 @@ int main(int argc, char **argv)
 #endif
 	}
 	if (j < ac)
-	    printf
-		("failed test %d (|%s|): %d args returned, should be %d\n",
+	    printf("failed test %d (|%s|): %d args returned, should be %d\n",
 		 i, argv_tests[i].cmdline, ac, j);
 	if (argv_tests[i].argv[j])
-	    printf
-		("failed test %d (|%s|): %d args returned, should be more\n",
+	    printf("failed test %d (|%s|): %d args returned, should be more\n",
 		 i, argv_tests[i].cmdline, ac);
     }
 

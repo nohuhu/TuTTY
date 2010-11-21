@@ -1,21 +1,13 @@
+/*
+ * Digital Signature Standard implementation for PuTTY.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
 #include "ssh.h"
 #include "misc.h"
-
-#define GET_32BIT(cp) \
-    (((unsigned long)(unsigned char)(cp)[0] << 24) | \
-    ((unsigned long)(unsigned char)(cp)[1] << 16) | \
-    ((unsigned long)(unsigned char)(cp)[2] << 8) | \
-    ((unsigned long)(unsigned char)(cp)[3]))
-
-#define PUT_32BIT(cp, value) { \
-    (cp)[0] = (unsigned char)((value) >> 24); \
-    (cp)[1] = (unsigned char)((value) >> 16); \
-    (cp)[2] = (unsigned char)((value) >> 8); \
-    (cp)[3] = (unsigned char)(value); }
 
 static void sha_mpint(SHA_State * s, Bignum b)
 {
@@ -69,8 +61,8 @@ static Bignum getmp(char **data, int *datalen)
     if (!p)
 	return NULL;
     if (p[0] & 0x80)
-	return NULL;		/* negative mp */
-    b = bignum_from_bytes((unsigned char *) p, length);
+	return NULL;		       /* negative mp */
+    b = bignum_from_bytes((unsigned char *)p, length);
     return b;
 }
 
@@ -78,7 +70,7 @@ static Bignum get160(char **data, int *datalen)
 {
     Bignum b;
 
-    b = bignum_from_bytes((unsigned char *) *data, 20);
+    b = bignum_from_bytes((unsigned char *)*data, 20);
     *data += 20;
     *datalen -= 20;
 
@@ -136,7 +128,7 @@ static char *dss_fmtkey(void *key)
     static const char hex[] = "0123456789abcdef";
     if (!dss->p)
 	return NULL;
-    len = 8 + 4 + 1;		/* 4 x "0x", punctuation, \0 */
+    len = 8 + 4 + 1;		       /* 4 x "0x", punctuation, \0 */
     len += 4 * (bignum_bitcount(dss->p) + 15) / 16;
     len += 4 * (bignum_bitcount(dss->q) + 15) / 16;
     len += 4 * (bignum_bitcount(dss->g) + 15) / 16;
@@ -188,7 +180,7 @@ static char *dss_fingerprint(void *key)
     int numlen, i;
 
     MD5Init(&md5c);
-    MD5Update(&md5c, (unsigned char *) "\0\0\0\7ssh-dss", 11);
+    MD5Update(&md5c, (unsigned char *)"\0\0\0\7ssh-dss", 11);
 
 #define ADD_BIGNUM(bignum) \
     numlen = (bignum_bitcount(bignum)+8)/8; \
@@ -248,12 +240,12 @@ static int dss_verifysig(void *key, char *sig, int siglen,
      * the length: length 40 means the commercial-SSH bug, anything
      * else is assumed to be IETF-compliant.
      */
-    if (siglen != 40) {		/* bug not present; read admin fields */
+    if (siglen != 40) {		       /* bug not present; read admin fields */
 	getstring(&sig, &siglen, &p, &slen);
 	if (!p || slen != 7 || memcmp(p, "ssh-dss", 7)) {
 	    return 0;
 	}
-	sig += 4, siglen -= 4;	/* skip yet another length field */
+	sig += 4, siglen -= 4;	       /* skip yet another length field */
     }
     r = get160(&sig, &siglen);
     s = get160(&sig, &siglen);
@@ -268,7 +260,7 @@ static int dss_verifysig(void *key, char *sig, int siglen,
     /*
      * Step 2. u1 <- SHA(message) * w mod q.
      */
-    SHA_Simple(data, datalen, (unsigned char *) hash);
+    SHA_Simple(data, datalen, (unsigned char *)hash);
     p = hash;
     slen = 20;
     sha = get160(&p, &slen);
@@ -454,7 +446,8 @@ static int dss_openssh_fmtkey(void *key, unsigned char *blob, int len)
 	ssh2_bignum_length(dss->p) +
 	ssh2_bignum_length(dss->q) +
 	ssh2_bignum_length(dss->g) +
-	ssh2_bignum_length(dss->y) + ssh2_bignum_length(dss->x);
+	ssh2_bignum_length(dss->y) +
+	ssh2_bignum_length(dss->x);
 
     if (bloblen > len)
 	return bloblen;
@@ -484,8 +477,7 @@ static int dss_pubkey_bits(void *blob, int len)
     return ret;
 }
 
-static unsigned char *dss_sign(void *key, char *data, int datalen,
-			       int *siglen)
+static unsigned char *dss_sign(void *key, char *data, int datalen, int *siglen)
 {
     /*
      * The basic DSS signing algorithm is:
@@ -597,14 +589,14 @@ static unsigned char *dss_sign(void *key, char *data, int datalen,
     /*
      * Now we have k, so just go ahead and compute the signature.
      */
-    gkp = modpow(dss->g, k, dss->p);	/* g^k mod p */
-    r = bigmod(gkp, dss->q);	/* r = (g^k mod p) mod q */
+    gkp = modpow(dss->g, k, dss->p);   /* g^k mod p */
+    r = bigmod(gkp, dss->q);	       /* r = (g^k mod p) mod q */
     freebn(gkp);
 
     hash = bignum_from_bytes(digest, 20);
-    kinv = modinv(k, dss->q);	/* k^-1 mod q */
-    hxr = bigmuladd(dss->x, r, hash);	/* hash + x*r */
-    s = modmul(kinv, hxr, dss->q);	/* s = k^-1 * (hash + x*r) mod q */
+    kinv = modinv(k, dss->q);	       /* k^-1 mod q */
+    hxr = bigmuladd(dss->x, r, hash);  /* hash + x*r */
+    s = modmul(kinv, hxr, dss->q);     /* s = k^-1 * (hash + x*r) mod q */
     freebn(hxr);
     freebn(kinv);
     freebn(hash);

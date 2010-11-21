@@ -28,9 +28,9 @@ void noise_get_light(void (*func) (void *, int));
  * time, process listings, and other such stuff.
  */
 
-#define HASHINPUT 64		/* 64 bytes SHA input */
-#define HASHSIZE 20		/* 160 bits SHA output */
-#define POOLSIZE 1200		/* size of random pool */
+#define HASHINPUT 64		       /* 64 bytes SHA input */
+#define HASHSIZE 20		       /* 160 bits SHA output */
+#define POOLSIZE 1200		       /* size of random pool */
 
 struct RandPool {
     unsigned char pool[POOLSIZE];
@@ -210,7 +210,7 @@ static void random_timer(void *ctx, long now)
 void random_ref(void)
 {
     if (!random_active) {
-	memset(&pool, 0, sizeof(pool));	/* just to start with */
+	memset(&pool, 0, sizeof(pool));    /* just to start with */
 
 	noise_get_heavy(random_add_heavynoise_bitbybit);
 	random_stir();
