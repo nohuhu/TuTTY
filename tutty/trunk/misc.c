@@ -641,15 +641,18 @@ void debug_memdump(void *buf, int len, int L)
 int cfg_launchable(const Config *cfg)
 {
     if (cfg->protocol == PROT_SERIAL)
-	return cfg->serline[0] != 0;
+	return cfg->port != 0;
     else
 	return cfg->host[0] != 0;
 }
 
+static char serline[BUFSIZE] = "";
+
 char const *cfg_dest(const Config *cfg)
 {
-    if (cfg->protocol == PROT_SERIAL)
-	return cfg->serline;
-    else
+    if (cfg->protocol == PROT_SERIAL) {
+	_snprintf(serline, BUFSIZE, "COM%d", cfg->port);
+	return serline;
+    } else
 	return cfg->host;
 }
