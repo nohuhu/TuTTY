@@ -43,6 +43,8 @@
 #define PROGBARHEIGHT 14
 #define	ICONHEIGHT 20
 
+extern Config cfg;
+
 void ctlposinit(struct ctlpos *cp, HWND hwnd,
 		int leftborder, int rightborder, int topborder)
 {
