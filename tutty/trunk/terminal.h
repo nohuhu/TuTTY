@@ -23,11 +23,11 @@ typedef struct {
 #ifdef OPTIMISE_SCROLL
 struct scrollregion {
     struct scrollregion *next;
-    int topline;		/* Top line of scroll region. */
-    int botline;		/* Bottom line of scroll region. */
-    int lines;			/* Number of lines to scroll by - +ve is forwards. */
+    int topline; /* Top line of scroll region. */
+    int botline; /* Bottom line of scroll region. */
+    int lines; /* Number of lines to scroll by - +ve is forwards. */
 };
-#endif				/* OPTIMISE_SCROLL */
+#endif /* OPTIMISE_SCROLL */
 
 typedef struct termchar termchar;
 typedef struct termline termline;
@@ -57,36 +57,37 @@ struct termchar {
 
 struct termline {
     unsigned short lattr;
-    int cols;			/* number of real columns on the line */
-    int size;			/* number of allocated termchars
+    int cols;			       /* number of real columns on the line */
+    int size;			       /* number of allocated termchars
 				 * (cc-lists may make this > cols) */
-    int temporary;		/* TRUE if decompressed from scrollback */
-    int cc_free;		/* offset to first cc in free list */
+    int temporary;		       /* TRUE if decompressed from scrollback */
+    int cc_free;		       /* offset to first cc in free list */
     struct termchar *chars;
 };
 
 struct bidi_cache_entry {
     int width;
     struct termchar *chars;
-    int *forward, *backward;	/* the permutations of line positions */
+    int *forward, *backward;	       /* the permutations of line positions */
 };
 
 struct terminal_tag {
 
     int compatibility_level;
 
-    tree234 *scrollback;	/* lines scrolled off top of screen */
-    tree234 *screen;		/* lines on primary screen */
-    tree234 *alt_screen;	/* lines on alternate screen */
-    int disptop;		/* distance scrolled back (0 or -ve) */
-    int tempsblines;		/* number of lines in temporary
-				   scrollback */
+    tree234 *scrollback;	       /* lines scrolled off top of screen */
+    tree234 *screen;		       /* lines on primary screen */
+    tree234 *alt_screen;	       /* lines on alternate screen */
+    int disptop;		       /* distance scrolled back (0 or -ve) */
+    int tempsblines;		       /* number of lines of .scrollback that
+					  can be retrieved onto the terminal
+					  ("temporary scrollback") */
 
-    termline **disptext;	/* buffer of text on real screen */
-    int dispcursx, dispcursy;	/* location of cursor on real screen */
-    int curstype;		/* type of cursor on real screen */
+    termline **disptext;	       /* buffer of text on real screen */
+    int dispcursx, dispcursy;	       /* location of cursor on real screen */
+    int curstype;		       /* type of cursor on real screen */
 
-#define VBELL_TIMEOUT (TICKSPERSEC/10)	/* visual bell lasts 1/10 sec */
+#define VBELL_TIMEOUT (TICKSPERSEC/10) /* visual bell lasts 1/10 sec */
 
     struct beeptime *beephead, *beeptail;
     int nbeeps;
@@ -98,41 +99,48 @@ struct terminal_tag {
 
 #ifdef OPTIMISE_SCROLL
     struct scrollregion *scrollhead, *scrolltail;
-#endif				/* OPTIMISE_SCROLL */
+#endif /* OPTIMISE_SCROLL */
 
     int default_attr, curr_attr, save_attr;
     termchar basic_erase_char, erase_char;
 
-    bufchain inbuf;		/* terminal input buffer */
-    pos curs;			/* cursor */
-    pos savecurs;		/* saved cursor position */
-    int marg_t, marg_b;		/* scroll margins */
-    int dec_om;			/* DEC origin mode flag */
-    int wrap, wrapnext;		/* wrap flags */
-    int insert;			/* insert-mode flag */
-    int cset;			/* 0 or 1: which char set */
-    int save_cset, save_csattr;	/* saved with cursor position */
-    int save_utf, save_wnext;	/* saved with cursor position */
-    int rvideo;			/* global reverse video flag */
-    unsigned long rvbell_startpoint;	/* for ESC[?5hESC[?5l vbell */
-    int cursor_on;		/* cursor enabled flag */
-    int reset_132;		/* Flag ESC c resets to 80 cols */
-    int use_bce;		/* Use Background coloured erase */
-    int cblinker;		/* When blinking is the cursor on ? */
-    int tblinker;		/* When the blinking text is on */
-    int blink_is_real;		/* Actually blink blinking text */
-    int term_echoing;		/* Does terminal want local echo? */
-    int term_editing;		/* Does terminal want local edit? */
-    int sco_acs, save_sco_acs;	/* CSI 10,11,12m -> OEM charset */
-    int vt52_bold;		/* Force bold on non-bold colours */
-    int utf;			/* Are we in toggleable UTF-8 mode? */
-    int utf_state;		/* Is there a pending UTF-8 character */
-    int utf_char;		/* and what is it so far. */
-    int utf_size;		/* The size of the UTF character. */
-    int printing, only_printing;	/* Are we doing ANSI printing? */
-    int print_state;		/* state of print-end-sequence scan */
-    bufchain printer_buf;	/* buffered data for printer */
+    bufchain inbuf;		       /* terminal input buffer */
+    pos curs;			       /* cursor */
+    pos savecurs;		       /* saved cursor position */
+    int marg_t, marg_b;		       /* scroll margins */
+    int dec_om;			       /* DEC origin mode flag */
+    int wrap, wrapnext;		       /* wrap flags */
+    int insert;			       /* insert-mode flag */
+    int cset;			       /* 0 or 1: which char set */
+    int save_cset, save_csattr;	       /* saved with cursor position */
+    int save_utf, save_wnext;	       /* saved with cursor position */
+    int rvideo;			       /* global reverse video flag */
+    unsigned long rvbell_startpoint;   /* for ESC[?5hESC[?5l vbell */
+    int cursor_on;		       /* cursor enabled flag */
+    int reset_132;		       /* Flag ESC c resets to 80 cols */
+    int use_bce;		       /* Use Background coloured erase */
+    int cblinker;		       /* When blinking is the cursor on ? */
+    int tblinker;		       /* When the blinking text is on */
+    int blink_is_real;		       /* Actually blink blinking text */
+    int term_echoing;		       /* Does terminal want local echo? */
+    int term_editing;		       /* Does terminal want local edit? */
+    int sco_acs, save_sco_acs;	       /* CSI 10,11,12m -> OEM charset */
+    int vt52_bold;		       /* Force bold on non-bold colours */
+    int utf;			       /* Are we in toggleable UTF-8 mode? */
+    int utf_state;		       /* Is there a pending UTF-8 character */
+    int utf_char;		       /* and what is it so far. */
+    int utf_size;		       /* The size of the UTF character. */
+    int printing, only_printing;       /* Are we doing ANSI printing? */
+    int print_state;		       /* state of print-end-sequence scan */
+    bufchain printer_buf;	       /* buffered data for printer */
     printer_job *print_job;
+
+    /* ESC 7 saved state for the alternate screen */
+    pos alt_savecurs;
+    int alt_save_attr;
+    int alt_save_cset, alt_save_csattr;
+    int alt_save_utf, alt_save_wnext;
+    int alt_save_sco_acs;
 
     int rows, cols, savelines;
     int has_focus;
@@ -143,8 +151,8 @@ struct terminal_tag {
     int seen_disp_event;
     int big_cursor;
 
-    int xterm_mouse;		/* send mouse messages to app */
-    int mouse_is_down;		/* used while tracking mouse buttons */
+    int xterm_mouse;		       /* send mouse messages to app */
+    int mouse_is_down;		       /* used while tracking mouse buttons */
 
     int cset_attr[2];
 
@@ -164,10 +172,10 @@ struct terminal_tag {
     int alt_cset, alt_sco_acs, alt_utf;
     int alt_t, alt_b;
     int alt_which;
-    int alt_sblines;		/* # of lines on alternate screen that should be used for scrollback. */
+    int alt_sblines; /* # of lines on alternate screen that should be used for scrollback. */
 
-#define ARGS_MAX 32		/* max # of esc sequence arguments */
-#define ARG_DEFAULT 0		/* if an arg isn't specified */
+#define ARGS_MAX 32		       /* max # of esc sequence arguments */
+#define ARG_DEFAULT 0		       /* if an arg isn't specified */
 #define def(a,d) ( (a) == ARG_DEFAULT ? (d) : (a) )
     int esc_args[ARGS_MAX];
     int esc_nargs;
@@ -222,7 +230,7 @@ struct terminal_tag {
     int paste_len, paste_pos, paste_hold;
     long last_paste;
 
-    void (*resize_fn) (void *, int, int);
+    void (*resize_fn)(void *, int, int);
     void *resize_ctx;
 
     void *ldisc;
