@@ -1,4 +1,4 @@
-\define{versionidpgpkeys} \versionid $Id$
+\define{versionidpgpkeys} \versionid $Id: pgpkeys.but 5598 2005-04-05 19:36:25Z simon $
 
 \A{pgpkeys} PuTTY download keys and signatures
 

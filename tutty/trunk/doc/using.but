@@ -127,9 +127,13 @@ Event Log into your bug report.
 
 Depending on the protocol used for the current session, there may be
 a submenu of \q{special commands}. These are protocol-specific
-tokens, such as a \i{\q{break} signal}, that can be sent down a
+tokens, such as a \q{break} signal, that can be sent down a
 connection in addition to normal data. Their precise effect is usually
-up to the server. Currently only Telnet and SSH have special commands.
+up to the server. Currently only Telnet, SSH, and serial connections
+have special commands.
+
+The \q{break} signal can also be invoked from the keyboard with
+\i{Ctrl-Break}.
 
 The following \I{Telnet special commands}special commands are
 available in Telnet:
@@ -211,6 +215,9 @@ Only available in SSH-2, and only during a session. Sends various
 POSIX signals. Not honoured by all servers.
 }
 
+With a serial connection, the only available special command is
+\I{Break, serial special command}\q{Break}.
+
 \S2{using-newsession} Starting new sessions
 
 TuTTY's system menu provides some shortcut ways to start new
@@ -244,6 +251,10 @@ Some of the options that are available in the main configuration box
 are not shown in the cut-down Change Settings box. These are usually
 options which don't make sense to change in the middle of a session
 (for example, you can't switch from SSH to Telnet in mid-session).
+
+You can save the current settings to a saved session for future use
+from this dialog box. See \k{config-saving} for more on saved
+sessions.
 
 \S2{using-copyall} \i{Copy All to Clipboard}
 
@@ -491,111 +502,38 @@ protocol}\q{Raw}, from the \q{Protocol} buttons in the \q{Session}
 configuration panel. (See \k{config-hostname}.) You can then enter a
 host name and a port number, and make the connection.
 
-\H{using-serial} Using \i{serial connections}
+\H{using-serial} Connecting to a local serial line
 
-In computer world, a \i{serial port} is an interface with which information
-is transferred in a serial way, bit after bit. It is used to communicate between
-two different devices and is always a point-to-point connection. There are
-two methods of sending and receiving data: \i{synchronous} and \i{asynchronous}
-and they differ in that synchronous devices both send data in both directions
-at the same time, and asynchronous devices wait for each other's turn to send,
-so there's always one device \q{on the line}, sending data and other device
-is always receiving (or just waiting its turn for send). In most IBM PC
-compatible computers there are two (or at least one) common asynchronous
-serial ports based on 16550 \i{UART} chip, either with \i{DB-25} or \i{DB-9} 
-connector. The synchronous ports are mostly used in telecom equipment and 
-rarely found in computers, so these are not supported by TuTTY.
+TuTTY can connect directly to a local serial line as an alternative
+to making a network connection. In this mode, text typed into the
+TuTTY window will be sent straight out of your computer's serial
+port, and data received through that port will be displayed in the
+TuTTY window. You might use this mode, for example, if your serial
+port is connected to another computer which has a serial connection.
 
-The two sides of a serial connection are called \i{DTE} (\q{Data Terminal
-Equipment}) and \i{DCE} (\q{Data Communication Equipment}). Usually the DTE
-is a computer (or a terminal), and DCE is a modem (MOdulator DEModulator), a
-special device used to transmit and receive data over a phone line or a
-dedicated copper wire to the modem on the other side. Note that these roles
-are often hardcoded into the device, so a computer is always DTE and a modem
-is always DCE, you can't configure it to be vice versa. In case when you need
-to connect two similar devices, say, a computer (DTE) to another computer (DTE)
-you need to use a special cable called \i{Null modem}. These cables are common
-enough and can be found in any computer store.
+To make a connection of this type, simply select \q{Serial} from the
+\q{Connection type} radio buttons on the \q{Session} configuration
+panel (see \k{config-hostname}). The \q{Host Name} and \q{Port}
+boxes will transform into \q{Phone number} and \q{Port}, allowing
+you to specify which serial line to use (if your computer has more
+than one) and what phone number to dial upon connecting to serial line.
+For further configuration options (speed, data bits, stop bits, parity,
+flow control), you can use the \q{Serial} configuration panel (see
+\k{config-serial}).
 
-Since the serial ports are different from network protocols, they have their
-own kind of settings:
+After you start up TuTTY in serial mode, you might find that you
+have to make the first move, by sending some data out of the serial
+line in order to notify the device at the other end that someone is
+there for it to talk to. This probably depends on the device. If you
+start up a PuTTY serial session and nothing appears in the window,
+try pressing Return a few times and see if that helps.
 
-\b \q{Speed:} Speed is bit speed from one device to another in bits per second 
-(bit/s or bps). Common bit rates per second for asynchronous start/stop communication 
-are 300, 1200, 2400, 9600, 19200 bit/s, etc. The port speed and device speed 
-must match, though some devices may automatically detect the speed of the 
-serial port. Though the RS-232 standard is formally limited to 20000 bits 
-per second, serial ports on popular personal computers allow settings up to 
-115000 bits per second, though not all bit rates are possible with all serial 
-port clock generators. The most common 16550 UART chips do support 115200
-bps speed.
+A serial line provides no well defined means for one end of the
+connection to notify the other that the connection is finished.
+Therefore, TuTTY in serial mode will remain connected until you
+close the window using the close button. However, TuTTY will try
+to indicate serial line status in its window title.
 
-\b \q{Data bits:} In asynchronous communication, the data is transmitted in
-blocks called \i{word}s. A block consist of a \q{Start bit}, denoting the
-start of a word and alerting the receiver to force its clock to be resynchronized;
-a number of \q{Data bits} consisting of actual data to be transmitted;
-a \q{Parity bit} and a \q{Stop bit}. Knowing the number of \q{data bits} is
-crucial, because if the other side of communication line uses different
-number of data bits, you will get garbled data on the output. The worst case
-may be in \e{partially} garbled data, which is very hard to detect.
-
-\b \q{Parity:} \i{Parity} is a method of detecting some errors in 
-transmission. Where parity is used with a serial port, an extra data bit is 
-sent with each data character, arranged so that the number of 1 bits in each 
-character, including the parity bit, is always odd or always even. If a byte 
-is received with the wrong number of 1 bits, then it must have been corrupted. 
-If parity is correct there may have been no errors or an even number of 
-errors. A single parity bit does not allow implementation of error correction 
-on each character, and communication protocols working over serial data 
-links have higher-level checksums to ensure data validity and request 
-retransmission of data that has been incorrectly received.
-
-\b \q{Stop bits:} \i{Stop bits} are sent at the end of every word transmitted 
-in order to allow the receiving signal hardware to resynchronize. Electronic 
-devices usually use one stop bit. Occasionally, and especially if 
-electromechanical devices are used such as printers, one-and-one half or 
-two stop bits are required.
-
-\b \q{\i{Flow control}:} A serial port may use signals in the interface to pause 
-and resume the transmission of data. For example, a slow printer might need 
-to handshake with the serial port to indicate that data should be paused 
-while the mechanism advances a line. Common hardware handshake signals use 
-the RS-232 RTS/CTS, DTR/DSR signal circuits.
-
-\lcont{
-An alternative method of flow control may use special characters such as 
-XON/XOFF to control the flow of data. The XON/XOFF characters are sent by 
-the receiver to the sender to control when the sender will send data, that 
-is, these characters go in the opposite direction to the data being sent. 
-The XON character tells the sender that the receiver is ready for more data. 
-The XOFF character tells the sender to stop sending characters until the 
-receiver is ready again.
-
-XON/XOFF is an in-band method that works between the endpoints, but both 
-ends must support the protocol, and there is the potential for confusion 
-in starting up. If the control characters are part of the data stream, 
-they must be sent as part of an escape sequence to prevent data from being 
-interpreted as flow control. Since no extra signal ciruits are required, 
-XON/XOFF flow control can be done on a 3 wire interface.
-
-RTS/CTS was originally intended to allow the teletype and the modem to 
-coordinate half-duplex links where only one modem could transmit at a time. 
-The terminal would raise Request To Send and wait for the modem to respond 
-with Clear To Send. RTS/CTS is a hardware handshake, but it does have 
-advantages.
-}
-
-The D/P/S conventional notation specifies the framing of a serial connection. 
-The most common usage on microcomputers is 8/N/1 (8N1). This specifies 8 data 
-bits, no parity, 1 stop bit. The number of data bits can be 5, 6, 7 or 8. 
-Parity is specified as none (N), odd (O), or even (E), with some systems 
-supporting mark (M) or space (S) to denote a constant 1 or 0 bit for parity.
-
-In this notation, the parity bit is not included in the data bits. 
-7/E/1 (7E1) means that an even parity bit is added to the seven data bits 
-for a total of eight bits between the start and stop bits. If a receiver of 
-a 7/E/1 stream is expecting an 8/N/1 stream, half the possible bytes will 
-be interpreted as having the high bit set.
 
 \H{using-cmdline} The TuTTY command line
 
@@ -755,11 +693,14 @@ a remote command or script from a file
 The \i\c{-m} option performs a similar function to the \q{\ii{Remote
 command}} box in the SSH panel of the TuTTY configuration box (see
 \k{config-command}). However, the \c{-m} option expects to be given
-a local file name, and it will read a command from that file. On
-most Unix systems, you can even put multiple lines in this file and
-execute more than one command in sequence, or a whole shell script;
-but this will not work on all servers (and is known not to work
-with certain \q{embedded} servers such as routers).
+a local file name, and it will read a command from that file.
+
+With some servers (particularly Unix systems), you can even put
+multiple lines in this file and execute more than one command in
+sequence, or a whole shell script; but this is arguably an abuse, and
+cannot be expected to work on all servers. In particular, it is known
+\e{not} to work with certain \q{embedded} servers, such as \i{Cisco}
+routers.
 
 This option is not available in the file transfer tools PSCP and
 PSFTP.
@@ -790,6 +731,19 @@ authentication instead. See \k{pubkey} for details.
 Note that the \c{-pw} option only works when you are using the SSH
 protocol. Due to fundamental limitations of Telnet and Rlogin, these
 protocols do not support automated password authentication.
+
+\S2{using-cmdline-agentauth} \i\c{-agent} and \i\c{-noagent}:
+control use of Pageant for authentication
+
+The \c{-agent} option turns on SSH authentication using Pageant, and
+\c{-noagent} turns it off. These options are only meaningful if you
+are using SSH.
+
+See \k{pageant} for general information on \i{Pageant}.
+
+These options are equivalent to the agent authentication checkbox in
+the Auth panel of the TuTTY configuration box (see
+\k{config-ssh-tryagent}).
 
 \S2{using-cmdline-agent} \I{-A-upper}\c{-A} and \i\c{-a}: control \i{agent
 forwarding}
@@ -854,6 +808,47 @@ at all} checkbox in the SSH panel of the TuTTY configuration box
 
 This option is not available in the file transfer tools PSCP and
 PSFTP.
+
+\S2{using-cmdline-ncmode} \I{-nc}\c{-nc}: make a \i{remote network
+connection} in place of a remote shell or command
+
+The \c{-nc} option prevents Plink (or TuTTY) from attempting to
+start a shell or command on the remote server. Instead, it will
+instruct the remote server to open a network connection to a host
+name and port number specified by you, and treat that network
+connection as if it were the main session.
+
+You specify a host and port as an argument to the \c{-nc} option,
+with a colon separating the host name from the port number, like
+this:
+
+\c plink host1.example.com -nc host2.example.com:1234
+
+You might want to use this feature if you needed to make an SSH
+connection to a target host which you can only reach by going
+through a proxy host, and rather than using port forwarding you
+prefer to use the local proxy feature (see \k{config-proxy-type} for
+more about local proxies). In this situation you might select
+\q{Local} proxy type, set your local proxy command to be \cq{plink
+%proxyhost -nc %host:%port}, enter the target host name on the
+Session panel, and enter the directly reachable proxy host name on
+the Proxy panel.
+
+This feature is only available in SSH protocol version 2 (since the
+version 1 protocol assumes you will always want to run a shell). It
+is not available in the file transfer tools PSCP and PSFTP. It is
+available in TuTTY itself, although it is unlikely to be very useful
+in any tool other than Plink. Also, \c{-nc} uses the same server
+functionality as port forwarding, so it will not work if your server
+administrator has disabled port forwarding.
+
+(The option is named \c{-nc} after the Unix program
+\W{http://www.vulnwatch.org/netcat/}\c{nc}, short for \q{netcat}.
+The command \cq{plink host1 -nc host2:port} is very similar in
+functionality to \cq{plink host1 nc host2 port}, which invokes
+\c{nc} on the server and tells it to connect to the specified
+destination. However, Plink's built-in \c{-nc} option does not
+depend on the \c{nc} program being installed on the server.)
 
 \S2{using-cmdline-compress} \I{-C-upper}\c{-C}: enable \i{compression}
 

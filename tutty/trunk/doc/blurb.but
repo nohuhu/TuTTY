@@ -7,7 +7,7 @@
 \cfg{xhtml-leaf-contains-contents}{true}
 \cfg{xhtml-body-end}{<p>If you want to provide feedback on this manual
 or on the TuTTY tools themselves, see the
-<a href="http://putty.dwalin.ru">TuTTY page</a>.</p>}
+<a href="http://tutty.dwalin.ru">TuTTY page</a>.</p>}
 
 \cfg{html-template-fragment}{%k}{%b}
 
@@ -30,7 +30,7 @@ only on the Win32 platform. Therefore, non-Windows utilities available
 with PuTTY are not available with TuTTY and are not covered in this
 manual.
 
-\copyright This manual is copyright 2005 dwalin@dwalin.ru.
+\copyright This manual is copyright 2005-2010 Alexander Tokarev <dwalin@dwalin.ru>.
 
 \copyright This manual is copyright 2001-2005 Simon Tatham. All
 rights reserved. You may distribute this documentation under the MIT

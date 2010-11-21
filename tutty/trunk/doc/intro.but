@@ -1,4 +1,4 @@
-\define{versionidintro} \versionid $Id$
+\define{versionidintro} \versionid $Id: intro.but 5593 2005-04-05 18:01:32Z jacob $
 
 \C{intro} Introduction to TuTTY
 
@@ -12,11 +12,7 @@ of patches and additions to PuTTY, and not a large pack at all: about
 I'm always trying to update TuTTY to latest released PuTTY code to provide
 all new features and fixes made by Simon & Co. The vice versa situation
 does not exist so all features that differentiate TuTTY from PuTTY are
-available in TuTTY only. In fact, TuTTY was renamed recently, before that
-it was "my version of PuTTY" or "PuTTY with my patches" or something
-like that. I got tired of this so I had to invent a new name and new
-versioning scheme. The name is now "TuTTY" and versions are clear to
-understand: for example, TuTTY 0.58.1.2 is based on the PuTTY 0.58
+available in TuTTY only. TuTTY 0.60.1.2 is based on the PuTTY 0.60
 release code, TuTTY's own major version is 1 and minor version is 2.
 If you have a development snapshot then you may take a look at the
 build number as well, it may be helpful for reporting any bugs and
@@ -24,8 +20,8 @@ describing problems.
 
 In short: TuTTY is the latest released PuTTY with extra features.
 
-Have said all this, I must add that this manual is also mostly contains
-descriptions of PuTTY features. TuTTY ones are also described but
+Having said all this, I must add that this manual mostly contains
+descriptions of PuTTY features. TuTTY features are also described but
 not always completely. Since TuTTY is heavily based on PuTTY, I didn't
 change \e{all} occurences of the name \q{PuTTY} in this manual. Wherever
 you find it, know that all descriptions are applied equally to TuTTY.

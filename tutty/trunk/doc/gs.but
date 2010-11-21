@@ -1,4 +1,4 @@
-\define{versionidgs} \versionid $Id$
+\define{versionidgs} \versionid $Id: gs.but 6815 2006-08-28 10:35:12Z simon $
 
 \C{gs} Getting started with TuTTY
 
@@ -21,10 +21,10 @@ buttons. For a login session, you should select \i{Telnet},
 differences between the three protocols, and advice on which one to
 use. The fourth protocol, \I{raw protocol}\e{Raw}, is not used for
 interactive login sessions; you would usually use this for debugging
-other Internet services (see \k{using-rawprot}). The fifth protocol,
-\I{serial protocol}\e{Serial}, is not related to network connections
-at all, it is used to connect to any serial device such as \i{modem}.
-See \k{using-serial} for details on using serial protocol.
+other Internet services (see \k{using-rawprot}). The fifth option,
+\e{Serial}, is used for connecting to a local serial line, and works
+somewhat differently: see \k{using-serial} for more information on
+this.
 
 When you change the selected protocol, the number in the \q{Port}
 box will change. This is normal: it happens because the various

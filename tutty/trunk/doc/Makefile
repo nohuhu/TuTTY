@@ -1,4 +1,4 @@
-all: index.html
+all: man index.html
 
 # Decide on the versionid policy.
 #
@@ -44,10 +44,18 @@ INPUTS = $(patsubst %,%.but,$(CHAPTERS))
 HALIBUT = halibut
 
 index.html: $(INPUTS)
-	$(HALIBUT) --text --html --winhelp --pdf $(INPUTS)
+	$(HALIBUT) --text --html --winhelp $(INPUTS)
+
+# During formal builds it's useful to be able to build this one alone.
+putty.hlp: $(INPUTS)
+	$(HALIBUT) --winhelp $(INPUTS)
 
 putty.info: $(INPUTS)
 	$(HALIBUT) --info $(INPUTS)
+
+chm: putty.hhp
+putty.hhp: $(INPUTS) chm.but
+	$(HALIBUT) --html $(INPUTS) chm.but
 
 MKMAN = $(HALIBUT) --man=$@ mancfg.but $<
 MANPAGES = putty.1 puttygen.1 plink.1 pscp.1 psftp.1 puttytel.1 pterm.1
@@ -61,5 +69,7 @@ psftp.1: man-psft.but mancfg.but; $(MKMAN)
 puttytel.1: man-ptel.but mancfg.but; $(MKMAN)
 pterm.1: man-pter.but mancfg.but; $(MKMAN)
 
-clean:
-	rm -f *.html *.txt *.hlp *.cnt *.1 *.info vstr.but
+mostlyclean:
+	rm -f *.html *.txt *.hlp *.cnt *.1 *.info vstr.but *.hh[pck]
+clean: mostlyclean
+	rm -f *.chm
