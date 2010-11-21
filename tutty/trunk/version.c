@@ -9,13 +9,26 @@
 
 #if defined SNAPSHOT
 
-char ver[] = "Development build " STR(BUILDNUMBER) "\n compiled " __DATE__ " " __TIME__;
-char sshver[] = "PuTTY-Snapshot-" STR(SNAPSHOT);
+#if defined SVN_REV
+#define SNAPSHOT_TEXT STR(SNAPSHOT) ":r" STR(SVN_REV)
+#else
+#define SNAPSHOT_TEXT STR(SNAPSHOT)
+#endif
+
+char ver[] = "Development snapshot " SNAPSHOT_TEXT;
+char sshver[] = "TuTTY-Snapshot-" SNAPSHOT_TEXT;
+
+#undef SNAPSHOT_TEXT
 
 #elif defined RELEASE
 
-char ver[] =  "Release " STR(RELEASE) " build " STR(BUILDNUMBER);
+char ver[] = "Release " STR(RELEASE) " build " STR(BUILDNUMBER);
 char sshver[] = "PuTTY-Release-" STR(RELEASE);
+
+#elif defined SVN_REV
+
+char ver[] = "Custom build r" STR(SVN_REV);
+char sshver[] = "TuTTY-Custom-r" STR(SVN_REV);
 
 #else
 
