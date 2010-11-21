@@ -1,3 +1,7 @@
+/*
+ * Telnet backend.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -10,86 +14,86 @@
 #define TRUE 1
 #endif
 
-#define	IAC	255		/* interpret as command: */
-#define	DONT	254		/* you are not to use option */
-#define	DO	253		/* please, you use option */
-#define	WONT	252		/* I won't use option */
-#define	WILL	251		/* I will use option */
-#define	SB	250		/* interpret as subnegotiation */
-#define	SE	240		/* end sub negotiation */
+#define	IAC	255		       /* interpret as command: */
+#define	DONT	254		       /* you are not to use option */
+#define	DO	253		       /* please, you use option */
+#define	WONT	252		       /* I won't use option */
+#define	WILL	251		       /* I will use option */
+#define	SB	250		       /* interpret as subnegotiation */
+#define	SE	240		       /* end sub negotiation */
 
-#define GA      249		/* you may reverse the line */
-#define EL      248		/* erase the current line */
-#define EC      247		/* erase the current character */
-#define	AYT	246		/* are you there */
-#define	AO	245		/* abort output--but let prog finish */
-#define	IP	244		/* interrupt process--permanently */
-#define	BREAK	243		/* break */
-#define DM      242		/* data mark--for connect. cleaning */
-#define NOP     241		/* nop */
-#define EOR     239		/* end of record (transparent mode) */
-#define ABORT   238		/* Abort process */
-#define SUSP    237		/* Suspend process */
-#define xEOF    236		/* End of file: EOF is already used... */
+#define GA      249		       /* you may reverse the line */
+#define EL      248		       /* erase the current line */
+#define EC      247		       /* erase the current character */
+#define	AYT	246		       /* are you there */
+#define	AO	245		       /* abort output--but let prog finish */
+#define	IP	244		       /* interrupt process--permanently */
+#define	BREAK	243		       /* break */
+#define DM      242		       /* data mark--for connect. cleaning */
+#define NOP     241		       /* nop */
+#define EOR     239		       /* end of record (transparent mode) */
+#define ABORT   238		       /* Abort process */
+#define SUSP    237		       /* Suspend process */
+#define xEOF    236		       /* End of file: EOF is already used... */
 
-#define TELOPT_BINARY	0	/* 8-bit data path */
-#define TELOPT_ECHO	1	/* echo */
-#define	TELOPT_RCP	2	/* prepare to reconnect */
-#define	TELOPT_SGA	3	/* suppress go ahead */
-#define	TELOPT_NAMS	4	/* approximate message size */
-#define	TELOPT_STATUS	5	/* give status */
-#define	TELOPT_TM	6	/* timing mark */
-#define	TELOPT_RCTE	7	/* remote controlled transmission and echo */
-#define TELOPT_NAOL 	8	/* negotiate about output line width */
-#define TELOPT_NAOP 	9	/* negotiate about output page size */
-#define TELOPT_NAOCRD	10	/* negotiate about CR disposition */
-#define TELOPT_NAOHTS	11	/* negotiate about horizontal tabstops */
-#define TELOPT_NAOHTD	12	/* negotiate about horizontal tab disposition */
-#define TELOPT_NAOFFD	13	/* negotiate about formfeed disposition */
-#define TELOPT_NAOVTS	14	/* negotiate about vertical tab stops */
-#define TELOPT_NAOVTD	15	/* negotiate about vertical tab disposition */
-#define TELOPT_NAOLFD	16	/* negotiate about output LF disposition */
-#define TELOPT_XASCII	17	/* extended ascic character set */
-#define	TELOPT_LOGOUT	18	/* force logout */
-#define	TELOPT_BM	19	/* byte macro */
-#define	TELOPT_DET	20	/* data entry terminal */
-#define	TELOPT_SUPDUP	21	/* supdup protocol */
-#define	TELOPT_SUPDUPOUTPUT 22	/* supdup output */
-#define	TELOPT_SNDLOC	23	/* send location */
-#define	TELOPT_TTYPE	24	/* terminal type */
-#define	TELOPT_EOR	25	/* end or record */
-#define	TELOPT_TUID	26	/* TACACS user identification */
-#define	TELOPT_OUTMRK	27	/* output marking */
-#define	TELOPT_TTYLOC	28	/* terminal location number */
-#define	TELOPT_3270REGIME 29	/* 3270 regime */
-#define	TELOPT_X3PAD	30	/* X.3 PAD */
-#define	TELOPT_NAWS	31	/* window size */
-#define	TELOPT_TSPEED	32	/* terminal speed */
-#define	TELOPT_LFLOW	33	/* remote flow control */
-#define TELOPT_LINEMODE	34	/* Linemode option */
-#define TELOPT_XDISPLOC	35	/* X Display Location */
-#define TELOPT_OLD_ENVIRON 36	/* Old - Environment variables */
-#define	TELOPT_AUTHENTICATION 37	/* Authenticate */
-#define	TELOPT_ENCRYPT	38	/* Encryption option */
-#define TELOPT_NEW_ENVIRON 39	/* New - Environment variables */
-#define TELOPT_TN3270E	40	/* TN3270 enhancements */
+#define TELOPT_BINARY	0	       /* 8-bit data path */
+#define TELOPT_ECHO	1	       /* echo */
+#define	TELOPT_RCP	2	       /* prepare to reconnect */
+#define	TELOPT_SGA	3	       /* suppress go ahead */
+#define	TELOPT_NAMS	4	       /* approximate message size */
+#define	TELOPT_STATUS	5	       /* give status */
+#define	TELOPT_TM	6	       /* timing mark */
+#define	TELOPT_RCTE	7	       /* remote controlled transmission and echo */
+#define TELOPT_NAOL 	8	       /* negotiate about output line width */
+#define TELOPT_NAOP 	9	       /* negotiate about output page size */
+#define TELOPT_NAOCRD	10	       /* negotiate about CR disposition */
+#define TELOPT_NAOHTS	11	       /* negotiate about horizontal tabstops */
+#define TELOPT_NAOHTD	12	       /* negotiate about horizontal tab disposition */
+#define TELOPT_NAOFFD	13	       /* negotiate about formfeed disposition */
+#define TELOPT_NAOVTS	14	       /* negotiate about vertical tab stops */
+#define TELOPT_NAOVTD	15	       /* negotiate about vertical tab disposition */
+#define TELOPT_NAOLFD	16	       /* negotiate about output LF disposition */
+#define TELOPT_XASCII	17	       /* extended ascic character set */
+#define	TELOPT_LOGOUT	18	       /* force logout */
+#define	TELOPT_BM	19	       /* byte macro */
+#define	TELOPT_DET	20	       /* data entry terminal */
+#define	TELOPT_SUPDUP	21	       /* supdup protocol */
+#define	TELOPT_SUPDUPOUTPUT 22	       /* supdup output */
+#define	TELOPT_SNDLOC	23	       /* send location */
+#define	TELOPT_TTYPE	24	       /* terminal type */
+#define	TELOPT_EOR	25	       /* end or record */
+#define	TELOPT_TUID	26	       /* TACACS user identification */
+#define	TELOPT_OUTMRK	27	       /* output marking */
+#define	TELOPT_TTYLOC	28	       /* terminal location number */
+#define	TELOPT_3270REGIME 29	       /* 3270 regime */
+#define	TELOPT_X3PAD	30	       /* X.3 PAD */
+#define	TELOPT_NAWS	31	       /* window size */
+#define	TELOPT_TSPEED	32	       /* terminal speed */
+#define	TELOPT_LFLOW	33	       /* remote flow control */
+#define TELOPT_LINEMODE	34	       /* Linemode option */
+#define TELOPT_XDISPLOC	35	       /* X Display Location */
+#define TELOPT_OLD_ENVIRON 36	       /* Old - Environment variables */
+#define	TELOPT_AUTHENTICATION 37       /* Authenticate */
+#define	TELOPT_ENCRYPT	38	       /* Encryption option */
+#define TELOPT_NEW_ENVIRON 39	       /* New - Environment variables */
+#define TELOPT_TN3270E	40	       /* TN3270 enhancements */
 #define TELOPT_XAUTH	41
-#define TELOPT_CHARSET	42	/* Character set */
-#define TELOPT_RSP	43	/* Remote serial port */
-#define TELOPT_COM_PORT_OPTION 44	/* Com port control */
-#define TELOPT_SLE	45	/* Suppress local echo */
-#define TELOPT_STARTTLS	46	/* Start TLS */
-#define TELOPT_KERMIT	47	/* Automatic Kermit file transfer */
+#define TELOPT_CHARSET	42	       /* Character set */
+#define TELOPT_RSP	43	       /* Remote serial port */
+#define TELOPT_COM_PORT_OPTION 44      /* Com port control */
+#define TELOPT_SLE	45	       /* Suppress local echo */
+#define TELOPT_STARTTLS	46	       /* Start TLS */
+#define TELOPT_KERMIT	47	       /* Automatic Kermit file transfer */
 #define TELOPT_SEND_URL	48
 #define TELOPT_FORWARD_X 49
 #define TELOPT_PRAGMA_LOGON	138
 #define TELOPT_SSPI_LOGON	139
 #define TELOPT_PRAGMA_HEARTBEAT	140
-#define	TELOPT_EXOPL	255	/* extended-options-list */
+#define	TELOPT_EXOPL	255	       /* extended-options-list */
 
-#define	TELQUAL_IS	0	/* option is... */
-#define	TELQUAL_SEND	1	/* send option */
-#define	TELQUAL_INFO	2	/* ENVIRON: informational version of IS */
+#define	TELQUAL_IS	0	       /* option is... */
+#define	TELQUAL_SEND	1	       /* send option */
+#define	TELQUAL_INFO	2	       /* ENVIRON: informational version of IS */
 #define BSD_VAR 1
 #define BSD_VALUE 0
 #define RFC_VAR 0
@@ -166,11 +170,11 @@ static char *telopt(int opt)
 static void telnet_size(void *handle, int width, int height);
 
 struct Opt {
-    int send;			/* what we initially send */
-    int nsend;			/* -ve send if requested to stop it */
-    int ack, nak;		/* +ve and -ve acknowledgements */
-    int option;			/* the option code */
-    int index;			/* index into telnet->opt_states[] */
+    int send;			       /* what we initially send */
+    int nsend;			       /* -ve send if requested to stop it */
+    int ack, nak;		       /* +ve and -ve acknowledgements */
+    int option;			       /* the option code */
+    int index;			       /* index into telnet->opt_states[] */
     enum {
 	REQUESTED, ACTIVE, INACTIVE, REALLY_INACTIVE
     } initial_state;
@@ -250,11 +254,10 @@ typedef struct telnet_tag {
 
 #define SB_DELTA 1024
 
-static void c_write1(Telnet telnet, int c)
+static void c_write(Telnet telnet, char *buf, int len)
 {
     int backlog;
-    char cc = (char) c;
-    backlog = from_backend(telnet->frontend, 0, &cc, 1);
+    backlog = from_backend(telnet->frontend, 0, buf, len);
     sk_set_frozen(telnet->s, backlog > TELNET_MAX_BACKLOG);
 }
 
@@ -268,7 +271,7 @@ static void log_option(Telnet telnet, char *sender, int cmd, int option)
      */
     buf = dupprintf("%s:\t%s %s", sender,
 		    (cmd == WILL ? "WILL" : cmd == WONT ? "WONT" :
-		     cmd == DO ? "DO" : cmd == DONT ? "DONT" : "<?" "?>"),
+		     cmd == DO ? "DO" : cmd == DONT ? "DONT" : "<?""?>"),
 		    telopt(option));
     logevent(telnet->frontend, buf);
     sfree(buf);
@@ -281,7 +284,7 @@ static void send_opt(Telnet telnet, int cmd, int option)
     b[0] = IAC;
     b[1] = cmd;
     b[2] = option;
-    telnet->bufsize = sk_write(telnet->s, (char *) b, 3);
+    telnet->bufsize = sk_write(telnet->s, (char *)b, 3);
     log_option(telnet, "client", cmd, option);
 }
 
@@ -296,14 +299,13 @@ static void deactivate_option(Telnet telnet, const struct Opt *o)
 /*
  * Generate side effects of enabling or disabling an option.
  */
-static void option_side_effects(Telnet telnet, const struct Opt *o,
-				int enabled)
+static void option_side_effects(Telnet telnet, const struct Opt *o, int enabled)
 {
     if (o->option == TELOPT_ECHO && o->send == DO)
 	telnet->echoing = !enabled;
     else if (o->option == TELOPT_SGA && o->send == DO)
 	telnet->editing = !enabled;
-    if (telnet->ldisc)		/* cause ldisc to notice the change */
+    if (telnet->ldisc)		       /* cause ldisc to notice the change */
 	ldisc_send(telnet->ldisc, NULL, 0, 0);
 
     /* Ensure we get the minimum options */
@@ -399,9 +401,8 @@ static void proc_rec_opt(Telnet telnet, int cmd, int option)
      * a negative ack to indicate refusal. If the request was
      * negative (WONT / DONT), we must do nothing.
      */
-    if (cmd == WILL || cmd == DO || cmd == WONT)
-	send_opt(telnet, ((cmd == WILL || cmd == WONT) ? DONT : WONT),
-		 option);
+    if (cmd == WILL || cmd == DO)
+        send_opt(telnet, (cmd == WILL ? DONT : WONT), option);
 }
 
 static void process_subneg(Telnet telnet)
@@ -418,20 +419,17 @@ static void process_subneg(Telnet telnet)
 	    b[1] = SB;
 	    b[2] = TELOPT_TSPEED;
 	    b[3] = TELQUAL_IS;
-	    strcpy((char *) (b + 4), telnet->cfg.termspeed);
+	    strcpy((char *)(b + 4), telnet->cfg.termspeed);
 	    n = 4 + strlen(telnet->cfg.termspeed);
 	    b[n] = IAC;
 	    b[n + 1] = SE;
-	    telnet->bufsize = sk_write(telnet->s, (char *) b, n + 2);
+	    telnet->bufsize = sk_write(telnet->s, (char *)b, n + 2);
 	    logevent(telnet->frontend, "server:\tSB TSPEED SEND");
-	    logbuf =
-		dupprintf("client:\tSB TSPEED IS %s",
-			  telnet->cfg.termspeed);
+	    logbuf = dupprintf("client:\tSB TSPEED IS %s", telnet->cfg.termspeed);
 	    logevent(telnet->frontend, logbuf);
 	    sfree(logbuf);
 	} else
-	    logevent(telnet->frontend,
-		     "server:\tSB TSPEED <something weird>");
+	    logevent(telnet->frontend, "server:\tSB TSPEED <something weird>");
 	break;
     case TELOPT_TTYPE:
 	if (telnet->sb_len == 1 && telnet->sb_buf[0] == TELQUAL_SEND) {
@@ -447,15 +445,14 @@ static void process_subneg(Telnet telnet)
 			    'a' : telnet->cfg.termtype[n]);
 	    b[n + 4] = IAC;
 	    b[n + 5] = SE;
-	    telnet->bufsize = sk_write(telnet->s, (char *) b, n + 6);
+	    telnet->bufsize = sk_write(telnet->s, (char *)b, n + 6);
 	    b[n + 4] = 0;
 	    logevent(telnet->frontend, "server:\tSB TTYPE SEND");
 	    logbuf = dupprintf("client:\tSB TTYPE IS %s", b + 4);
 	    logevent(telnet->frontend, logbuf);
 	    sfree(logbuf);
 	} else
-	    logevent(telnet->frontend,
-		     "server:\tSB TTYPE <something weird>\r\n");
+	    logevent(telnet->frontend, "server:\tSB TTYPE <something weird>\r\n");
 	break;
     case TELOPT_OLD_ENVIRON:
     case TELOPT_NEW_ENVIRON:
@@ -464,8 +461,7 @@ static void process_subneg(Telnet telnet)
 	if (p < q && *p == TELQUAL_SEND) {
 	    char *logbuf;
 	    p++;
-	    logbuf =
-		dupprintf("server:\tSB %s SEND", telopt(telnet->sb_opt));
+	    logbuf = dupprintf("server:\tSB %s SEND", telopt(telnet->sb_opt));
 	    logevent(telnet->frontend, logbuf);
 	    sfree(logbuf);
 	    if (telnet->sb_opt == TELOPT_OLD_ENVIRON) {
@@ -527,7 +523,7 @@ static void process_subneg(Telnet telnet)
 	    }
 	    b[n++] = IAC;
 	    b[n++] = SE;
-	    telnet->bufsize = sk_write(telnet->s, (char *) b, n);
+	    telnet->bufsize = sk_write(telnet->s, (char *)b, n);
 	    logbuf = dupprintf("client:\tSB %s IS %s%s%s%s",
 			       telopt(telnet->sb_opt),
 			       *telnet->cfg.username ? "USER=" : "",
@@ -544,6 +540,16 @@ static void process_subneg(Telnet telnet)
 
 static void do_telnet_read(Telnet telnet, char *buf, int len)
 {
+    char *outbuf = NULL;
+    int outbuflen = 0, outbufsize = 0;
+
+#define ADDTOBUF(c) do { \
+    if (outbuflen >= outbufsize) { \
+	outbufsize = outbuflen + 256; \
+        outbuf = sresize(outbuf, outbufsize, char); \
+    } \
+    outbuf[outbuflen++] = (c); \
+} while (0)
 
     while (len--) {
 	int c = (unsigned char) *buf++;
@@ -557,7 +563,7 @@ static void do_telnet_read(Telnet telnet, char *buf, int len)
 		telnet->state = SEENIAC;
 	    else {
 		if (!telnet->in_synch)
-		    c_write1(telnet, c);
+		    ADDTOBUF(c);
 
 #if 1
 		/* I can't get the F***ing winsock to insert the urgent IAC
@@ -571,8 +577,7 @@ static void do_telnet_read(Telnet telnet, char *buf, int len)
 		else if (c == DM)
 		    telnet->in_synch = 0;
 #endif
-		if (c == CR
-		    && telnet->opt_states[o_they_bin.index] != ACTIVE)
+		if (c == CR && telnet->opt_states[o_they_bin.index] != ACTIVE)
 		    telnet->state = SEENCR;
 		else
 		    telnet->state = TOP_LEVEL;
@@ -595,7 +600,7 @@ static void do_telnet_read(Telnet telnet, char *buf, int len)
 	    } else {
 		/* ignore everything else; print it if it's IAC */
 		if (c == IAC) {
-		    c_write1(telnet, c);
+		    ADDTOBUF(c);
 		}
 		telnet->state = TOP_LEVEL;
 	    }
@@ -628,8 +633,7 @@ static void do_telnet_read(Telnet telnet, char *buf, int len)
 	      subneg_addchar:
 		if (telnet->sb_len >= telnet->sb_size) {
 		    telnet->sb_size += SB_DELTA;
-		    telnet->sb_buf =
-			sresize(telnet->sb_buf, telnet->sb_size,
+		    telnet->sb_buf = sresize(telnet->sb_buf, telnet->sb_size,
 				unsigned char);
 		}
 		telnet->sb_buf[telnet->sb_len++] = c;
@@ -638,7 +642,7 @@ static void do_telnet_read(Telnet telnet, char *buf, int len)
 	    break;
 	case SUBNEG_IAC:
 	    if (c != SE)
-		goto subneg_addchar;	/* yes, it's a hack, I know, but... */
+		goto subneg_addchar;   /* yes, it's a hack, I know, but... */
 	    else {
 		process_subneg(telnet);
 		telnet->state = TOP_LEVEL;
@@ -646,6 +650,10 @@ static void do_telnet_read(Telnet telnet, char *buf, int len)
 	    break;
 	}
     }
+
+    if (outbuflen)
+	c_write(telnet, outbuf, outbuflen);
+    sfree(outbuf);
 }
 
 static void telnet_log(Plug plug, int type, SockAddr addr, int port,
@@ -705,8 +713,8 @@ static void telnet_sent(Plug plug, int bufsize)
  * Also places the canonical host name into `realhost'. It must be
  * freed by the caller.
  */
-static const char *telnet_init(void *frontend_handle,
-			       void **backend_handle, Config * cfg,
+static const char *telnet_init(void *frontend_handle, void **backend_handle,
+			       Config *cfg,
 			       char *host, int port, char **realhost,
 			       int nodelay, int keepalive)
 {
@@ -722,7 +730,7 @@ static const char *telnet_init(void *frontend_handle,
 
     telnet = snew(struct telnet_tag);
     telnet->fn = &fn_table;
-    telnet->cfg = *cfg;		/* STRUCTURE COPY */
+    telnet->cfg = *cfg;		       /* STRUCTURE COPY */
     telnet->s = NULL;
     telnet->echoing = TRUE;
     telnet->editing = TRUE;
@@ -749,23 +757,20 @@ static const char *telnet_init(void *frontend_handle,
 	logevent(telnet->frontend, buf);
 	sfree(buf);
     }
-    addr =
-	name_lookup(host, port, realhost, &telnet->cfg,
-		    cfg->addressfamily);
+    addr = name_lookup(host, port, realhost, &telnet->cfg, cfg->addressfamily);
     if ((err = sk_addr_error(addr)) != NULL) {
 	sk_addr_free(addr);
 	return err;
     }
 
     if (port < 0)
-	port = 23;		/* default telnet port */
+	port = 23;		       /* default telnet port */
 
     /*
      * Open socket.
      */
     telnet->s = new_connection(addr, *realhost, port, 0, 1,
-			       nodelay, keepalive, (Plug) telnet,
-			       &telnet->cfg);
+			       nodelay, keepalive, (Plug) telnet, &telnet->cfg);
     if ((err = sk_socket_error(telnet->s)) != NULL)
 	return err;
 
@@ -814,17 +819,16 @@ static void telnet_free(void *handle)
 	pinger_free(telnet->pinger);
     sfree(telnet);
 }
-
 /*
  * Reconfigure the Telnet backend. There's no immediate action
  * necessary, in this backend: we just save the fresh config for
  * any subsequent negotiations.
  */
-static void telnet_reconfig(void *handle, Config * cfg)
+static void telnet_reconfig(void *handle, Config *cfg)
 {
     Telnet telnet = (Telnet) handle;
     pinger_reconfig(telnet->pinger, &telnet->cfg, cfg);
-    telnet->cfg = *cfg;		/* STRUCTURE COPY */
+    telnet->cfg = *cfg;		       /* STRUCTURE COPY */
 }
 
 /*
@@ -843,18 +847,18 @@ static int telnet_send(void *handle, char *buf, int len)
     if (telnet->s == NULL)
 	return 0;
 
-    p = (unsigned char *) buf;
-    end = (unsigned char *) (buf + len);
+    p = (unsigned char *)buf;
+    end = (unsigned char *)(buf + len);
     while (p < end) {
 	unsigned char *q = p;
 
 	while (p < end && iswritable(*p))
 	    p++;
-	telnet->bufsize = sk_write(telnet->s, (char *) q, p - q);
+	telnet->bufsize = sk_write(telnet->s, (char *)q, p - q);
 
 	while (p < end && !iswritable(*p)) {
-	    telnet->bufsize =
-		sk_write(telnet->s, (char *) (*p == IAC ? iac : cr), 2);
+	    telnet->bufsize = 
+		sk_write(telnet->s, (char *)(*p == IAC ? iac : cr), 2);
 	    p++;
 	}
     }
@@ -891,20 +895,16 @@ static void telnet_size(void *handle, int width, int height)
     b[n++] = SB;
     b[n++] = TELOPT_NAWS;
     b[n++] = telnet->term_width >> 8;
-    if (b[n - 1] == IAC)
-	b[n++] = IAC;		/* duplicate any IAC byte occurs */
+    if (b[n-1] == IAC) b[n++] = IAC;   /* duplicate any IAC byte occurs */
     b[n++] = telnet->term_width & 0xFF;
-    if (b[n - 1] == IAC)
-	b[n++] = IAC;		/* duplicate any IAC byte occurs */
+    if (b[n-1] == IAC) b[n++] = IAC;   /* duplicate any IAC byte occurs */
     b[n++] = telnet->term_height >> 8;
-    if (b[n - 1] == IAC)
-	b[n++] = IAC;		/* duplicate any IAC byte occurs */
+    if (b[n-1] == IAC) b[n++] = IAC;   /* duplicate any IAC byte occurs */
     b[n++] = telnet->term_height & 0xFF;
-    if (b[n - 1] == IAC)
-	b[n++] = IAC;		/* duplicate any IAC byte occurs */
+    if (b[n-1] == IAC) b[n++] = IAC;   /* duplicate any IAC byte occurs */
     b[n++] = IAC;
     b[n++] = SE;
-    telnet->bufsize = sk_write(telnet->s, (char *) b, n);
+    telnet->bufsize = sk_write(telnet->s, (char *)b, n);
     logbuf = dupprintf("client:\tSB NAWS %d,%d",
 		       telnet->term_width, telnet->term_height);
     logevent(telnet->frontend, logbuf);
@@ -926,51 +926,51 @@ static void telnet_special(void *handle, Telnet_Special code)
     switch (code) {
     case TS_AYT:
 	b[1] = AYT;
-	telnet->bufsize = sk_write(telnet->s, (char *) b, 2);
+	telnet->bufsize = sk_write(telnet->s, (char *)b, 2);
 	break;
     case TS_BRK:
 	b[1] = BREAK;
-	telnet->bufsize = sk_write(telnet->s, (char *) b, 2);
+	telnet->bufsize = sk_write(telnet->s, (char *)b, 2);
 	break;
     case TS_EC:
 	b[1] = EC;
-	telnet->bufsize = sk_write(telnet->s, (char *) b, 2);
+	telnet->bufsize = sk_write(telnet->s, (char *)b, 2);
 	break;
     case TS_EL:
 	b[1] = EL;
-	telnet->bufsize = sk_write(telnet->s, (char *) b, 2);
+	telnet->bufsize = sk_write(telnet->s, (char *)b, 2);
 	break;
     case TS_GA:
 	b[1] = GA;
-	telnet->bufsize = sk_write(telnet->s, (char *) b, 2);
+	telnet->bufsize = sk_write(telnet->s, (char *)b, 2);
 	break;
     case TS_NOP:
 	b[1] = NOP;
-	telnet->bufsize = sk_write(telnet->s, (char *) b, 2);
+	telnet->bufsize = sk_write(telnet->s, (char *)b, 2);
 	break;
     case TS_ABORT:
 	b[1] = ABORT;
-	telnet->bufsize = sk_write(telnet->s, (char *) b, 2);
+	telnet->bufsize = sk_write(telnet->s, (char *)b, 2);
 	break;
     case TS_AO:
 	b[1] = AO;
-	telnet->bufsize = sk_write(telnet->s, (char *) b, 2);
+	telnet->bufsize = sk_write(telnet->s, (char *)b, 2);
 	break;
     case TS_IP:
 	b[1] = IP;
-	telnet->bufsize = sk_write(telnet->s, (char *) b, 2);
+	telnet->bufsize = sk_write(telnet->s, (char *)b, 2);
 	break;
     case TS_SUSP:
 	b[1] = SUSP;
-	telnet->bufsize = sk_write(telnet->s, (char *) b, 2);
+	telnet->bufsize = sk_write(telnet->s, (char *)b, 2);
 	break;
     case TS_EOR:
 	b[1] = EOR;
-	telnet->bufsize = sk_write(telnet->s, (char *) b, 2);
+	telnet->bufsize = sk_write(telnet->s, (char *)b, 2);
 	break;
     case TS_EOF:
 	b[1] = xEOF;
-	telnet->bufsize = sk_write(telnet->s, (char *) b, 2);
+	telnet->bufsize = sk_write(telnet->s, (char *)b, 2);
 	break;
     case TS_EOL:
 	/* In BINARY mode, CR-LF becomes just CR -
@@ -982,8 +982,8 @@ static void telnet_special(void *handle, Telnet_Special code)
 	break;
     case TS_SYNCH:
 	b[1] = DM;
-	telnet->bufsize = sk_write(telnet->s, (char *) b, 1);
-	telnet->bufsize = sk_write_oob(telnet->s, (char *) (b + 1), 1);
+	telnet->bufsize = sk_write(telnet->s, (char *)b, 1);
+	telnet->bufsize = sk_write_oob(telnet->s, (char *)(b + 1), 1);
 	break;
     case TS_RECHO:
 	if (telnet->opt_states[o_echo.index] == INACTIVE ||
@@ -1001,11 +1001,11 @@ static void telnet_special(void *handle, Telnet_Special code)
     case TS_PING:
 	if (telnet->opt_states[o_they_sga.index] == ACTIVE) {
 	    b[1] = NOP;
-	    telnet->bufsize = sk_write(telnet->s, (char *) b, 2);
+	    telnet->bufsize = sk_write(telnet->s, (char *)b, 2);
 	}
 	break;
     default:
-	break;			/* never heard of it */
+	break;	/* never heard of it */
     }
 }
 
@@ -1032,10 +1032,10 @@ static const struct telnet_special *telnet_get_specials(void *handle)
     return specials;
 }
 
-static Socket telnet_socket(void *handle)
+static int telnet_connected(void *handle)
 {
     Telnet telnet = (Telnet) handle;
-    return telnet->s;
+    return telnet->s != NULL;
 }
 
 static int telnet_sendok(void *handle)
@@ -1075,7 +1075,7 @@ static int telnet_exitcode(void *handle)
 {
     Telnet telnet = (Telnet) handle;
     if (telnet->s != NULL)
-	return -1;		/* still connected */
+        return -1;                     /* still connected */
     else
 	/* Telnet doesn't transmit exit codes back to the client */
 	return 0;
@@ -1098,7 +1098,7 @@ Backend telnet_backend = {
     telnet_size,
     telnet_special,
     telnet_get_specials,
-    telnet_socket,
+    telnet_connected,
     telnet_exitcode,
     telnet_sendok,
     telnet_ldisc,
