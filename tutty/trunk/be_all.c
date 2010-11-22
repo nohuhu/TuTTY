@@ -23,6 +23,7 @@ const int be_default_protocol = PROT_SSH;
 #endif
 
 struct backend_list backends[] = {
+    {PROT_SERIAL, "serial", &serial_backend},
     {PROT_SSH, "ssh", &ssh_backend},
     {PROT_TELNET, "telnet", &telnet_backend},
     {PROT_RLOGIN, "rlogin", &rlogin_backend},

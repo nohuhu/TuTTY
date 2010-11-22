@@ -1,15 +1,17 @@
 #!/usr/bin/perl
 
-open(BUILD, "/home/tutty-0.58.1/build.h") or die "cannot open build.h!";
-$line = <BUILD>;
+open(ENTR, "/Users/nohuhu/Documents/Development/tutty/trunk/.svn/entries") or die "cannot open SVN entries!";
+<ENTR>; <ENTR>; <ENTR>;
+$rev = <ENTR>;
+close(ENTR);
+
+chomp $rev;
+$rev++;
+
+open(BUILD, ">/Users/nohuhu/Documents/Development/tutty/trunk/build.h");
+print BUILD "#define SVN_REV $rev\n";
 close(BUILD);
 
-($define, $buildnumber, $build) = split(' ', $line);
-$build++;
-
-open(BUILD, ">/home/tutty-0.58.1/build.h");
-print BUILD "#define BUILDNUMBER $build\n";
-close(BUILD);
-
-system("touch /home/tutty-0.58.1/build.h");
-system("touch /home/tutty-0.58.1/version.c");
+$now = time;
+utime $now, $now, "/Users/nohuhu/Documents/Development/tutty/trunk/build.h";
+utime $now, $now, "/Users/nohuhu/Documents/Development/tutty/trunk/version.c";

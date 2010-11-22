@@ -70,7 +70,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /Zp4 /W3 /Gm /GX /ZI /Od /I "..\.." /I "..\..\windows" /D "_DEBUG" /D "SESSION_FOLDERS" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "DWALIN" /D RELEASE=0.56 /D "UNDERLINE_COLOUR" /D "SECONDARY_SCRIPT" /D "ATT513_TERMINAL" /D "SERIAL_BACKEND" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /Zp4 /W3 /Gm /GX /ZI /Od /I "..\.." /I "..\..\windows" /D SNAPSHOT=0.60.1.2 /D "_DEBUG" /D "SESSION_FOLDERS" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "DWALIN" /D "UNDERLINE_COLOUR" /D "SECONDARY_SCRIPT" /D "ATT513_TERMINAL" /D "SERIAL_BACKEND" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x809 /d "_DEBUG"
