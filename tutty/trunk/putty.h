@@ -336,7 +336,10 @@ enum {
     FUNKY_XTERM,
     FUNKY_VT400,
     FUNKY_VT100P,
-    FUNKY_SCO, FUNKY_ATT513
+    FUNKY_SCO, 
+    FUNKY_ATT513,
+    FUNKY_ATT4410,
+    FUNKY_SUNXTERM
 };
 
 enum {
@@ -416,6 +419,8 @@ extern const char *const appname;
  * enum comes out as a different size from int.
  */
 struct config_tag {
+    /* Session root structure */
+    session_root_t sessionroot;
     /* Basic options */
     char host[512];
     int port;
@@ -620,7 +625,6 @@ struct config_tag {
     FontSpec widefont;
     FontSpec wideboldfont;
     int shadowboldoffset;
-    session_root_t sessionroot;
 };
 
 /*
@@ -716,6 +720,9 @@ void free_prompts(prompts_t *p);
 /*
  * Exports from the front end.
  */
+
+extern HWND pd;
+
 void request_resize(void *frontend, int, int);
 void do_text(Context, int, int, wchar_t *, int, unsigned long, int);
 void do_cursor(Context, int, int, wchar_t *, int, unsigned long, int);
@@ -807,7 +814,8 @@ char *save_settings(char *section, Config * cfg);
 void save_open_settings(void *sesskey, Config *cfg);
 void load_settings(char *section, Config * cfg);
 void load_open_settings(void *sesskey, Config *cfg);
-void get_sesslist(struct sesslist *, char *path, int allocate);
+void get_sesslist(session_root_t *root, struct sesslist *, 
+		  char *path, int allocate);
 void do_defaults(char *, Config *);
 void registry_cleanup(void);
 
@@ -1109,7 +1117,7 @@ void cmdline_error(char *, ...);
  * Exports from config.c.
  */
 struct controlbox;
-void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
+void setup_config_box(Config *cfg, struct controlbox *b, struct sesslist *sesslist,
 		      int midsession, int protocol, int protcfginfo);
 
 /*

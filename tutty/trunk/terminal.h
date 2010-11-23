@@ -157,7 +157,6 @@ struct terminal_tag {
     int cset_attr[2];
 
     termchar last_printable;
-    HWND bottom_buttons[10];
     int sec_proceed;
     int sec_item;
     int sec_pos;

@@ -237,7 +237,7 @@ char *save_settings(char *section, Config * cfg)
     void *sesskey;
     char *errmsg;
 
-    sesskey = open_settings_w(section, &errmsg);
+    sesskey = open_settings_w(&cfg->sessionroot, section, &errmsg);
     if (!sesskey)
 	return errmsg;
     save_open_settings(sesskey, cfg);
@@ -367,7 +367,7 @@ void save_open_settings(void *sesskey, Config *cfg)
     write_setting_i(sesskey, "DECOriginMode", cfg->dec_om);
     write_setting_i(sesskey, "AutoWrapMode", cfg->wrap_mode);
     write_setting_i(sesskey, "LFImpliesCR", cfg->lfhascr);
-    write_setting_i(sesskey, "ShowBottomButtons", cfg->bottom_buttons);
+    write_setting_i(sesskey, "DisableBottomButtons", cfg->bottom_buttons);
     write_setting_i(sesskey, "DisableArabicShaping", cfg->arabicshaping);
     write_setting_i(sesskey, "DisableBidi", cfg->bidi);
     write_setting_i(sesskey, "WinNameAlways", cfg->win_name_always);
@@ -486,7 +486,7 @@ void load_settings(char *section, Config * cfg)
 {
     void *sesskey;
 
-    sesskey = open_settings_r(section);
+    sesskey = open_settings_r(&cfg->sessionroot, section);
     load_open_settings(sesskey, cfg);
     close_settings_r(sesskey);
 }
@@ -697,7 +697,7 @@ void load_open_settings(void *sesskey, Config *cfg)
     gppi(sesskey, "DECOriginMode", 0, &cfg->dec_om);
     gppi(sesskey, "AutoWrapMode", 1, &cfg->wrap_mode);
     gppi(sesskey, "LFImpliesCR", 0, &cfg->lfhascr);
-    gppi(sesskey, "ShowBottomButtons", 0, &cfg->bottom_buttons);
+    gppi(sesskey, "DisableBottomButtons", 1, &cfg->bottom_buttons);
     gppi(sesskey, "DisableArabicShaping", 0, &cfg->arabicshaping);
     gppi(sesskey, "DisableBidi", 0, &cfg->bidi);
     gppi(sesskey, "WinNameAlways", 1, &cfg->win_name_always);
@@ -892,7 +892,8 @@ static int sessioncmp(const void *av, const void *bv)
     return strcmp(a, b);	       /* otherwise, compare normally */
 }
 
-void get_sesslist(struct sesslist *list, char *path, int allocate)
+void get_sesslist(session_root_t *root, struct sesslist *list, 
+		  char *path, int allocate)
 {
     char otherbuf[2048];
     int buflen, bufsize, i;
@@ -904,7 +905,7 @@ void get_sesslist(struct sesslist *list, char *path, int allocate)
 
 	buflen = bufsize = 0;
 	list->buffer = NULL;
-	if ((handle = enum_settings_start(path)) != NULL) {
+	if ((handle = enum_settings_start(root, path)) != NULL) {
 	    do {
 		ret = enum_settings_next(handle, otherbuf, sizeof(otherbuf));
 		if (ret) {

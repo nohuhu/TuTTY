@@ -8,7 +8,7 @@
 #include <limits.h>
 #include "putty.h"
 #include "storage.h"
-#include "registry.h"
+#include "session.h"
 
 #include <shlobj.h>
 #ifndef CSIDL_APPDATA
@@ -17,6 +17,11 @@
 #ifndef CSIDL_LOCAL_APPDATA
 #define CSIDL_LOCAL_APPDATA 0x001c
 #endif
+
+typedef struct _session_handle_t {
+    session_root_t *root;
+    void *handle;
+} session_handle_t;
 
 static const char *const puttystr = PUTTY_REG_POS "\\Sessions";
 
@@ -73,105 +78,90 @@ static void unmungestr(const char *in, char *out, int outlen)
     return;
 }
 
-void *open_settings_w(const char *sessionname, char **errmsg)
+void *open_settings_w(session_root_t *root, const char *sessionname, char **errmsg)
 {
-    HKEY subkey1, sesskey;
-    int ret;
-    char *p;
+    session_handle_t *handle;
 
     *errmsg = NULL;
 
     if (!sessionname || !*sessionname)
 	sessionname = "Default Settings";
 
-    p = snewn(3 * strlen(sessionname) + 1, char);
-    mungestr(sessionname, p);
+    handle = snew(session_handle_t);
 
-    ret = RegCreateKey(HKEY_CURRENT_USER, puttystr, &subkey1);
-    if (ret != ERROR_SUCCESS) {
-	sfree(p);
-	*errmsg = dupprintf("Unable to create registry key\n"
-			    "HKEY_CURRENT_USER\\%s", puttystr);
+    if (!handle) {
+	*errmsg = "Not enough memory";
 	return NULL;
+    };
+
+    handle->root = root;
+    handle->handle = (void *) ses_open_session_w(root, (char *) sessionname);
+
+    return handle;
     }
-    ret = RegCreateKey(subkey1, p, &sesskey);
-    RegCloseKey(subkey1);
-    if (ret != ERROR_SUCCESS) {
-	*errmsg = dupprintf("Unable to create registry key\n"
-			    "HKEY_CURRENT_USER\\%s\\%s", puttystr, p);
-	sfree(p);
-	return NULL;
-    }
-    sfree(p);
-    return (void *) sesskey;
-}
 
 void write_setting_s(void *handle, const char *key, const char *value)
 {
+    session_handle_t *sh = (session_handle_t *) handle;
+
     if (handle)
-	RegSetValueEx((HKEY) handle, key, 0, REG_SZ, value,
-		      1 + strlen(value));
+	ses_write_handle_s(sh->root, sh->handle, (char *) key, (char *) value);
 }
 
 void write_setting_i(void *handle, const char *key, int value)
 {
+    session_handle_t *sh = (session_handle_t *) handle;
+
     if (handle)
-	RegSetValueEx((HKEY) handle, key, 0, REG_DWORD,
-		      (CONST BYTE *) &value, sizeof(value));
+	ses_write_handle_i(sh->root, sh->handle, (char *) key, value);
 }
 
 void close_settings_w(void *handle)
 {
-    RegCloseKey((HKEY) handle);
+    session_handle_t *sh = (session_handle_t *) handle;
+
+    if (handle) {
+	ses_close_session(sh->root, sh->handle);
+	sfree(sh);
+    };
 }
 
-void *open_settings_r(const char *sessionname)
+void *open_settings_r(session_root_t *root, const char *sessionname)
 {
-    HKEY subkey1, sesskey;
-    char *p;
+    session_handle_t *handle;
 
     if (!sessionname || !*sessionname)
 	sessionname = "Default Settings";
 
-    p = snewn(3 * strlen(sessionname) + 1, char);
-    mungestr(sessionname, p);
+    handle = snew(session_handle_t);
 
-    if (RegOpenKey(HKEY_CURRENT_USER, puttystr, &subkey1) != ERROR_SUCCESS) {
-	sesskey = NULL;
-    } else {
-	if (RegOpenKey(subkey1, p, &sesskey) != ERROR_SUCCESS) {
-	    sesskey = NULL;
-	}
-	RegCloseKey(subkey1);
-    }
+    if (!handle)
+	return NULL;
 
-    sfree(p);
+    handle->root = root;
+    handle->handle = (void *) ses_open_session_r(root, (char *) sessionname);
 
-    return (void *) sesskey;
+    return handle;
 }
 
 char *read_setting_s(void *handle, const char *key, char *buffer, int buflen)
 {
-    DWORD type, size;
-    size = buflen;
+    session_handle_t *sh = (session_handle_t *) handle;
 
     if (!handle ||
-	RegQueryValueEx((HKEY) handle, key, 0,
-			&type, buffer, &size) != ERROR_SUCCESS ||
-	type != REG_SZ || size == 0) return NULL;
+	!ses_read_handle_s(sh->root, sh->handle, (char *) key, NULL, buffer, buflen))
+	return NULL;
     else
 	return buffer;
 }
 
 int read_setting_i(void *handle, const char *key, int defvalue)
 {
-    DWORD type, val, size;
-    size = sizeof(val);
+    session_handle_t *sh = (session_handle_t *) handle;
+    int val = 0;
 
     if (!handle ||
-	RegQueryValueEx((HKEY) handle, key, 0, &type,
-			(BYTE *) &val, &size) != ERROR_SUCCESS ||
-	size != sizeof(val) || type != REG_DWORD)
+	!ses_read_handle_i(sh->root, sh->handle, (char *) key, defvalue, &val))
 	return defvalue;
     else
 	return val;
@@ -228,63 +218,55 @@ void write_setting_filename(void *handle, const char *name, Filename result)
 
 void close_settings_r(void *handle)
 {
-    RegCloseKey((HKEY) handle);
-}
+    session_handle_t *sh = (session_handle_t *) handle;
 
-void del_settings(const char *sessionname)
-{
-    reg_delete_tree((char *)sessionname);
-}
-
-struct enumsettings {
-    HKEY key;
-    int i;
-};
-
-void *enum_settings_start(char *path)
-{
-    struct enumsettings *ret;
-    HKEY key;
-    char tmp[1024], munge[1024];
-
-    if (path && path[0]) {
-	mungestr(path, munge);
-	sprintf(tmp, "%s\\%s", puttystr, munge);
-    } else
-	strcpy(tmp, puttystr);
-
-    if (RegOpenKey(HKEY_CURRENT_USER, tmp, &key) != ERROR_SUCCESS) {
-	return NULL;
+    if (handle) {
+	ses_close_session(sh->root, sh->handle);
+	sfree(sh);
     };
+}
 
-    ret = snew(struct enumsettings);
-    if (ret) {
-	ret->key = key;
-	ret->i = 0;
-    }
+void del_settings(session_root_t *root, const char *sessionname)
+{
+    ses_delete_tree(root, (char *) sessionname);
+}
+
+typedef struct _enum_settings_t {
+    session_root_t *root;
+    void *handle;
+} enum_settings_t;
+
+void *enum_settings_start(session_root_t *root, char *path)
+{
+    enum_settings_t *ret;
+
+    ret = snew(enum_settings_t);
+
+    if (!ret)
+	return NULL;
+
+    ret->root = root;
+    ret->handle = ses_enum_settings_start(root, path);
+
+    if (!ret->handle) {
+	sfree(ret);
+	ret = NULL;
+    };
 
     return ret;
 }
 
 char *enum_settings_next(void *handle, char *buffer, int buflen)
 {
-    struct enumsettings *e = (struct enumsettings *) handle;
-    char *otherbuf;
-    otherbuf = snewn(3 * buflen, char);
-    if (RegEnumKey(e->key, e->i++, otherbuf, 3 * buflen) == ERROR_SUCCESS) {
-	unmungestr(otherbuf, buffer, buflen);
-	sfree(otherbuf);
-	return buffer;
-    } else {
-	sfree(otherbuf);
-	return NULL;
-    }
+    enum_settings_t *e = (enum_settings_t *) handle;
+
+    return ses_enum_settings_next(e->root, e->handle, buffer, buflen);
 }
 
 void enum_settings_finish(void *handle)
 {
-    struct enumsettings *e = (struct enumsettings *) handle;
-    RegCloseKey(e->key);
+    enum_settings_t *e = (enum_settings_t *) handle;
+    ses_enum_settings_finish(e->root, e->handle);
     sfree(e);
 }
 

@@ -403,16 +403,16 @@ static int load_selected_session(struct sessionsaver_data *ssd,
     }
     if (!strcmp(ssd->sesslist.sessions[i], "..")) {
 	ses_pathname(ssd->currentpath, path, BUFSIZE);
-	get_sesslist(&ssd->sesslist, path, FALSE);
-	get_sesslist(&ssd->sesslist, path, TRUE);
+	get_sesslist(&cfg->sessionroot, &ssd->sesslist, path, FALSE);
+	get_sesslist(&cfg->sessionroot, &ssd->sesslist, path, TRUE);
 	savedsession[0] = '\0';
 	strcpy(ssd->currentpath, path);
 	dlg_setcontroltext(ssd->pathview, dlg, savedsession);
 	return 0;
     } else if (ses_is_folder(&cfg->sessionroot, ssd->sesslist.sessions[i])) {
 	strncpy(path, ssd->sesslist.sessions[i], BUFSIZE);
-	get_sesslist(&ssd->sesslist, path, FALSE);
-	get_sesslist(&ssd->sesslist, path, TRUE);
+	get_sesslist(&cfg->sessionroot, &ssd->sesslist, path, FALSE);
+	get_sesslist(&cfg->sessionroot, &ssd->sesslist, path, TRUE);
 	savedsession[0] = '\0';
 	strcpy(ssd->currentpath, path);
 	dlg_setcontroltext(ssd->pathview, dlg, savedsession);
@@ -464,8 +464,8 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 	    tmp = ses_lastname(loaded_session_name);
 	    strcpy(savedsession, tmp);
 	    dlg_setcontroltext(ssd->pathview, dlg, loaded_session_name);
-	    get_sesslist(&ssd->sesslist, "", FALSE);
-	    get_sesslist(&ssd->sesslist, ssd->currentpath, TRUE);
+	    get_sesslist(&cfg->sessionroot, &ssd->sesslist, "", FALSE);
+	    get_sesslist(&cfg->sessionroot, &ssd->sesslist, ssd->currentpath, TRUE);
 	} else
 	    savedsession[0] = '\0';
     } else {
@@ -493,7 +493,16 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 	    else
 		dlg_setcontroltext(ssd->pathview, dlg, ssd->sesslist.sessions[selected]);
 	    dlg_update_done(ctrl, dlg);
-	}
+	/*
+	 * Check the session root properties, and if it's read only,
+	 * disable the "Save", "Delete" and "New folder" buttons.
+	 */
+	} else if (ctrl == ssd->mkfolderbutton)
+	    dlg_control_enable(ssd->mkfolderbutton, dlg, !cfg->sessionroot.readonly);
+	else if (ctrl == ssd->delbutton)
+	    dlg_control_enable(ssd->delbutton, dlg, !cfg->sessionroot.readonly);
+	else if (ctrl == ssd->savebutton)
+	    dlg_control_enable(ssd->savebutton, dlg, !cfg->sessionroot.readonly);
     } else if (event == EVENT_VALCHANGE) {
 	if (ctrl == ssd->editbox) {
 	    dlg_editbox_get(ctrl, dlg, savedsession, SAVEDSESSION_LEN);
@@ -580,8 +589,8 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 		    sfree(errmsg);
 		}
 	    }
-	    get_sesslist(&ssd->sesslist, ssd->currentpath, FALSE);
-	    get_sesslist(&ssd->sesslist, ssd->currentpath, TRUE);
+	    get_sesslist(&cfg->sessionroot, &ssd->sesslist, ssd->currentpath, FALSE);
+	    get_sesslist(&cfg->sessionroot, &ssd->sesslist, ssd->currentpath, TRUE);
 	    {
 		int i, selected = -1;
 		char *name;
@@ -605,8 +614,8 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 	    else
 		strcpy(tmp, savedsession[0] ? savedsession : "New folder");
 	    ses_make_folder(&cfg->sessionroot, tmp);
-	    get_sesslist(&ssd->sesslist, ssd->currentpath, FALSE);
-	    get_sesslist(&ssd->sesslist, ssd->currentpath, TRUE);
+	    get_sesslist(&cfg->sessionroot, &ssd->sesslist, ssd->currentpath, FALSE);
+	    get_sesslist(&cfg->sessionroot, &ssd->sesslist, ssd->currentpath, TRUE);
 	    savedsession[0] = '\0';
 	    dlg_refresh(ssd->editbox, dlg);
 	    dlg_refresh(ssd->listbox, dlg);
@@ -624,9 +633,9 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 		    if (!dlg_yesnobox(dlg, msg))
 			return;
 		};
-		del_settings(ssd->sesslist.sessions[i]);
-		get_sesslist(&ssd->sesslist, ssd->currentpath, FALSE);
-		get_sesslist(&ssd->sesslist, ssd->currentpath, TRUE);
+		del_settings(&cfg->sessionroot, ssd->sesslist.sessions[i]);
+		get_sesslist(&cfg->sessionroot, &ssd->sesslist, ssd->currentpath, FALSE);
+		get_sesslist(&cfg->sessionroot, &ssd->sesslist, ssd->currentpath, TRUE);
 		dlg_refresh(ssd->listbox, dlg);
 	    }
 	} else if (ctrl == ssd->okbutton) {
@@ -1618,7 +1627,7 @@ static void window_icon_handler(union control *ctrl, void *dlg,
     };
 };
 
-void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
+void setup_config_box(Config *cfg, struct controlbox *b, struct sesslist *sesslist,
 		      int midsession, int protocol, int protcfginfo)
 {
     struct controlset *s;
@@ -1712,7 +1721,7 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
 		    midsession ? "Save the current session settings" :
 		    "Load, save or delete a stored session");
     ctrl_columns(s, 2, 75, 25);
-    get_sesslist(&ssd->sesslist, "", TRUE);
+    get_sesslist(&cfg->sessionroot, &ssd->sesslist, "", TRUE);
     ssd->editbox = ctrl_editbox(s, "Saved Sessions", 'e', 100,
 				HELPCTX(session_saved),
 				sessionsaver_handler, P(ssd), P(NULL));
@@ -1908,7 +1917,12 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
 		      I(offsetof(Config, funky_type)),
 		      "ESC[n~", I(0), "Linux", I(1), "Xterm R6", I(2),
 		      "VT400", I(3), "VT100+", I(4), "SCO", I(5),
-		      "AT&T 513", I(6), NULL);
+		      "AT&T 513", I(6), 
+/*
+		      "AT&T 4410", I(7),
+*/
+		      "Sun Xterm", I(8),
+		      NULL);
 
     s = ctrl_getset(b, "Terminal/Keyboard", "appkeypad",
 		    "Application keypad settings:");
@@ -2002,7 +2016,7 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
     ctrl_checkbox(s, "Disable bidirectional text display",
 		  'd', HELPCTX(features_bidi), dlg_stdcheckbox_handler,
 		  I(offsetof(Config, bidi)));
-    ctrl_checkbox(s, "Show bottom buttons (AT&T 513 terminal only)", NO_SHORTCUT,
+    ctrl_checkbox(s, "Disable feature key buttons", NO_SHORTCUT,
 		  HELPCTX(features_bottombuttons), dlg_stdcheckbox_handler,
 		  I(offsetof(Config, bottom_buttons)));
 
@@ -2461,7 +2475,7 @@ void setup_config_box(struct controlbox *b, struct sesslist *sesslist,
 
 	dod->winloc =
 	    ctrl_checkbox(s, "Use Windows Dialing Rules", 'w',
-			  HELPCTX(no_help), dialingoptions_handler,
+			  HELPCTX(serial_dialing), dialingoptions_handler,
 			  P(dod));
 	dod->mode =
 	    ctrl_radiobuttons(s, "Dialing Mode", 'm', 2, 
