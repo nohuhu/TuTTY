@@ -70,7 +70,8 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /Zp4 /W3 /Gm /GX /ZI /Od /I "..\.." /I "..\..\windows" /D SNAPSHOT=0.60.2.0 /D "_DEBUG" /D "SESSION_FOLDERS" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "DWALIN" /D "UNDERLINE_COLOUR" /D "SECONDARY_SCRIPT" /D "ATT513_TERMINAL" /D "SERIAL_BACKEND" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /Zp4 /W3 /Gm /GX /ZI /Od /I "..\.." /I "..\..\windows" /I "..\..\sapi" /D SNAPSHOT=0.60.2.0 /D "_DEBUG" /D "SESSION_FOLDERS" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "DWALIN" /D "UNDERLINE_COLOUR" /D "SECONDARY_SCRIPT" /D "ATT513_TERMINAL" /D "SERIAL_BACKEND" /FR /FD /GZ /c
+# SUBTRACT CPP /YX
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x809 /d "_DEBUG"
@@ -80,7 +81,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 advapi32.lib comctl32.lib comdlg32.lib gdi32.lib imm32.lib shell32.lib user32.lib winmm.lib winspool.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 comctl32.lib imm32.lib winmm.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
@@ -491,16 +492,20 @@ SOURCE=..\..\windows\winstuff.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=..\..\.\putty.ico
+SOURCE=..\..\windows\putty.ico
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\.\puttycfg.ico
+SOURCE=..\..\windows\puttycfg.ico
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\windows\win_res.rc
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=..\..\windows\putty.mft
+# End Source File
 # End Target
 # End Project

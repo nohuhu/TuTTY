@@ -10,8 +10,6 @@
 #include "dialog.h"
 #include "storage.h"
 
-#include "session.h"
-
 #define PRINTER_DISABLED_STRING "None (printing disabled)"
 
 #define HOST_BOX_TITLE "Host Name (or IP address)"
@@ -43,6 +41,7 @@ static void config_host_handler(union control *ctrl, void *dlg,
 
     if (event == EVENT_REFRESH) {
 	char *str;
+	int selected = FALSE;
 
 	if (cfg->protocol == PROT_SERIAL) {
 	    int i, port;
@@ -65,9 +64,12 @@ static void config_host_handler(union control *ctrl, void *dlg,
 	    };
 
 	    for (i = 0; i < dlg_listbox_getcount(ctrl, dlg); i++) {
-		if (dlg_listbox_getid(ctrl, dlg, i) == cfg->port)
+		if (dlg_listbox_getid(ctrl, dlg, i) == cfg->port) {
 		    dlg_listbox_select(ctrl, dlg, i);
+		    selected = TRUE;
+		};
 	    };
+	    if (!selected) dlg_listbox_select(ctrl, dlg, 0);
 	    dlg_update_done(ctrl, dlg);
 	} else {
 	    dlg_update_start(ctrl, dlg);
@@ -532,7 +534,7 @@ static void sessionsaver_handler(union control *ctrl, void *dlg,
 	    int mbl = FALSE;
 	    int i, isfolder;
 
-	    i = dlg_listbox_index(ctrl, dlg);
+	    i = dlg_listbox_index(ssd->listbox, dlg);
 	    isfolder = !strcmp(ssd->sesslist.sessions[i], "..") ||
 		ses_is_folder(&cfg->sessionroot, ssd->sesslist.sessions[i]);
 	    
