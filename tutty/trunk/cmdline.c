@@ -162,6 +162,20 @@ int cmdline_process_param(char *p, char *value, int need_save, Config *cfg)
 	loaded_session = TRUE;
 	return 2;
     }
+    if (!strcmp(p, "-serial")) {
+	RETURN(2);
+	UNAVAILABLE_IN(TOOLTYPE_FILETRANSFER | TOOLTYPE_NONNETWORK);
+	SAVEABLE(0);
+	if (!_strnicmp(value, "COM", 3)) {
+	    default_protocol = cfg->protocol = PROT_SERIAL;
+	    default_port = cfg->port = atoi(value + 3);
+	    if (!default_port) {
+		cmdline_error("-serial expects argument of form COMx");
+		return ret;
+	    }
+	    return 2;
+	};
+    }
     if (!strcmp(p, "-ssh")) {
 	RETURN(1);
 	UNAVAILABLE_IN(TOOLTYPE_FILETRANSFER | TOOLTYPE_NONNETWORK);

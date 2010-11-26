@@ -543,13 +543,17 @@ window}, or a \i{Windows shortcut}).
 
 \S{using-cmdline-session} Starting a session from the command line
 
-\I\c{-ssh}\I\c{-telnet}\I\c{-rlogin}\I\c{-raw}These options allow
+\I\c{-serial}\I\c{-ssh}\I\c{-telnet}\I\c{-rlogin}\I\c{-raw}These options allow
 you to bypass the configuration window and launch straight into a
 session.
 
 To start a connection to a server called \c{host}:
 
 \c tutty.exe [-ssh | -telnet | -rlogin | -raw] [user@]host
+
+To connect to a port COMx, use:
+
+\c tutty.exe -serial COMx
 
 If this syntax is used, settings are taken from the \i{Default Settings}
 (see \k{config-saving}); \c{user} overrides these settings if
@@ -566,6 +570,16 @@ In order to start an existing saved session called \c{sessionname},
 use the \c{-load} option (described in \k{using-cmdline-load}).
 
 \c tutty.exe -load "session name"
+
+Note that session folders are also supported, with folder names separated
+with back slashes just like ordinary disk folder names. For example:
+
+\c tutty.exe -load Folder\Session
+
+Or, if there are spaces in folder or session name, enclose both in double
+quotes:
+
+\c tutty.exe -load "Folder name\Session name"
 
 \S{using-cleanup} \i\c{-cleanup}
 
