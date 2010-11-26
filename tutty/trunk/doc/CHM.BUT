@@ -11,10 +11,10 @@
 \cfg{html-template-filename}{%k.html}
 \cfg{html-template-fragment}{%k}
 
-\cfg{html-mshtmlhelp-chm}{putty.chm}
-\cfg{html-mshtmlhelp-project}{putty.hhp}
-\cfg{html-mshtmlhelp-contents}{putty.hhc}
-\cfg{html-mshtmlhelp-index}{putty.hhk}
+\cfg{html-mshtmlhelp-chm}{tutty.chm}
+\cfg{html-mshtmlhelp-project}{tutty.hhp}
+\cfg{html-mshtmlhelp-contents}{tutty.hhc}
+\cfg{html-mshtmlhelp-index}{tutty.hhk}
 
 \cfg{html-body-end}{}
 

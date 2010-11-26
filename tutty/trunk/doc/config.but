@@ -1270,6 +1270,44 @@ close (or a warning box to appear; see \k{config-warnonclose}). If you
 disable the \q{Window closes on ALT-F4} option, then pressing ALT-F4
 will simply send a key sequence to the server.
 
+\S{config-window-has-sysmenu} \q{Window has system menu}
+
+\cfg{winhelp-topic}{behaviour.has_sysmenu}
+
+This option controls if main TuTTY window has system menu and by default
+it is turned on. Due to Windows limitations, disabling it will not only
+turn off system menu but also remove all right-side caption buttons. To
+reflect this, disabling this option will also disable the five following
+options.
+
+\S{config-window-closable} \q{Window has Close button}
+
+\cfg{winhelp-topic}{behaviour.closebutton}
+
+By default this option is turned on and TuTTY window has "Close" caption
+button as well as "Close" item in left corner system menu. Turning it off
+will limit user's ability to close the window. Note that Alt-F4 option
+above does not depend on Close caption button and will work regardless.
+
+\S{config-window-minimizable} \q{Window has Minimize button}
+
+\cfg{winhelp-topic}{behaviour.minimizebutton}
+
+This option controls if TuTTY window can be minimized by using Minimize
+caption button. It is also turned on by default, and turning it off will
+also disable Minimize system menu item. Note that Minimizing TuTTY window
+with Task Manager will work regardless of this setting.
+
+\S{config-window-maximizable} \q{Window has Maximize button}
+
+\cfg{winhelp-topic}{behaviour.maximizebuton}
+
+This option defines if TuTTY window is maximizable. By default it is,
+turning this option off will disable Maximize caption button, corresponding
+system menu item and window title double click shortcut. Just like with
+previous option, Windows Task Manager will be able to maximize TuTTY
+window even if there is no button.
+
 \S{config-altspace} \q{\ii{System menu} appears on \i{ALT-Space}}
 
 \cfg{winhelp-topic}{behaviour.altspace}

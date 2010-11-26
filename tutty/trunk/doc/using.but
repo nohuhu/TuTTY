@@ -571,16 +571,6 @@ use the \c{-load} option (described in \k{using-cmdline-load}).
 
 \c tutty.exe -load "session name"
 
-Note that session folders are also supported, with folder names separated
-with back slashes just like ordinary disk folder names. For example:
-
-\c tutty.exe -load Folder\Session
-
-Or, if there are spaces in folder or session name, enclose both in double
-quotes:
-
-\c tutty.exe -load "Folder name\Session name"
-
 \S{using-cleanup} \i\c{-cleanup}
 
 \cfg{winhelp-topic}{options.cleanup}
@@ -609,13 +599,21 @@ causes TuTTY to load configuration details out of a saved session.
 If these details include a host name, then this option is all you
 need to make TuTTY start a session.
 
-You need double quotes around the session name if it contains spaces.
+Note that session folders are also supported, with folder names separated
+with back slashes just like ordinary disk folder names. For example:
+
+\c tutty.exe -load Folder\Session
+
+Or, if there are spaces in folder or session name, enclose both in double
+quotes:
+
+\c tutty.exe -load "Folder name\Session name"
 
 If you want to create a \i{Windows shortcut} to start a TuTTY saved
 session, this is the option you should use: your shortcut should
 call something like
 
-\c d:\path\to\tutty.exe -load "my session"
+\c d:\path\to\tutty.exe -load "my folder\my deep folder\my session"
 
 (Note that TuTTY itself supports an alternative form of this option,
 for backwards compatibility. If you execute \i\c{tutty @sessionname}
@@ -629,6 +627,8 @@ option is deprecated.)
 
 To choose which protocol you want to connect with, you can use one
 of these options:
+
+\b \i\c{-serial} selects Serial protocol.
 
 \b \i\c{-ssh} selects the SSH protocol.
 
@@ -644,6 +644,10 @@ PSFTP (which only work with the SSH protocol).
 These options are equivalent to the \i{protocol selection} buttons
 in the Session panel of the TuTTY configuration box (see
 \k{config-hostname}).
+
+Serial protocol requires COM port name and number as parameter:
+
+\c tutty.exe -serial COMx
 
 \S2{using-cmdline-v} \i\c{-v}: increase verbosity
 
