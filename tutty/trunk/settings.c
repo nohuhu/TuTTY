@@ -342,6 +342,10 @@ void save_open_settings(void *sesskey, Config *cfg)
     write_setting_i(sesskey, "LocalEdit", cfg->localedit);
     write_setting_s(sesskey, "Answerback", cfg->answerback);
     write_setting_i(sesskey, "AlwaysOnTop", cfg->alwaysontop);
+    write_setting_i(sesskey, "WindowClosable", cfg->window_closable);
+    write_setting_i(sesskey, "WindowMinimizable", cfg->window_minimizable);
+    write_setting_i(sesskey, "WindowMaximizable", cfg->window_maximizable);
+    write_setting_i(sesskey, "WindowHasSysMenu", cfg->window_has_sysmenu);
     write_setting_i(sesskey, "FullScreenOnAltEnter", cfg->fullscreenonaltenter);
     write_setting_i(sesskey, "HideMousePtr", cfg->hide_mouseptr);
     write_setting_i(sesskey, "SunkenEdge", cfg->sunken_edge);
@@ -669,6 +673,10 @@ void load_open_settings(void *sesskey, Config *cfg)
     gpps(sesskey, "Answerback", "PuTTY", cfg->answerback,
 	 sizeof(cfg->answerback));
     gppi(sesskey, "AlwaysOnTop", 0, &cfg->alwaysontop);
+    gppi(sesskey, "WindowClosable", 1, &cfg->window_closable);
+    gppi(sesskey, "WindowMimimizable", 1, &cfg->window_minimizable);
+    gppi(sesskey, "WindowMaximizable", 1, &cfg->window_maximizable);
+    gppi(sesskey, "WindowHasSysMenu", 1, &cfg->window_has_sysmenu);
     gppi(sesskey, "FullScreenOnAltEnter", 0, &cfg->fullscreenonaltenter);
     gppi(sesskey, "HideMousePtr", 0, &cfg->hide_mouseptr);
     gppi(sesskey, "SunkenEdge", 0, &cfg->sunken_edge);

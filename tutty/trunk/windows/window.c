@@ -782,18 +782,18 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	    winmode &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
 	if (cfg.alwaysontop)
 	    exwinmode |= WS_EX_TOPMOST;
+	if (!cfg.window_has_sysmenu)
+	    winmode &= ~(WS_SYSMENU);
+	if (!cfg.window_minimizable)
+	    winmode &= ~(WS_MINIMIZEBOX);
+	if (!cfg.window_maximizable)
+	    winmode &= ~(WS_MAXIMIZEBOX);
 	if (cfg.sunken_edge)
 	    exwinmode |= WS_EX_CLIENTEDGE;
-	if (!cfg.bottom_buttons)
-	    hwnd = CreateWindowEx(exwinmode, appname, appname,
-				  winmode, CW_USEDEFAULT, CW_USEDEFAULT,
-				  guess_width, guess_height + BOTTOM_BUTTON_HEIGHT,
-				  NULL, NULL, inst, NULL);
-	else
-	    hwnd = CreateWindowEx(exwinmode, appname, appname,
-				  winmode, CW_USEDEFAULT, CW_USEDEFAULT,
-				  guess_width, guess_height,
-				  NULL, NULL, inst, NULL);
+	hwnd = CreateWindowEx(exwinmode, appname, appname,
+			      winmode, CW_USEDEFAULT, CW_USEDEFAULT,
+			      guess_width, guess_height + (cfg.bottom_buttons ? BOTTOM_BUTTON_HEIGHT : 0),
+			      NULL, NULL, inst, NULL);
     }
 
     /*
@@ -897,7 +897,9 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 	int i, j;
 	char *str;
 
-	popup_menus[SYSMENU].menu = GetSystemMenu(hwnd, FALSE);
+	m = popup_menus[SYSMENU].menu = GetSystemMenu(hwnd, FALSE);
+	EnableMenuItem(m, SC_CLOSE, cfg.window_closable ? MF_ENABLED : MF_GRAYED);
+
 	popup_menus[CTXMENU].menu = CreatePopupMenu();
 	AppendMenu(popup_menus[CTXMENU].menu, MF_ENABLED, IDM_PASTE, "&Paste");
 

@@ -30,10 +30,80 @@ static void help_handler(union control *ctrl, void *dlg,
     }
 }
 
-void win_setup_config_box(struct controlbox *b, HWND *hwndp, int has_help,
+struct window_behaviour_data {
+    union control *has_sysmenu, *window_closable, *window_minimizable,
+	*window_maximizable, *sysmenu_alt_space, *sysmenu_alt_only;
+};
+
+static void behaviour_handler(union control *ctrl, void *dlg,
+			      void *data, int event)
+{
+    Config *cfg = (Config *)data;
+    struct window_behaviour_data *wbd =
+	(struct window_behaviour_data *)ctrl->generic.context.p;
+
+    if (ctrl == wbd->has_sysmenu) {
+	if (event == EVENT_REFRESH) {
+	    dlg_update_start(ctrl, dlg);
+	    dlg_checkbox_set(ctrl, dlg, cfg->window_has_sysmenu);
+	    dlg_checkbox_set(wbd->window_closable, dlg, cfg->window_has_sysmenu ? cfg->window_closable : 0);
+	    dlg_control_enable(wbd->window_closable, dlg, cfg->window_has_sysmenu);
+	    dlg_checkbox_set(wbd->window_minimizable, dlg, cfg->window_has_sysmenu ? cfg->window_minimizable : 0);
+	    dlg_control_enable(wbd->window_minimizable, dlg, cfg->window_has_sysmenu);
+	    dlg_checkbox_set(wbd->window_maximizable, dlg, cfg->window_has_sysmenu ? cfg->window_maximizable : 0);
+	    dlg_control_enable(wbd->window_maximizable, dlg, cfg->window_has_sysmenu);
+	    dlg_checkbox_set(wbd->sysmenu_alt_space, dlg, cfg->window_has_sysmenu ? cfg->alt_space : 0);
+	    dlg_control_enable(wbd->sysmenu_alt_space, dlg, cfg->window_has_sysmenu);
+	    dlg_checkbox_set(wbd->sysmenu_alt_only, dlg, cfg->window_has_sysmenu ? cfg->alt_only : 0);
+	    dlg_control_enable(wbd->sysmenu_alt_only, dlg, cfg->window_has_sysmenu);
+	    dlg_update_done(ctrl, dlg);
+	} else if (event == EVENT_VALCHANGE) {
+	    cfg->window_has_sysmenu = dlg_checkbox_get(ctrl, dlg);
+	    dlg_refresh(ctrl, dlg);
+	};
+    } else if (ctrl == wbd->window_closable) {
+	if (event == EVENT_REFRESH) {
+	    dlg_update_start(ctrl, dlg);
+	    dlg_checkbox_set(ctrl, dlg, cfg->window_has_sysmenu ? cfg->window_closable : 0);
+	    dlg_update_done(ctrl, dlg);
+	} else if (event == EVENT_VALCHANGE)
+	    cfg->window_closable = dlg_checkbox_get(ctrl, dlg);
+    } else if (ctrl == wbd->window_minimizable) {
+	if (event == EVENT_REFRESH) {
+	    dlg_update_start(ctrl, dlg);
+	    dlg_checkbox_set(ctrl, dlg, cfg->window_has_sysmenu ? cfg->window_minimizable : 0);
+	    dlg_update_done(ctrl, dlg);
+	} else if (event == EVENT_VALCHANGE)
+	    cfg->window_minimizable = dlg_checkbox_get(ctrl, dlg);
+    } else if (ctrl == wbd->window_maximizable) {
+	if (event == EVENT_REFRESH) {
+	    dlg_update_start(ctrl, dlg);
+	    dlg_checkbox_set(ctrl, dlg, cfg->window_has_sysmenu ? cfg->window_maximizable : 0);
+	    dlg_update_done(ctrl, dlg);
+	} else if (event == EVENT_VALCHANGE)
+	    cfg->window_maximizable = dlg_checkbox_get(ctrl, dlg);
+    } else if (ctrl == wbd->sysmenu_alt_space) {
+	if (event == EVENT_REFRESH) {
+	    dlg_update_start(ctrl, dlg);
+	    dlg_checkbox_set(ctrl, dlg, cfg->window_has_sysmenu ? cfg->alt_space : 0);
+	    dlg_update_done(ctrl, dlg);
+	} else if (event == EVENT_VALCHANGE)
+	    cfg->alt_space = dlg_checkbox_get(ctrl, dlg);
+    } else if (ctrl == wbd->sysmenu_alt_only) {
+	if (event == EVENT_REFRESH) {
+	    dlg_update_start(ctrl, dlg);
+	    dlg_checkbox_set(ctrl, dlg, cfg->window_has_sysmenu ? cfg->alt_only : 0);
+	    dlg_update_done(ctrl, dlg);
+	} else if (event == EVENT_VALCHANGE)
+	    cfg->alt_only = dlg_checkbox_get(ctrl, dlg);
+    };
+};
+
+void win_setup_config_box(Config *cfg, struct controlbox *b, HWND *hwndp, int has_help,
 			  int midsession, int protocol)
 {
     struct controlset *s;
+    struct window_behaviour_data *wbd;
     union control *c;
     char *str;
 
@@ -320,12 +390,27 @@ void win_setup_config_box(struct controlbox *b, HWND *hwndp, int has_help,
     ctrl_checkbox(s, "Window closes on ALT-F4", '4',
 		  HELPCTX(behaviour_altf4),
 		  dlg_stdcheckbox_handler, I(offsetof(Config,alt_f4)));
-    ctrl_checkbox(s, "System menu appears on ALT-Space", 'y',
+    wbd = (struct window_behaviour_data *)ctrl_alloc(b,
+	    sizeof(struct window_behaviour_data));
+    memset(wbd, 0, sizeof(*wbd));
+    wbd->has_sysmenu = ctrl_checkbox(s, "Window has system menu (in upper left corner)", 'u',
+		  HELPCTX(behaviour_has_sysmenu),
+		  behaviour_handler, P(wbd));
+    wbd->window_closable = ctrl_checkbox(s, "Window has Close button", 'b',
+		  HELPCTX(behaviour_closebutton),
+		  behaviour_handler, P(wbd));
+    wbd->window_minimizable = ctrl_checkbox(s, "Window has Minimize button", 'm',
+		  HELPCTX(behaviour_minimizebutton),
+		  behaviour_handler, P(wbd));
+    wbd->window_maximizable = ctrl_checkbox(s, "Window has Maximize button", 'x',
+		  HELPCTX(behaviour_maximizebutton),
+		  behaviour_handler, P(wbd));
+    wbd->sysmenu_alt_space = ctrl_checkbox(s, "System menu appears on ALT-Space", 'y',
 		  HELPCTX(behaviour_altspace),
-		  dlg_stdcheckbox_handler, I(offsetof(Config,alt_space)));
-    ctrl_checkbox(s, "System menu appears on ALT alone", 'l',
+		  behaviour_handler, P(wbd));
+    wbd->sysmenu_alt_only = ctrl_checkbox(s, "System menu appears on ALT alone", 'l',
 		  HELPCTX(behaviour_altonly),
-		  dlg_stdcheckbox_handler, I(offsetof(Config,alt_only)));
+		  behaviour_handler, P(wbd));
     ctrl_checkbox(s, "Ensure window is always on top", 'e',
 		  HELPCTX(behaviour_alwaysontop),
 		  dlg_stdcheckbox_handler,

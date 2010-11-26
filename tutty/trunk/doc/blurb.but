@@ -30,8 +30,9 @@ only on the Win32 platform. Therefore, non-Windows utilities available
 with PuTTY are not available with TuTTY and are not covered in this
 manual.
 
-\copyright This manual is copyright 2005-2010 Alexander Tokarev <dwalin@dwalin.ru>.
-
 \copyright This manual is copyright 2001-2005 Simon Tatham. All
 rights reserved. You may distribute this documentation under the MIT
 licence. See \k{licence} for the licence text in full.
+
+\copyright Portions of this manual is copyright 2005-2010 Alexander Tokarev <dwalin@dwalin.ru>.
+

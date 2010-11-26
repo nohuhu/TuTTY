@@ -43,9 +43,9 @@ to connect to. If you select Telnet, Rlogin, or SSH, this box will
 be filled in automatically to the usual value, and you will only
 need to change it if you have an unusual server. If you select Raw
 mode, you will almost certainly need to fill in the \q{Port} box.
-Again, when using \q{Serial} protocol, this field is changed to combo
-box filled with list of serial ports available on the computer. You
-can choose one of them for connection, default is COM1.
+When \q{Serial} protocol is used, this field changes to drop-down
+selection box filled with list of serial ports available on your
+computer.
 
 \S{config-saving} \ii{Loading and storing saved sessions}
 
@@ -55,24 +55,18 @@ The next part of the Session configuration panel allows you to save
 your preferred TuTTY options so they will appear automatically the
 next time you start TuTTY. It also allows you to create \e{saved
 sessions}, which contain a full set of configuration options plus a
-host name and protocol. A saved session contains all the information
-TuTTY needs to start exactly the session you want. Saved sessions
-are organized in a tree-like structure just like the ordinary files
-on your computer, with folders for similar sessions. The most upper
-folder that contains default settings and all other folders and
-sessions is also called root folder or simply root.
+host name and protocol, or phone number and port respectively. A
+saved session contains all the information TuTTY needs to start
+exactly the session you want. Saved sessions are organized in a 
+tree-like structure just like the ordinary files on your computer,
+with folders for similar sessions. The most upper folder that contains
+default settings and all other folders and sessions is also called
+root folder or session root.
 
 \b To save your default settings: first set up the settings the way
 you want them saved. Then come back to the Session panel. Select the
 \q{\i{Default Settings}} entry in the saved sessions list, with a single
 click. Then press the \q{Save} button.
-
-\lcont{
-Note that TuTTY does not allow you to save a host name into the
-Default Settings entry. This ensures that when TuTTY is started up,
-the host name box is always empty, so a user can always just type in
-a host name and connect.
-}
 
 If there is a specific host you want to store the details of how to
 connect to, you should create a saved session, which will be
@@ -97,7 +91,7 @@ button.
 select the folder name in the list box, and then press the
 \q{Delete} button. TuTTY will ask you to confirm the operation.
 If you press Yes button, the folder will be deleted. If you
-press No button, it will not be deleted.
+press No button, deletion will be canceled.
 
 \b To save a session: first go through the rest of the configuration
 box setting up all the options you want. Then come back to the
@@ -1656,17 +1650,18 @@ these selections. If you don't change them, they will work as normal.
 
 \cfg{winhelp-topic}{colours.selected}
 
-When you select the text in main window using mouse, by default the
-selection area changes its colour to inversed: for example, if the
-normal text is yellow-on-blue, the selected area will be 
-blue-on-yellow. This feature allows you to specify exact colours
-you want the selected area to be.
+When you select the text in main window using mouse, usually selection
+area's colour is inversed, i.e. if normal text is displayed as
+yellow-on-blue, selecting it will change colour to blue-on-yellow.
+"Selected as different colour" feature changes this behaviour and allows
+you to specify exact colours to be used for selection area.
 
-By default the box is unchecked. If you check it, two strings will
+By default the box is unchecked. If you check it, two lines will
 appear in the colour selection list box: \q{Selected Text Foreground}
-and \q{Selected Text Background}. Choosing these strings will give
-you the ability to change default colours to some other. If you
-don't change them, the colours will be default black-on-white.
+and \q{Selected Text Background}. You can change the actual colours by
+selecting these lines and then changing RGB components either manually
+or by clicking Modify button and using colour selector. Default values
+are black-on-white.
 
 \S{config-logpalette} \q{Attempt to use \i{logical palettes}}
 

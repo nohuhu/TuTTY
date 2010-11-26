@@ -526,6 +526,10 @@ struct config_tag {
     int localecho;
     int localedit;
     int alwaysontop;
+    int window_closable;
+    int window_minimizable;
+    int window_maximizable;
+    int window_has_sysmenu;
     int fullscreenonaltenter;
     int scroll_on_key;
     int scroll_on_disp;

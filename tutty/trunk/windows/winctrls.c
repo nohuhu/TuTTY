@@ -2946,7 +2946,7 @@ void dlg_control_enable(union control *ctrl, void *dlg, int enable)
 	    max = 3;
 	    break;
 	default:
-	    max = 2;
+	    max = 1;
 	};
 	for (i = 0; i < max; i++) {
 	    ctl = GetDlgItem(dp->hwnd, c->base_id + i);

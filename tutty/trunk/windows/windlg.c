@@ -655,7 +655,7 @@ int do_config(void)
 
     ctrlbox = ctrl_new_box();
     setup_config_box(&cfg, ctrlbox, &sesslist, FALSE, 0, 0);
-    win_setup_config_box(ctrlbox, &dp.hwnd, has_help(), FALSE, 0);
+    win_setup_config_box(&cfg, ctrlbox, &dp.hwnd, has_help(), FALSE, 0);
     dp_init(&dp);
     winctrl_init(&ctrls_base);
     winctrl_init(&ctrls_panel);
@@ -690,7 +690,7 @@ int do_reconfig(HWND hwnd, int protcfginfo)
     ctrlbox = ctrl_new_box();
     get_sesslist(&cfg.sessionroot, &sesslist, "", TRUE);
     setup_config_box(&cfg, ctrlbox, &sesslist, TRUE, cfg.protocol, protcfginfo);
-    win_setup_config_box(ctrlbox, &dp.hwnd, has_help(), TRUE, cfg.protocol);
+    win_setup_config_box(&cfg, ctrlbox, &dp.hwnd, has_help(), TRUE, cfg.protocol);
     dp_init(&dp);
     winctrl_init(&ctrls_base);
     winctrl_init(&ctrls_panel);
