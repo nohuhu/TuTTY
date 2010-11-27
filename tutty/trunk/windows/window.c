@@ -1852,7 +1852,7 @@ static void redraw_buttons(HWND hwnd, int show)
     w = cfg.funky_type == FUNKY_SUNXTERM ? font_width * 8 : 
 	(win_width - offset_width * 2) / 8;
 
-    j = offset_width + gap;
+    j = cfg.funky_type == FUNKY_SUNXTERM ? offset_width : offset_width + gap;
 
     for (i = 0; i < 4; i++) {
 	ShowWindow(bp.buttons[i], SW_HIDE);
@@ -4562,13 +4562,6 @@ static int TranslateKey(UINT message, WPARAM wParam, LPARAM lParam,
 		    "\x1BOm", "\033f6", "\x1B[U", "\x1B[V"
 		};
 		tcode = (code >= 11 && code <= 15) ? code - 11 : code - 12;
-/*
-		if (!cfg.bottom_buttons) {
-		    SendMessage(bp.buttons[tcode], BM_SETSTATE, (WPARAM) TRUE, 0);
-		    Sleep(50);
-		    SendMessage(bp.buttons[tcode], BM_SETSTATE, (WPARAM) FALSE, 0);
-		};
-*/
 		p += sprintf((char *) p, codes[tcode]);
 		return p - output;
 	};

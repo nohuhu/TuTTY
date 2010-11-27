@@ -39,7 +39,7 @@
 #define WINHELP_CTX_features_charset "features.charset:config-features-charset"
 #define WINHELP_CTX_features_arabicshaping "features.arabicshaping:config-features-shaping"
 #define WINHELP_CTX_features_bidi "features.bidi:config-features-bidi"
-#define WINHELP_CTX_features_bottombuttons "features.bottombuttons"
+#define WINHELP_CTX_features_bottombuttons "features.bottombuttons:config-features-bottombuttons"
 #define WINHELP_CTX_terminal_autowrap "terminal.autowrap:config-autowrap"
 #define WINHELP_CTX_terminal_decom "terminal.decom:config-decom"
 #define WINHELP_CTX_terminal_lfhascr "terminal.lfhascr:config-crlf"

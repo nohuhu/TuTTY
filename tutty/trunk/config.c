@@ -1472,135 +1472,122 @@ static void funky_handler(union control *ctrl, void *dlg,
 
     dlg_stdradiobutton_handler(ctrl, dlg, data, event);
 
-    if (event == EVENT_VALCHANGE && cfg->funky_type == FUNKY_ATT513) {
-	if (dlg_yesnobox
-	    (dlg,
-	     "It seems you want to configure 513 terminal emulation "
-	     "which is primarily used to manage Lucent/Avaya phone switches. "
-	     "Do you want the terminal settings to be adjusted so they will "
-	     "be more like Avaya Terminal Emulator's? This will change some "
-	     "options which you can review on this and other panels.")) {
-	    cfg->cursor_type = 0;	/* block cursor */
-	    cfg->blink_cur = TRUE;	/* ...and it will blink */
-	    cfg->bold_colour = TRUE;	/* bold is different colour */
-	    cfg->under_colour = TRUE;	/* the same for underlined */
-	    cfg->sel_colour = TRUE;	/* and the same for selected */
-	    cfg->resize_action = RESIZE_DISABLED;
-	    cfg->height = 24;
-	    cfg->width = 80;
-	    cfg->savelines = 0;	/* scrollback is meaningless in this case */
-	    cfg->scrollbar = FALSE;	/* so we hide scrollbar */
-	    cfg->scroll_on_disp = FALSE;
-	    cfg->scroll_on_key = FALSE;
-	    cfg->erase_to_scrollback = FALSE;
-	    cfg->scrollbar_in_fullscreen = FALSE;
-	    cfg->bksp_is_delete = 0;
-	    cfg->bottom_buttons = 0;	/* doesn't show bottom buttons (yet) */
-	    cfg->passive_telnet = 1;	/* compatibility with c-lan telnetd */
-	    cfg->colours[0][0] = 255;
-	    cfg->colours[0][1] = 255;
-	    cfg->colours[0][2] = 128;
-	    cfg->colours[1][0] = 255;
-	    cfg->colours[1][1] = 255;
-	    cfg->colours[1][2] = 128;
-	    cfg->colours[2][0] = 0;
-	    cfg->colours[2][1] = 0;
-	    cfg->colours[2][2] = 128;
-	    cfg->colours[3][0] = 0;
-	    cfg->colours[3][1] = 0;
-	    cfg->colours[3][2] = 128;
-	    cfg->colours[4][0] = 0;
-	    cfg->colours[4][1] = 0;
-	    cfg->colours[4][2] = 0;
-	    cfg->colours[5][0] = 255;
-	    cfg->colours[5][1] = 255;
-	    cfg->colours[5][2] = 128;
-	    cfg->colours[6][0] = 0;
-	    cfg->colours[6][1] = 0;
-	    cfg->colours[6][2] = 0;
-	    cfg->colours[7][0] = 85;
-	    cfg->colours[7][1] = 85;
-	    cfg->colours[7][2] = 85;
-	    cfg->colours[8][0] = 187;
-	    cfg->colours[8][1] = 0;
-	    cfg->colours[8][2] = 0;
-	    cfg->colours[9][0] = 255;
-	    cfg->colours[9][1] = 85;
-	    cfg->colours[9][2] = 85;
-	    cfg->colours[10][0] = 0;
-	    cfg->colours[10][1] = 187;
-	    cfg->colours[10][2] = 0;
-	    cfg->colours[11][0] = 85;
-	    cfg->colours[11][1] = 255;
-	    cfg->colours[11][2] = 85;
-	    cfg->colours[12][0] = 187;
-	    cfg->colours[12][1] = 187;
-	    cfg->colours[12][2] = 0;
-	    cfg->colours[13][0] = 255;
-	    cfg->colours[13][1] = 255;
-	    cfg->colours[13][2] = 85;
-	    cfg->colours[14][0] = 0;
-	    cfg->colours[14][1] = 0;
-	    cfg->colours[14][2] = 187;
-	    cfg->colours[15][0] = 85;
-	    cfg->colours[15][1] = 85;
-	    cfg->colours[15][2] = 255;
-	    cfg->colours[16][0] = 187;
-	    cfg->colours[16][1] = 0;
-	    cfg->colours[16][2] = 187;
-	    cfg->colours[17][0] = 255;
-	    cfg->colours[17][1] = 85;
-	    cfg->colours[17][2] = 255;
-	    cfg->colours[18][0] = 0;
-	    cfg->colours[18][1] = 187;
-	    cfg->colours[18][2] = 187;
-	    cfg->colours[19][0] = 85;
-	    cfg->colours[19][1] = 255;
-	    cfg->colours[19][2] = 255;
-	    cfg->colours[20][0] = 187;
-	    cfg->colours[20][1] = 187;
-	    cfg->colours[20][2] = 187;
-	    cfg->colours[21][0] = 255;
-	    cfg->colours[21][1] = 255;
-	    cfg->colours[21][2] = 255;
-	    cfg->colours[22][0] = 255;
-	    cfg->colours[22][1] = 128;
-	    cfg->colours[22][2] = 64;
-	    cfg->colours[23][0] = 0;
-	    cfg->colours[23][1] = 0;
-	    cfg->colours[23][2] = 128;
-	    cfg->colours[24][0] = 0;
-	    cfg->colours[24][1] = 0;
-	    cfg->colours[24][2] = 0;
-	    cfg->colours[25][0] = 187;
-	    cfg->colours[25][1] = 0;
-	    cfg->colours[25][2] = 0;
-	    cfg->colours[26][0] = 0;
-	    cfg->colours[26][1] = 187;
-	    cfg->colours[26][2] = 0;
-	    cfg->colours[27][0] = 187;
-	    cfg->colours[27][1] = 187;
-	    cfg->colours[27][2] = 0;
-	    cfg->colours[28][0] = 0;
-	    cfg->colours[28][1] = 0;
-	    cfg->colours[28][2] = 187;
-	    cfg->colours[29][0] = 187;
-	    cfg->colours[29][1] = 0;
-	    cfg->colours[29][2] = 187;
-	    cfg->colours[30][0] = 0;
-	    cfg->colours[30][1] = 187;
-	    cfg->colours[30][2] = 187;
-	    cfg->colours[31][0] = 187;
-	    cfg->colours[31][1] = 187;
-	    cfg->colours[31][2] = 187;
-	    cfg->colours[32][0] = 255;
-	    cfg->colours[32][1] = 255;
-	    cfg->colours[32][2] = 0;
-	    cfg->colours[33][0] = 128;
-	    cfg->colours[33][1] = 0;
-	    cfg->colours[33][2] = 0;
-	    dlg_refresh(NULL, dlg);
-	};
+    if (event == EVENT_VALCHANGE && cfg->funky_type == FUNKY_ATT513 &&
+	dlg_yesnobox(dlg, "It seems you want to configure 513 terminal emulation "
+			  "which is primarily used to manage Lucent/Avaya phone switches. "
+			  "Do you want the terminal settings to be adjusted so they will "
+			  "be more like Avaya Terminal Emulator? This will change some "
+			  "options that you can review on this and other panels.")) {
+	cfg->cursor_type = 0;	/* block cursor */	    
+	cfg->blink_cur = TRUE;	/* ...and it will blink */
+	cfg->bold_colour = TRUE;	/* bold is different colour */
+	cfg->under_colour = TRUE;	/* the same for underlined */
+	cfg->sel_colour = TRUE;	/* and the same for selected */
+	cfg->resize_action = RESIZE_DISABLED;
+	cfg->height = 24;
+	cfg->width = 80;
+	cfg->savelines = 0;	/* scrollback is meaningless in this case */
+	cfg->scrollbar = FALSE;	/* so we hide scrollbar */
+	cfg->scroll_on_disp = FALSE;
+	cfg->scroll_on_key = FALSE;
+	cfg->erase_to_scrollback = FALSE;
+	cfg->scrollbar_in_fullscreen = FALSE;
+	cfg->bksp_is_delete = 0;
+	cfg->bottom_buttons = 0;	/* this feature is probably harmless enough by now */
+	cfg->passive_telnet = 1;	/* compatibility with c-lan telnetd */
+	cfg->colours[0][0] = 255;  cfg->colours[0][1] = 255;  cfg->colours[0][2] = 128;
+	cfg->colours[1][0] = 255;  cfg->colours[1][1] = 255;  cfg->colours[1][2] = 128;
+	cfg->colours[2][0] = 0;	   cfg->colours[2][1] = 0;    cfg->colours[2][2] = 128;
+	cfg->colours[3][0] = 0;    cfg->colours[3][1] = 0;    cfg->colours[3][2] = 128;
+	cfg->colours[4][0] = 0;    cfg->colours[4][1] = 0;    cfg->colours[4][2] = 0;
+        cfg->colours[5][0] = 255;  cfg->colours[5][1] = 255;  cfg->colours[5][2] = 128;
+	cfg->colours[6][0] = 0;    cfg->colours[6][1] = 0;    cfg->colours[6][2] = 0;
+	cfg->colours[7][0] = 85;   cfg->colours[7][1] = 85;   cfg->colours[7][2] = 85;
+	cfg->colours[8][0] = 187;  cfg->colours[8][1] = 0;    cfg->colours[8][2] = 0;
+	cfg->colours[9][0] = 255;  cfg->colours[9][1] = 85;   cfg->colours[9][2] = 85;
+	cfg->colours[10][0] = 0;   cfg->colours[10][1] = 187; cfg->colours[10][2] = 0;
+	cfg->colours[11][0] = 85;  cfg->colours[11][1] = 255; cfg->colours[11][2] = 85;
+	cfg->colours[12][0] = 187; cfg->colours[12][1] = 187; cfg->colours[12][2] = 0;
+	cfg->colours[13][0] = 255; cfg->colours[13][1] = 255; cfg->colours[13][2] = 85;
+	cfg->colours[14][0] = 0;   cfg->colours[14][1] = 0;   cfg->colours[14][2] = 187;
+	cfg->colours[15][0] = 85;  cfg->colours[15][1] = 85;  cfg->colours[15][2] = 255;
+	cfg->colours[16][0] = 187; cfg->colours[16][1] = 0;   cfg->colours[16][2] = 187;
+	cfg->colours[17][0] = 255; cfg->colours[17][1] = 85;  cfg->colours[17][2] = 255;
+	cfg->colours[18][0] = 0;   cfg->colours[18][1] = 187; cfg->colours[18][2] = 187;
+	cfg->colours[19][0] = 85;  cfg->colours[19][1] = 255; cfg->colours[19][2] = 255;
+	cfg->colours[20][0] = 187; cfg->colours[20][1] = 187; cfg->colours[20][2] = 187;
+	cfg->colours[21][0] = 255; cfg->colours[21][1] = 255; cfg->colours[21][2] = 255;
+	cfg->colours[22][0] = 255; cfg->colours[22][1] = 128; cfg->colours[22][2] = 64;
+	cfg->colours[23][0] = 0;   cfg->colours[23][1] = 0;   cfg->colours[23][2] = 128;
+	cfg->colours[24][0] = 0;   cfg->colours[24][1] = 0;   cfg->colours[24][2] = 0;
+	cfg->colours[25][0] = 187; cfg->colours[25][1] = 0;   cfg->colours[25][2] = 0;
+	cfg->colours[26][0] = 0;   cfg->colours[26][1] = 187; cfg->colours[26][2] = 0;
+	cfg->colours[27][0] = 187; cfg->colours[27][1] = 187; cfg->colours[27][2] = 0;
+	cfg->colours[28][0] = 0;   cfg->colours[28][1] = 0;   cfg->colours[28][2] = 187;
+	cfg->colours[29][0] = 187; cfg->colours[29][1] = 0;   cfg->colours[29][2] = 187;
+	cfg->colours[30][0] = 0;   cfg->colours[30][1] = 187; cfg->colours[30][2] = 187;
+	cfg->colours[31][0] = 187; cfg->colours[31][1] = 187; cfg->colours[31][2] = 187;
+	cfg->colours[32][0] = 255; cfg->colours[32][1] = 255; cfg->colours[32][2] = 0;
+	cfg->colours[33][0] = 128; cfg->colours[33][1] = 0;   cfg->colours[33][2] = 0;
+	dlg_refresh(NULL, dlg);
+    } else if (event == EVENT_VALCHANGE && cfg->funky_type == FUNKY_SUNXTERM &&
+	dlg_yesnobox(dlg, "Sun Xterm mode is primarily intended for use "
+			  "with Avaya CMS system in terminal emulation mode. "
+			  "Do you wish to have terminal settings adjusted for more "
+			  "compatibility with Avaya CMS? You will be able to review "
+			  "and revert these changes at later time, if you wish so.")) {
+	cfg->cursor_type = 0;	/* block cursor */	    
+	cfg->blink_cur = TRUE;	/* ...and it will blink */
+	cfg->bold_colour = FALSE;	/* bold is not a different colour */
+	cfg->under_colour = FALSE;	/* the same for underlined */
+	cfg->sel_colour = FALSE;	/* and the same for selected */
+	cfg->resize_action = RESIZE_DISABLED;
+	cfg->height = 24;
+	cfg->width = 80;
+	cfg->savelines = 0;	/* scrollback is meaningless in this case */
+	cfg->scrollbar = FALSE;	/* so we hide scrollbar */
+	cfg->scroll_on_disp = FALSE;
+	cfg->scroll_on_key = FALSE;
+	cfg->erase_to_scrollback = FALSE;
+	cfg->scrollbar_in_fullscreen = FALSE;
+	cfg->bksp_is_delete = 0;
+	cfg->bottom_buttons = 0;	/* this feature is probably harmless enough by now */
+	cfg->passive_telnet = 0;	/* sun solaris seems to be happy with default active telnet */
+	cfg->colours[0][0] = 187;  cfg->colours[0][1] = 187;  cfg->colours[0][2] = 187;
+	cfg->colours[1][0] = 255;  cfg->colours[1][1] = 255;  cfg->colours[1][2] = 255;
+	cfg->colours[2][0] = 0;	   cfg->colours[2][1] = 0;    cfg->colours[2][2] = 0;
+	cfg->colours[3][0] = 85;   cfg->colours[3][1] = 85;   cfg->colours[3][2] = 85;
+	cfg->colours[4][0] = 0;    cfg->colours[4][1] = 0;    cfg->colours[4][2] = 0;
+        cfg->colours[5][0] = 0;    cfg->colours[5][1] = 255;  cfg->colours[5][2] = 0;
+	cfg->colours[6][0] = 0;    cfg->colours[6][1] = 0;    cfg->colours[6][2] = 0;
+	cfg->colours[7][0] = 85;   cfg->colours[7][1] = 85;   cfg->colours[7][2] = 85;
+	cfg->colours[8][0] = 187;  cfg->colours[8][1] = 0;    cfg->colours[8][2] = 0;
+	cfg->colours[9][0] = 255;  cfg->colours[9][1] = 85;   cfg->colours[9][2] = 85;
+	cfg->colours[10][0] = 0;   cfg->colours[10][1] = 187; cfg->colours[10][2] = 0;
+	cfg->colours[11][0] = 85;  cfg->colours[11][1] = 255; cfg->colours[11][2] = 85;
+	cfg->colours[12][0] = 187; cfg->colours[12][1] = 187; cfg->colours[12][2] = 0;
+	cfg->colours[13][0] = 255; cfg->colours[13][1] = 255; cfg->colours[13][2] = 85;
+	cfg->colours[14][0] = 0;   cfg->colours[14][1] = 0;   cfg->colours[14][2] = 187;
+	cfg->colours[15][0] = 85;  cfg->colours[15][1] = 85;  cfg->colours[15][2] = 255;
+	cfg->colours[16][0] = 187; cfg->colours[16][1] = 0;   cfg->colours[16][2] = 187;
+	cfg->colours[17][0] = 255; cfg->colours[17][1] = 85;  cfg->colours[17][2] = 255;
+	cfg->colours[18][0] = 0;   cfg->colours[18][1] = 187; cfg->colours[18][2] = 187;
+	cfg->colours[19][0] = 85;  cfg->colours[19][1] = 255; cfg->colours[19][2] = 255;
+	cfg->colours[20][0] = 187; cfg->colours[20][1] = 187; cfg->colours[20][2] = 187;
+	cfg->colours[21][0] = 255; cfg->colours[21][1] = 255; cfg->colours[21][2] = 255;
+	cfg->colours[22][0] = 187; cfg->colours[22][1] = 187; cfg->colours[22][2] = 187;
+	cfg->colours[23][0] = 0;   cfg->colours[23][1] = 0;   cfg->colours[23][2] = 0;
+	cfg->colours[24][0] = 0;   cfg->colours[24][1] = 0;   cfg->colours[24][2] = 0;
+	cfg->colours[25][0] = 187; cfg->colours[25][1] = 0;   cfg->colours[25][2] = 0;
+	cfg->colours[26][0] = 0;   cfg->colours[26][1] = 187; cfg->colours[26][2] = 0;
+	cfg->colours[27][0] = 187; cfg->colours[27][1] = 187; cfg->colours[27][2] = 0;
+	cfg->colours[28][0] = 0;   cfg->colours[28][1] = 0;   cfg->colours[28][2] = 187;
+	cfg->colours[29][0] = 187; cfg->colours[29][1] = 0;   cfg->colours[29][2] = 187;
+	cfg->colours[30][0] = 0;   cfg->colours[30][1] = 187; cfg->colours[30][2] = 187;
+	cfg->colours[31][0] = 187; cfg->colours[31][1] = 187; cfg->colours[31][2] = 187;
+	cfg->colours[32][0] = 0;   cfg->colours[32][1] = 0;   cfg->colours[32][2] = 0;
+	cfg->colours[33][0] = 187; cfg->colours[33][1] = 187; cfg->colours[33][2] = 187;
+	dlg_refresh(NULL, dlg);
     };
 };
 

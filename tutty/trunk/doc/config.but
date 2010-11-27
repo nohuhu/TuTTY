@@ -634,7 +634,7 @@ through to \c{ESC [j}.  With control they generate \c{ESC [k} through
 to \c{ESC [v}, and with shift and control together they generate
 \c{ESC [w} through to \c{ESC [\{}.
 
-\b In AT&T 513 mode, the function keys generate default escape codes
+\b In \i{AT&T 513} mode, the function keys generate default escape codes
 except these:
 
 \lcont{
@@ -649,19 +649,27 @@ except these:
 \c F9 - ESC Ok
 \c F10 - ESC Ol
 
-\e{Note} that this mode was primarily intended for use with Avaya (Lucent)
+\e{Note} that this mode was primarily intended to be used with Avaya (Lucent)
 products: phone switches, voice mail hosts and so on, so this is not
 true 513 terminal. It was hacked for specific compatibility with mentioned
 hardware. Using it with any other devices may not give you expected results
-and is not recommended. Therefore, TuTTY expects that you know what you're
-doing and is trying to help you: when the AT&T 513 button is ticked, TuTTY
+and is not recommended. TuTTY expects that you know what you're doing and is
+trying to be nice with you: when the AT&T 513 button is ticked, TuTTY
 will ask you whether you want to fix other settings for more compatibility
-with mentioned Avaya (Lucent) products. If you ask No, nothing would happen,
+with mentioned Avaya (Lucent) products. If you ask No, no changes will be made,
 if you ask Yes, TuTTY will set terminal colours, telnet options and some
 other settings to match this mode. You may visit other configuration pages
 and review or change these settings if you wish before opening a connection
 to the host.
 }
+
+\b In \i{Sun Xterm} mode, the function keys F1 to F8 generate escape sequences
+compatible with specific application, namely Avaya Call Management System, that
+is working in Sun Solaris environment using xterm emulation. There probably will
+be no point in trying this mode with any other application or environment. In
+both Sun Xterm and AT&T 513 modes, you can use helper buttons showing functional
+key names and actions just below the terminal window. See \k{config-features-bottombuttons}
+for more information on this feature.
 
 If you don't know what any of this means, you probably don't need to
 fiddle with it.

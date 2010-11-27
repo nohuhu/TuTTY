@@ -8,7 +8,7 @@
 <assemblyIdentity
    version="0.0.0.0"
    processorArchitecture="x86"
-   name="PuTTY"
+   name="TuTTY"
    type="win32" />
    <description>A network client and terminal emulator</description>
    <dependency>
@@ -23,4 +23,10 @@
              processorArchitecture="x86"/> 
    </dependentAssembly>
    </dependency>
+   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+      <application>
+        <!--The ID below indicates application support for Windows Vista -->
+          <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"/>
+      </application>
+    </compatibility>
 </assembly>
