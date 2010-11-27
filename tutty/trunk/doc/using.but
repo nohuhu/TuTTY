@@ -74,9 +74,10 @@ work if you hold down Shift.  See \k{config-features-mouse} and
 \k{config-mouseshift} for details of this feature and how to configure
 it.
 
-Also it is possible to change the default black-on-white colour for
-selected text to something other, see \k{config-selectedcolour} for
-details.
+By default, selected text is displayed with inverted colours, i.e.
+for default terminal text that would be black-on-white. You can change
+selected area colour for better usability, see \k{config-selectedcolour}
+for details.
 
 \S{using-scrollback} \I{scrollback}Scrolling the screen back
 
@@ -534,7 +535,6 @@ Therefore, TuTTY in serial mode will remain connected until you
 close the window using the close button. However, TuTTY will try
 to indicate serial line status in its window title.
 
-
 \H{using-cmdline} The TuTTY command line
 
 TuTTY can be made to do various things without user intervention by
@@ -570,6 +570,10 @@ In order to start an existing saved session called \c{sessionname},
 use the \c{-load} option (described in \k{using-cmdline-load}).
 
 \c tutty.exe -load "session name"
+
+To disable changing saved sessions, use read-only command line options:
+
+\c tutty.exe -ro | --read-only
 
 \S{using-cleanup} \i\c{-cleanup}
 
@@ -622,7 +626,7 @@ the \c{@} form, no double quotes are required, and the \c{@} sign
 must be the very first thing on the command line. This form of the
 option is deprecated.)
 
-\S2{using-cmdline-protocol} Selecting a protocol: \c{-ssh},
+\S2{using-cmdline-protocol} Selecting a protocol: \c{serial}, \c{-ssh},
 \c{-telnet}, \c{-rlogin}, \c{-raw}
 
 To choose which protocol you want to connect with, you can use one
