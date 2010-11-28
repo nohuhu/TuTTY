@@ -12,13 +12,15 @@ of patches and additions to PuTTY, and not a large pack at all: about
 I'm always trying to update TuTTY to latest released PuTTY code to provide
 all new features and fixes made by Simon & Co. The vice versa situation
 does not exist so all features that differentiate TuTTY from PuTTY are
-available in TuTTY only. TuTTY 0.60.1.2 is based on the PuTTY 0.60
-release code, TuTTY's own major version is 1 and minor version is 2.
+available in TuTTY only. TuTTY 0.60.2.0 is based on the PuTTY 0.60
+release code, TuTTY's own major version is 2 and minor version is 0.
 If you have a development snapshot then you may take a look at the
-build number as well, it may be helpful for reporting any bugs and
+revision number as well, it may be helpful for reporting any bugs and
 describing problems.
 
-In short: TuTTY is the latest released PuTTY with extra features.
+In short: TuTTY is the latest released PuTTY with extra features. See
+\k{tutty-differences} for more explanations of TuTTY vs PuTTY differences
+and explicit list of TuTTY features. 
 
 Having said all this, I must add that this manual mostly contains
 descriptions of PuTTY features. TuTTY features are also described but
@@ -143,3 +145,71 @@ leave them to default: 9600 bits per second, 8 data bits, none parity,
 default on the other side as well.
 
 See \k{using-serial} for more detailed explanations of serial communication.
+
+\H{tutty-differences} What is the difference between TuTTY and PuTTY?
+
+As I already said, TuTTY is in fact PuTTY with extra features. Nothing
+original PuTTY had was removed, so you can safely assume that if feature
+'X' was announced in PuTTY X.Y, then it is available in TuTTY X.Y.Z.W.
+
+So, what is the difference? It's in additional tricks TuTTY can do:
+
+\b Session Folders. PuTTY stores its saved sessions as plain one-level
+list, sorted alphabetically. This is not very convenient, especially if
+there's a lot of saved sessions and/or a need to group them by some criteria.
+TuTTY allows you to create folders and store sessions in folders, just like
+you would do with regular files. This feature is not backwards-compatible to
+vanilla PuTTY, i.e. PuTTY will not see any sessions saved by TuTTY in folders
+deeper than root. PuTTY also sees folders as regular sessions.
+There's more on that in PuTTY wishlist: \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/wishlist/many-sessions.html}{many-sessions}.
+
+\b Session Icons. Very simple, but handy feature: you can assign an icon
+to a session, and these of course can be different. The icon you assign will
+be displayed in session list, in Windows taskbar - in short, everywhere. Makes
+it real easy to distinguish between running sessions.
+This feature corresponds with PuTTY wish \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/wishlist/session-icon.html}{session-icon}.
+
+\b Scripting. TuTTY implements very basic, yet immensely useful scripting
+in form of Cisco-like chat-script. Essentially, it's a combination of several
+expect-response pairs configured for a session, and these pairs are run in
+sequence upon terminal input. It is primarily intended for automation of routine
+tasks, see more in \k{config-connection-script}.
+This feature loosely corresponds with PuTTY wish \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/wishlist/scripting.html}{scripting}.
+
+\b Display enhancements: Underlined text and Selected area colours are
+configurable in TuTTY. See more in \k{config-underlinecolour} and \k{config-selectedcolour},
+albeit there's not that much more to see.
+These features are also mentioned in PuTTY wishlist: \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/wishlist/sgr-as-colours.html}{sgr-as-colours}
+and \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/wishlist/sel-colours.html}{sel-colours}.
+
+\b Terminal enhancements: support for AT&T 513 terminal escape sequences and
+functional keys, support for specialized applications working in Sun Xterm
+environment. This feature is intended to be used with Avaya equipment such
+as Definity/Communication Manager phone switches, CMS reporting system etc.
+If you administer Avaya equipment, you're probably already familiar with what
+is involved.
+
+\b Additional configurable window behaviour options. In TuTTY, you can disable
+Close, Minimize and Maximize caption buttons as well as upper-left-corner
+system menu, and store these settings in saved session. This feature is NOT
+intended for security purposes as there are alternative methods of closing,
+minimizing, maximizing or otherwise manipulating an application window - for
+example, Windows Task Manager can do all this and more without any regard for
+TuTTY settings. However, having a window without caption buttons may be useful
+in certain situations, as this would help preventing \e{accidental} window
+manipulation.
+This feature is mentioned in PuTTY wishlist as non-enhancement never to be
+implemented: \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/wishlist/inhibit-close.html}{inhibit-close}. I do not agree, in my view this is very useful
+thing and that is why I implemented it.
+
+\b Serial communication: ability to use serial communication links, devices,
+modems and other equipment that is connected via serial lines. This feature,
+when it first appeared in mid-2003, was intended to be used with Avaya equipment
+via direct serial links or remotely via modems. There was no serial backend in
+original PuTTY at that time, so I had to implement it myself. Since then, PuTTY
+developers wrote their own version of serial backend that is included since
+version 0.59; however it lacks several important (at least, for me) features and
+is more generic, so to speak. For this reason, I decided not to abandon my own
+serial backend implementation at this time, although PuTTY's is more portable and
+certainly deserves some consideration.
+There's PuTTY wishlist item as well: \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/wishlist/serial-backend.html}{serial-backend}

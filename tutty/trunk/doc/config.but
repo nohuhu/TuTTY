@@ -1062,11 +1062,13 @@ see \k{config-features-shaping}.
 
 \cfg{winhelp-topic}{features.bottombuttons}
 
-This feature is intended for using with AT&T 513 terminal mode and
-does not provide anything helpful for any other terminal. If this
-box is ticked, TuTTY would display a row of buttons near the bottom
-of the main window, labeled with function key names and short function
-descriptions:
+This feature is intended for using with AT&T 513 and Sun Xterm terminal
+modes and does not provide anything helpful for any other terminal. When
+this box is ticked, TuTTY will display a row of buttons near the bottom
+of the terminal window, labeled with function key names and/or short
+function descriptions.
+
+In AT&T 513 mode:
 
 \c F1 - Help
 \c F2 - Refresh
@@ -1077,12 +1079,11 @@ descriptions:
 \c F7 - Next page
 \c F8 - Prev page
 
-Pressing a button with a mouse click will send the respective function 
-key code to the server. Pressing a function key on the keyboard will push
-the respective button visibly.
+In Sun Xterm mode the buttons will have only F-number labels since relevant
+function names are displayed within terminal itself.
 
-\e{Be warned} that this feature is highly experimental and it is not
-recommended to turn it on, this may lead to unpredictable TuTTY behaviour.
+Pressing a button with a mouse click will send the respective function 
+key code to the server.
 
 \H{config-window} The Window panel
 
@@ -1687,16 +1688,17 @@ display it as normal text or it can change the colour of this text.
 Displaying underlined text with different font is not supported.
 
 By default the box is unchecked, so underlined text is displayed the same
-as normal. Checking this box will add the \q{Underline} strings to
+way as normal. Checking this box will add the \q{Underline} items to
 the colour selection list box so you can change these settings. Note
 that checking the box will not change any colour, it will only display
-these selections. If you don't change them, they will work as normal.
+the items for these colours. If you don't change colours, selected text
+will be displayed as normal text.
 
 \S{config-selectedcolour} \q{Selected text is a different colour}
 
 \cfg{winhelp-topic}{colours.selected}
 
-When you select the text in main window using mouse, usually selection
+When you select some text in main window using mouse, usually selection
 area's colour is inversed, i.e. if normal text is displayed as
 yellow-on-blue, selecting it will change colour to blue-on-yellow.
 "Selected as different colour" feature changes this behaviour and allows
@@ -1900,14 +1902,36 @@ characters: it is done deliberately to avoid case sensitivity
 problems. TuTTY matches the \q{expect} word against the input
 data exactly as it is defined in the script, i.e. if you enter
 \q{login:} and server sends you \q{Login:} with capital \q{L}
-it wouldn't match and the script wouldn't work. Also note that
-from TuTTY perspective, there's no distinction between the login
-procedure and anything that happen after it, for TuTTY it's just
-a string of except-send pairs and it will try to apply these
-pairs till the session ends or till all pairs are worked out.
-So if something goes wrong and expect-send pair doesn't work
-when you expect it to, don't be too surprised if it would work
-somewhen else when TuTTY sees the expect word in the input.
+it won't match and the script won't work.
+
+If you need to expect or send more than one word with space(s)
+between them, enclose the whole sentence in double quotes. If you
+need to send some text without receiving something first, use
+double-double-quote. Think of it as "empty string between quotes".
+If you put such empty expect at the very beginning of the script,
+TuTTY will not wait for any text to come up on terminal, but will
+run chat-script immediately. This may be helpful communicating with
+devices that expect your side to say something first.
+
+There is a limit on overall chat-script length, it should not exceed
+512 characters. There is no arbitrary limit on number of expect-send
+pairs.
+
+\e{Note} that a chat-script is really dumb and it has no knowledge
+whatsoever of what's going on in the terminal. From TuTTY perspective,
+there's no distinction between the login procedure and anything
+happening after it, for TuTTY it's just a string of except-send
+pairs and it will try to apply these pairs until the session ends
+or until all pairs are worked out. So if something goes wrong and
+chat-script doesn't work when you expect it to, don't be too
+surprised if it would work somewhen else when TuTTY sees the expect
+word in the input. It can even be worse: TuTTY can see a part of
+some other, absolutely unconnected word, and react with programmed
+response. Time is another thing that is not considered and it may
+be weeks between "login" and "password" pairs.
+
+In short, the chat-script is as potentially dangerous and
+unpredictable as it is useful. Handle With Care.
 
 \H{config-data} The Data panel
 
@@ -2222,8 +2246,6 @@ octets. Allowed values are: 1, 1.5 and 2. Default is 1.
 \b \q{Flow control:} the method of synchronizing data flows between
 \i{DTE} and \i{DCE}. Allowed values: \q{None}, \I{RTS/CTS}\q{RTS/CTS} and
 \I{XON/XOFF}\q{XON/XOFF}.
-
-For detailed explanations of these settings see \k{using-serial}.
 
 \S{config-dialing} \q{Dialing options}
 
