@@ -28,7 +28,7 @@ project based on PuTTY. Though genuine PuTTY written by Simon Tatham &
 his colleagues supports Linux and other operating systems, TuTTY works
 only on the Win32 platform. Therefore, non-Windows utilities available
 with PuTTY are not available with TuTTY and are not covered in this
-manual.
+manual. More information on TuTTY vs PuTTY difference see in \k{tutty-differences}.
 
 \copyright This manual is copyright 2001-2005 Simon Tatham. All
 rights reserved. You may distribute this documentation under the MIT

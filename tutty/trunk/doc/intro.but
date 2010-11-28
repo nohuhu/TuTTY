@@ -139,7 +139,7 @@ first the serial port is opened with specified settings: \i{Port speed},
 \i{Parity}, number of \i{Data bits}, number of \i{Stop bits} and \i{Flow 
 control} mode. You should know the settings supported by the other side of 
 serial connection (either modem or directly connected device), otherwise 
-connection wouldn't function. If you don't know these settings, try to 
+connection will not function. If you don't know these settings, try to 
 leave them to default: 9600 bits per second, 8 data bits, none parity, 
 1 stop bit and no flow control. Chances are, these settings are also 
 default on the other side as well.
@@ -148,9 +148,9 @@ See \k{using-serial} for more detailed explanations of serial communication.
 
 \H{tutty-differences} What is the difference between TuTTY and PuTTY?
 
-As I already said, TuTTY is in fact PuTTY with extra features. Nothing
+As I said already, TuTTY is in fact PuTTY with extra features. Nothing of what
 original PuTTY had was removed, so you can safely assume that if feature
-'X' was announced in PuTTY X.Y, then it is available in TuTTY X.Y.Z.W.
+'X' was announced in PuTTY X.Y, then it is available in TuTTY X.Y.z.w.
 
 So, what is the difference? It's in additional tricks TuTTY can do:
 
@@ -212,4 +212,4 @@ version 0.59; however it lacks several important (at least, for me) features and
 is more generic, so to speak. For this reason, I decided not to abandon my own
 serial backend implementation at this time, although PuTTY's is more portable and
 certainly deserves some consideration.
-There's PuTTY wishlist item as well: \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/wishlist/serial-backend.html}{serial-backend}
+There's PuTTY wishlist item as well: \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/wishlist/serial-backend.html}{serial-backend}.

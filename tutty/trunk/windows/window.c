@@ -2489,6 +2489,8 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 //		    EnableMenuItem(m, IDM_LICENSE, MF_BYCOMMAND |
 //				   (cfg.funky_type == FUNKY_ATT513)
 //				   ? MF_ENABLED : MF_GRAYED);
+		    /* Disable Close button if configuration tells us so */
+		    EnableMenuItem(m, SC_CLOSE, cfg.window_closable ? MF_ENABLED : MF_GRAYED);
 		}
 
 		/* Pass new config data to the logging module */
@@ -2560,7 +2562,18 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 		    else
 			nflg |= WS_THICKFRAME;
 
-		    if (cfg.resize_action == RESIZE_DISABLED)
+		    if (!cfg.window_has_sysmenu)
+			nflg &= ~WS_SYSMENU;
+		    else
+			nflg |= WS_SYSMENU;
+
+		    if (!cfg.window_minimizable)
+			nflg &= ~WS_MINIMIZEBOX;
+		    else
+			nflg |= WS_MINIMIZEBOX;
+
+		    if (cfg.resize_action == RESIZE_DISABLED ||
+			!cfg.window_maximizable)
 			nflg &= ~WS_MAXIMIZEBOX;
 		    else
 			nflg |= WS_MAXIMIZEBOX;

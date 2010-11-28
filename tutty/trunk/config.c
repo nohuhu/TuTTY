@@ -2439,23 +2439,26 @@ void setup_config_box(Config *cfg, struct controlbox *b, struct sesslist *sessli
 		      "Options controlling Serial connections");
 	s = ctrl_getset(b, "Connection/Serial", "settings",
 			"Serial port settings");
-	spd = (struct serialpanel_data *)
-	    ctrl_alloc(b, sizeof(struct serialpanel_data));
-	spd->baud = ctrl_droplist(s, "Baud rate:", 'b', 40,
-				  HELPCTX(serial_portsettings),
-				  serialpanel_handler, P(spd));
-	spd->datab = ctrl_droplist(s, "Data bits:", 'd', 40,
-				   HELPCTX(serial_portsettings),
-				   serialpanel_handler, P(spd));
-	spd->parity = ctrl_droplist(s, "Parity:", 'p', 40,
-				    HELPCTX(serial_portsettings),
-				    serialpanel_handler, P(spd));
-	spd->stopb = ctrl_droplist(s, "Stop bits:", 's', 40,
-				   HELPCTX(serial_portsettings),
-				   serialpanel_handler, P(spd));
-	spd->flowctrl = ctrl_droplist(s, "Flow control:", 'f', 40,
-				      HELPCTX(serial_portsettings),
-				      serialpanel_handler, P(spd));
+
+	if (!midsession) {
+	    spd = (struct serialpanel_data *)
+		ctrl_alloc(b, sizeof(struct serialpanel_data));
+	    spd->baud = ctrl_droplist(s, "Baud rate:", 'b', 40,
+		HELPCTX(serial_portsettings),
+		serialpanel_handler, P(spd));
+	    spd->datab = ctrl_droplist(s, "Data bits:", 'd', 40,
+		HELPCTX(serial_portsettings),
+		serialpanel_handler, P(spd));
+	    spd->parity = ctrl_droplist(s, "Parity:", 'p', 40,
+		HELPCTX(serial_portsettings),
+		serialpanel_handler, P(spd));
+	    spd->stopb = ctrl_droplist(s, "Stop bits:", 's', 40,
+		HELPCTX(serial_portsettings),
+		serialpanel_handler, P(spd));
+	    spd->flowctrl = ctrl_droplist(s, "Flow control:", 'f', 40,
+		HELPCTX(serial_portsettings),
+		serialpanel_handler, P(spd));
+	};
 
 	s = ctrl_getset(b, "Connection/Serial", "dialing",
 			"Dialing options");

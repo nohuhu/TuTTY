@@ -551,7 +551,7 @@ To start a connection to a server called \c{host}:
 
 \c tutty.exe [-ssh | -telnet | -rlogin | -raw] [user@]host
 
-To connect to a port COMx, use:
+To connect to a serial port COMx, use:
 
 \c tutty.exe -serial COMx
 
