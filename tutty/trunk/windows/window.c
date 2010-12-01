@@ -1102,16 +1102,8 @@ char *do_select(SOCKET skt, int startup)
  */
 static void update_savedsess_menu(void)
 {
-    int i;
     while (DeleteMenu(savedsess_menu, 0, MF_BYPOSITION)) ;
-    /* skip sesslist.sessions[0] == Default Settings */
-    for (i = 1;
-	 i < ((sesslist.nsessions <= MENU_SAVED_MAX+1) ? sesslist.nsessions
-						       : MENU_SAVED_MAX+1);
-	 i++)
-	AppendMenu(savedsess_menu, MF_ENABLED,
-		   IDM_SAVED_MIN + (i-1)*MENU_SAVED_STEP,
-		   sesslist.sessions[i]);
+    savedsess_menu = menu_addsession(savedsess_menu, "");
 }
 
 /*
@@ -2273,9 +2265,9 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	if ((HMENU)wParam == savedsess_menu) {
 	    /* About to pop up Saved Sessions sub-menu.
 	     * Refresh the session list. */
-	    get_sesslist(&cfg.sessionroot, &sesslist, "", FALSE); /* free */
-	    get_sesslist(&cfg.sessionroot, &sesslist, "", TRUE);
-	    update_savedsess_menu();
+//	    get_sesslist(&cfg.sessionroot, &sesslist, "", FALSE); /* free */
+//	    get_sesslist(&cfg.sessionroot, &sesslist, "", TRUE);
+//	    update_savedsess_menu();
 	    return 0;
 	}
 	break;
@@ -2415,12 +2407,16 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 		    sprintf(c, "putty &%p", filemap);
 		    cl = c;
 		} else if (wParam == IDM_SAVEDSESS) {
-		    unsigned int sessno = ((lParam - IDM_SAVED_MIN)
-					   / MENU_SAVED_STEP) + 1;
-		    if (sessno < (unsigned)sesslist.nsessions) {
-			char *session = sesslist.sessions[sessno];
+		    MENUITEMINFO mii;
+
+		    memset(&mii, 0, sizeof(MENUITEMINFO));
+		    mii.cbSize = sizeof(MENUITEMINFO);
+		    mii.fMask = MIIM_DATA;
+
+		    if (GetMenuItemInfo(GetSystemMenu(hwnd, FALSE), lParam, FALSE, &mii)) {
+			char *session = (char *)mii.dwItemData;
 			/* XXX spaces? quotes? "-load"? */
-			cl = dupprintf("putty @%s", session);
+			cl = dupprintf("tutty @%s", session);
 			inherit_handles = FALSE;
 			freecl = TRUE;
 		    } else

@@ -87,7 +87,7 @@ HMENU menu_addsession(HMENU menu, char *root)
 
     if (GetMenuItemCount(menu) == 0)
 	AppendMenu(menu, MF_STRING | MF_GRAYED, IDM_EMPTY,
-		   "(No saved sessions)");
+		   "(Empty)");
 
     return menu;
 };
