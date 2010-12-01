@@ -132,12 +132,13 @@ void config_protocolbuttons_handler(union control *ctrl, void *dlg,
 	      case PROT_SSH: defport = 22; break;
 	      case PROT_TELNET: defport = 23; break;
 	      case PROT_RLOGIN: defport = 513; break;
-          case PROT_SERIAL: defport = 1; break;
+	      case PROT_SERIAL: defport = 1; break;
 	    }
 	    if (cfg->protocol == PROT_SERIAL) {
 		dlg_setcontroltext(pbd->host, dlg, PHONE_NUMBER_OR_BLANK);
 		dlg_refresh(pbd->host, dlg);
 		dlg_refresh(pbd->port, dlg);
+		cfg->port = dlg_listbox_getid(pbd->port, dlg, dlg_listbox_index(pbd->port, dlg));
 	    } else {
 		dlg_setcontroltext(pbd->host, dlg, HOST_BOX_TITLE);
 		dlg_refresh(pbd->host, dlg);
