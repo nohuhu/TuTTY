@@ -22,8 +22,8 @@ char sshver[] = "TuTTY-Snapshot-" SNAPSHOT_TEXT;
 
 #elif defined RELEASE
 
-char ver[] = "Release " STR(RELEASE) " build " STR(BUILDNUMBER);
-char sshver[] = "PuTTY-Release-" STR(RELEASE);
+char ver[] = "Release " STR(RELEASE);
+char sshver[] = "TuTTY-Release-" STR(RELEASE);
 
 #elif defined SVN_REV
 

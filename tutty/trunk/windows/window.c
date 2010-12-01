@@ -2301,7 +2301,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
     case WM_DRAWITEM:
 	{
 	    LPDRAWITEMSTRUCT di = (LPDRAWITEMSTRUCT) lParam;
-	    HICON icon;
+	    HICON icon = NULL;
 	    int x, y;
 	    char *name, *path;
 	    int selected = 0;
@@ -2338,7 +2338,9 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message,
 	    } else {
 		char buf[2048], ipath[2048];
 
-		buf[0] = '\0';
+		memset(buf, 0, 2048);
+		memset(ipath, 0, 2048);
+
 		ses_make_path("", path, buf, 2048);
 		ses_read_s(&cfg.sessionroot, buf, SESSIONICON, "", ipath, 2048);
 		icon = extract_icon(ipath);
