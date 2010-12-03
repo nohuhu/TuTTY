@@ -48,7 +48,7 @@ RSC=rc.exe
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x809 /d "NDEBUG"
-# ADD RSC /l 0x809 /d "NDEBUG" /d "SERIAL_BACKEND"
+# ADD RSC /l 0x809 /i "..\.." /d "NDEBUG" /d RELEASE=0.60.2.0
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -75,7 +75,7 @@ LINK32=link.exe
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x809 /d "_DEBUG"
-# ADD RSC /l 0x809 /d "_DEBUG" /d "SERIAL_BACKEND"
+# ADD RSC /l 0x809 /i "..\.." /d "_DEBUG" /d SNAPSHOT=0.60.2.0
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -372,7 +372,7 @@ SOURCE=..\..\.\puttycfg.ico
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\windows\win_res.rc
+SOURCE=..\..\windows\tuttytel.rc
 # End Source File
 # End Group
 # End Target

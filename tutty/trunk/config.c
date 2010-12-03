@@ -2293,18 +2293,15 @@ void setup_config_box(Config *cfg, struct controlbox *b, struct sesslist *sessli
 	if (!midsession) {
 	    s = ctrl_getset(b, "Connection", "script",
 			    "Login script options");
-	    ctrl_columns(s, 2, 20, 80);
-	    c = ctrl_checkbox(s, "Enable", 'e',
+	    c = ctrl_checkbox(s, "Enable chat-script processing", 'e',
 			      HELPCTX(connection_script),
 			      dlg_stdcheckbox_handler,
 			      I(offsetof(Config, secondary)));
-	    c->generic.column = 0;
 	    c = ctrl_editbox(s, "Script:", 'i', 84,
 			     HELPCTX(connection_script),
 			     dlg_stdeditbox_handler,
 			     I(offsetof(Config, secondaryscript)),
 			     I(sizeof(((Config *) 0)->secondaryscript)));
-	    c->generic.column = 1;
 	};
 
 	/*

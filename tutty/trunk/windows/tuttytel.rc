@@ -1,4 +1,5 @@
 #include "rcstuff.h"
+#include "build.h"
 
 #define APPNAME "TuTTYtel"
 #define APPDESC "Telnet and Rlogin client based on PuTTYtel"

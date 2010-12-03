@@ -41,8 +41,6 @@
 
 #if defined SNAPSHOT
 
-#include "build.h"
-
 /* Make SVN_REV mandatory for snapshots, to avoid issuing binary
  * version numbers that look like full releases. */
 #ifndef SVN_REV
