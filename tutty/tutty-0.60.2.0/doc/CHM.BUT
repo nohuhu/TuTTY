@@ -1,0 +1,23 @@
+\# File containing the magic HTML configuration directives to create
+\# an MS HTML Help project. We put this on the end of the PuTTY
+\# docs build command line to build the HHP and friends.
+
+\cfg{html-leaf-level}{infinite}
+\cfg{html-leaf-contains-contents}{false}
+\cfg{html-suppress-navlinks}{true}
+\cfg{html-suppress-address}{true}
+
+\cfg{html-contents-filename}{index.html}
+\cfg{html-template-filename}{%k.html}
+\cfg{html-template-fragment}{%k}
+
+\cfg{html-mshtmlhelp-chm}{tutty.chm}
+\cfg{html-mshtmlhelp-project}{tutty.hhp}
+\cfg{html-mshtmlhelp-contents}{tutty.hhc}
+\cfg{html-mshtmlhelp-index}{tutty.hhk}
+
+\cfg{html-body-end}{}
+
+\cfg{html-head-end}{<link rel="stylesheet" type="text/css" href="chm.css">}
+
+\versionid $Id: chm.but 7272 2007-02-11 18:13:56Z jacob $

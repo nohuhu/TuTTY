@@ -1,0 +1,215 @@
+\define{versionidintro} \versionid $Id: intro.but 5593 2005-04-05 18:01:32Z jacob $
+
+\C{intro} Introduction to TuTTY
+
+TuTTY is a free SSH, Telnet, Rlogin and Serial client for 32-bit 
+Windows systems. TuTTY is based on PuTTY (c) Simon Tatham.
+
+Before you go any further, I'd like to mention that the word \e{based}
+should be taken literally. Essentially, TuTTY is no more than a pack
+of patches and additions to PuTTY, and not a large pack at all: about
+90% of the code is genuine written by Simon Tatham and his colleagues.
+I'm always trying to update TuTTY to latest released PuTTY code to provide
+all new features and fixes made by Simon & Co. The vice versa situation
+does not exist so all features that differentiate TuTTY from PuTTY are
+available in TuTTY only. TuTTY 0.60.2.0 is based on the PuTTY 0.60
+release code, TuTTY's own major version is 2 and minor version is 0.
+If you have a development snapshot then you may take a look at the
+revision number as well, it may be helpful for reporting any bugs and
+describing problems.
+
+In short: TuTTY is the latest released PuTTY with extra features. See
+\k{tutty-differences} for more explanations of TuTTY vs PuTTY differences
+and explicit list of TuTTY features. 
+
+Having said all this, I must add that this manual mostly contains
+descriptions of PuTTY features. TuTTY features are also described but
+not always completely. Since TuTTY is heavily based on PuTTY, I didn't
+change \e{all} occurences of the name \q{PuTTY} in this manual. Wherever
+you find it, know that all descriptions are applied equally to TuTTY.
+Some sections I decided to leave as is: for example, the FAQ. It does
+not mention TuTTY at all but can be applied to it. That's because I think
+that answering any questions before they're even asked is a bit stupid, 
+and also it lessens the burden of proofreading and changing about 400 
+kilobytes of complete documentation set.
+
+\H{you-what} What are SSH, Telnet and Rlogin?
+
+If you already know what SSH, Telnet and Rlogin are, you can safely
+skip on to the next section.
+
+SSH, Telnet and Rlogin are three ways of doing the same thing:
+logging in to a multi-user computer from another computer, over a
+network.
+
+Multi-user operating systems, such as Unix and VMS, usually present
+a \i{command-line interface} to the user, much like the \q{\i{Command
+Prompt}} or \q{\i{MS-DOS Prompt}} in Windows. The system prints a
+prompt, and you type commands which the system will obey.
+
+Using this type of interface, there is no need for you to be sitting
+at the same machine you are typing commands to. The commands, and
+responses, can be sent over a network, so you can sit at one
+computer and give commands to another one, or even to more than one.
+
+SSH, Telnet and Rlogin are \i\e{network protocols} that allow you to
+do this. On the computer you sit at, you run a \i\e{client}, which
+makes a network connection to the other computer (the \i\e{server}).
+The network connection carries your keystrokes and commands from the
+client to the server, and carries the server's responses back to
+you.
+
+These protocols can also be used for other types of keyboard-based
+interactive session. In particular, there are a lot of bulletin
+boards, \i{talker systems} and \i{MUDs} (Multi-User Dungeons) which support
+access using Telnet. There are even a few that support SSH.
+
+You might want to use SSH, Telnet or Rlogin if:
+
+\b you have an account on a Unix or VMS system which you want to be
+able to access from somewhere else
+
+\b your Internet Service Provider provides you with a login account
+on a \i{web server}. (This might also be known as a \i\e{shell account}.
+A \e{shell} is the program that runs on the server and interprets
+your commands for you.)
+
+\b you want to use a \i{bulletin board system}, talker or MUD which can
+be accessed using Telnet.
+
+You probably do \e{not} want to use SSH, Telnet or Rlogin if:
+
+\b you only use Windows. Windows computers have their own
+ways of networking between themselves, and unless you are doing
+something fairly unusual, you will not need to use any of these
+remote login protocols.
+
+\H{which-one} How do SSH, Telnet and Rlogin differ?
+
+This list summarises some of the \i{differences between SSH, Telnet
+and Rlogin}.
+
+\b SSH (which stands for \q{\i{secure shell}}) is a recently designed,
+high-security protocol. It uses strong cryptography to protect your
+connection against eavesdropping, hijacking and other attacks. Telnet
+and Rlogin are both older protocols offering minimal security.
+
+\b SSH and Rlogin both allow you to \I{passwordless login}log in to the
+server without having to type a password. (Rlogin's method of doing this is
+insecure, and can allow an attacker to access your account on the
+server. SSH's method is much more secure, and typically breaking the
+security requires the attacker to have gained access to your actual
+client machine.)
+
+\b SSH allows you to connect to the server and automatically send a
+command, so that the server will run that command and then
+disconnect. So you can use it in automated processing.
+
+The Internet is a hostile environment and security is everybody's
+responsibility. If you are connecting across the open Internet, then
+we recommend you use SSH. If the server you want to connect to
+doesn't support SSH, it might be worth trying to persuade the
+administrator to install it.
+
+If your client and server are both behind the same (good) firewall,
+it is more likely to be safe to use Telnet or Rlogin, but we still
+recommend you use SSH.
+
+\H{serial-what} What is Serial protocol?
+
+A serial port communication protocol is the most used of the legacy
+communication protocols. Almost all hardware devices related to
+computing world and many of the others support \i{serial communication}.
+Many older devices do not support any other protocols. Therefore it is
+very beneficial for a terminal client to have support for this protocol.
+
+Unlike the protocols described above, Serial does not have any relation
+to TCP/IP networking. It is used in combination with specific hardware
+chip called \i{UART} (Universal Asynchronous Receiver Transmitter) or a 
+software emulation of this chip. This chip provides an \i{asynchronous mode}
+of serial communication. Some devices support \i{synchronous serial mode} but
+it is not available in TuTTY.
+
+There are two mostly used scenarios involved with serial ports: either
+a computer serial port is used to connect to a serial port of another
+device directly with a straight cable, or a serial port is used to connect 
+to a piece of hardware called \i{modem} (MOdulator DEModulator) that is 
+used to connect to another modem over the phone line. In either case, 
+first the serial port is opened with specified settings: \i{Port speed}, 
+\i{Parity}, number of \i{Data bits}, number of \i{Stop bits} and \i{Flow 
+control} mode. You should know the settings supported by the other side of 
+serial connection (either modem or directly connected device), otherwise 
+connection will not function. If you don't know these settings, try to 
+leave them to default: 9600 bits per second, 8 data bits, none parity, 
+1 stop bit and no flow control. Chances are, these settings are also 
+default on the other side as well.
+
+See \k{using-serial} for more detailed explanations of serial communication.
+
+\H{tutty-differences} What is the difference between TuTTY and PuTTY?
+
+As I said already, TuTTY is in fact PuTTY with extra features. Nothing of what
+original PuTTY had was removed, so you can safely assume that if feature
+'X' was announced in PuTTY X.Y, then it is available in TuTTY X.Y.z.w.
+
+So, what is the difference? It's in additional tricks TuTTY can do:
+
+\b Session Folders. PuTTY stores its saved sessions as plain one-level
+list, sorted alphabetically. This is not very convenient, especially if
+there's a lot of saved sessions and/or a need to group them by some criteria.
+TuTTY allows you to create folders and store sessions in folders, just like
+you would do with regular files. This feature is not backwards-compatible to
+vanilla PuTTY, i.e. PuTTY will not see any sessions saved by TuTTY in folders
+deeper than root. PuTTY also sees folders as regular sessions.
+There's more on that in PuTTY wishlist: \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/wishlist/many-sessions.html}{many-sessions}.
+
+\b Session Icons. Very simple, but handy feature: you can assign an icon
+to a session, and these of course can be different. The icon you assign will
+be displayed in session list, in Windows taskbar - in short, everywhere. Makes
+it real easy to distinguish between running sessions.
+This feature corresponds with PuTTY wish \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/wishlist/session-icon.html}{session-icon}.
+
+\b Scripting. TuTTY implements very basic, yet immensely useful scripting
+in form of Cisco-like chat-script. Essentially, it's a combination of several
+expect-response pairs configured for a session, and these pairs are run in
+sequence upon terminal input. It is primarily intended for automation of routine
+tasks, see more in \k{config-connection-script}.
+This feature loosely corresponds with PuTTY wish \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/wishlist/scripting.html}{scripting}.
+
+\b Display enhancements: Underlined text and Selected area colours are
+configurable in TuTTY. See more in \k{config-underlinecolour} and \k{config-selectedcolour},
+albeit there's not that much more to see.
+These features are also mentioned in PuTTY wishlist: \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/wishlist/sgr-as-colours.html}{sgr-as-colours}
+and \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/wishlist/sel-colours.html}{sel-colours}.
+
+\b Terminal enhancements: support for AT&T 513 terminal escape sequences and
+functional keys, support for specialized applications working in Sun Xterm
+environment. This feature is intended to be used with Avaya equipment such
+as Definity/Communication Manager phone switches, CMS reporting system etc.
+If you administer Avaya equipment, you're probably already familiar with what
+is involved.
+
+\b Additional configurable window behaviour options. In TuTTY, you can disable
+Close, Minimize and Maximize caption buttons as well as upper-left-corner
+system menu, and store these settings in saved session. This feature is NOT
+intended for security purposes as there are alternative methods of closing,
+minimizing, maximizing or otherwise manipulating an application window - for
+example, Windows Task Manager can do all this and more without any regard for
+TuTTY settings. However, having a window without caption buttons may be useful
+in certain situations, as this would help preventing \e{accidental} window
+manipulation.
+This feature is mentioned in PuTTY wishlist as non-enhancement never to be
+implemented: \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/wishlist/inhibit-close.html}{inhibit-close}. I do not agree, in my view this is very useful
+thing and that is why I implemented it.
+
+\b Serial communication: ability to use serial communication links, devices,
+modems and other equipment that is connected via serial lines. This feature,
+when it first appeared in mid-2003, was intended to be used with Avaya equipment
+via direct serial links or remotely via modems. There was no serial backend in
+original PuTTY at that time, so I had to implement it myself. Since then, PuTTY
+developers wrote their own version of serial backend that is included since
+version 0.59; however it lacks several important (at least, for me) features and
+is more generic, so to speak. For this reason, I decided not to abandon my own
+serial backend implementation at this time, although PuTTY's is more portable and
+certainly deserves some consideration.
+There's PuTTY wishlist item as well: \W{http://www.chiark.greenend.org.uk/~sgtatham/putty/wishlist/serial-backend.html}{serial-backend}.
