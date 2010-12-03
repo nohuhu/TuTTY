@@ -5,24 +5,24 @@
 #
 # Extra options you can set:
 #
-#  - VER=-d SNAPSHOT=1999-01-25
+#  - VER="-d SNAPSHOT=1999-01-25 -d SVN_REV=1234"
 #      Generates executables whose About box report them as being a
-#      development snapshot.
+#      development snapshot. SVN_REV is a Subversion revision number.
 #
 #  - VER=-d RELEASE=0.43
 #      Generates executables whose About box report them as being a
 #      release version.
 #
-#  - COMPAT=-d AUTO_WINSOCK
+#  - COMPAT=-d AUTO_WINSOCK (Windows only)
 #      Causes PuTTY to assume that <windows.h> includes its own WinSock
 #      header file, so that it won't try to include <winsock.h>.
 #
-#  - COMPAT=-d WINSOCK_TWO
+#  - COMPAT=-d WINSOCK_TWO (Windows only)
 #      Causes the PuTTY utilities to include <winsock2.h> instead of
 #      <winsock.h>, except Plink which _needs_ WinSock 2 so it already
 #      does this.
 #
-#  - COMPAT=-d NO_SECURITY
+#  - COMPAT=-d NO_SECURITY (Windows only)
 #      Disables Pageant's use of <aclapi.h>, which is not available
 #      with some development environments (such as older versions of
 #      the Cygwin/mingw GNU toolchain). This means that Pageant
@@ -32,7 +32,7 @@
 #      will run fine on Win95-series OSes where there is no access
 #      control anyway).
 #
-#  - COMPAT=-d NO_MULTIMON
+#  - COMPAT=-d NO_MULTIMON (Windows only)
 #      Disables PuTTY's use of <multimon.h>, which is not available
 #      with some development environments. This means that PuTTY's
 #      full-screen mode (configurable to work on Alt-Enter) will
@@ -42,17 +42,34 @@
 #      build, since at the time of writing this <multimon.h> is
 #      known not to be available in Cygwin.
 #
+#  - COMPAT=-d NO_HTMLHELP (Windows only)
+#      Disables PuTTY's use of <htmlhelp.h>, which is not available
+#      with some development environments. The resulting binary
+#      will only look for an old-style WinHelp file (.HLP/.CNT), and
+#      will ignore any .CHM file.
+#
+#      Note that this definition is always enabled in the Cygwin
+#      build, since at the time of writing this <htmlhelp.h> is
+#      known not to be available in Cygwin (although you can use
+#      the htmlhelp.h supplied with HTML Help Workshop).
+#
+#  - RCFL=-d NO_MANIFESTS (Windows only)
+#      Disables inclusion of XML application manifests in the PuTTY
+#      binaries. This may be necessary to build for 64-bit Windows;
+#      the manifests are only included to use the XP GUI style on
+#      Windows XP, and the architecture tags are a lie on 64-bit.
+#
 #  - COMPAT=-d NO_IPV6
 #      Disables PuTTY's ability to make IPv6 connections, enabling
 #      it to compile under development environments which do not
 #      support IPv6 in their header files.
 #
-#  - COMPAT=-d MSVC4
+#  - COMPAT=-d MSVC4 (Windows only)
 #  - RCFL=-d MSVC4
 #      Makes a couple of minor changes so that PuTTY compiles using
-#      MSVC 4. You will also need /DNO_SECURITY and /DNO_MULTIMON.
+#      MSVC 4. You will also need -d NO_SECURITY and -d NO_MULTIMON.
 #
-#  - RCFL=-d ASCIICTLS
+#  - RCFL=-d ASCIICTLS (Windows only)
 #      Uses ASCII rather than Unicode to specify the tab control in
 #      the resource file. Probably most useful when compiling with
 #      Cygnus/mingw32, whose resource compiler may have less of a
@@ -70,7 +87,7 @@
 #      Causes PuTTY to emit a file called putty_mem.log, logging every
 #      memory allocation and free, so you can track memory leaks.
 #
-#  - XFLAGS=-d MINEFIELD
+#  - XFLAGS=-d MINEFIELD (Windows only)
 #      Causes PuTTY to use a custom memory allocator, similar in
 #      concept to Electric Fence, in place of regular malloc(). Wastes
 #      huge amounts of RAM, but should cause heap-corruption bugs to
@@ -166,14 +183,14 @@ PuTTY.68k Ä be_all.68k.o config.68k.o cproxy.68k.o dialog.68k.o ¶
 		mtcpnet.68k.o otnet.68k.o pinger.68k.o portfwd.68k.o ¶
 		pproxy.68k.o proxy.68k.o raw.68k.o rlogin.68k.o sbcs.68k.o ¶
 		sbcsdat.68k.o settings.68k.o slookup.68k.o ssh.68k.o ¶
-		sshaes.68k.o sshblowf.68k.o sshbn.68k.o sshcrc.68k.o ¶
-		sshcrcda.68k.o sshdes.68k.o sshdh.68k.o sshdss.68k.o ¶
-		sshmd5.68k.o sshpubk.68k.o sshrand.68k.o sshrsa.68k.o ¶
-		sshsh512.68k.o sshsha.68k.o sshzlib.68k.o stricmp.68k.o ¶
-		telnet.68k.o terminal.68k.o testback.68k.o timing.68k.o ¶
-		toucs.68k.o tree234.68k.o utf8.68k.o version.68k.o ¶
-		vsnprint.68k.o wcwidth.68k.o wildcard.68k.o x11fwd.68k.o ¶
-		xenc.68k.o mac_res.rsrc
+		sshaes.68k.o ssharcf.68k.o sshblowf.68k.o sshbn.68k.o ¶
+		sshcrc.68k.o sshcrcda.68k.o sshdes.68k.o sshdh.68k.o ¶
+		sshdss.68k.o sshmd5.68k.o sshpubk.68k.o sshrand.68k.o ¶
+		sshrsa.68k.o sshsh256.68k.o sshsh512.68k.o sshsha.68k.o ¶
+		sshzlib.68k.o stricmp.68k.o telnet.68k.o terminal.68k.o ¶
+		testback.68k.o timing.68k.o toucs.68k.o tree234.68k.o ¶
+		utf8.68k.o version.68k.o vsnprint.68k.o wcwidth.68k.o ¶
+		wildcard.68k.o x11fwd.68k.o xenc.68k.o mac_res.rsrc
 	Duplicate -y mac_res.rsrc {Targ}
 	{Link_68K} -o {Targ} -fragname PuTTY {LinkOptions_68K} be_all.68k.o ¶
 		config.68k.o cproxy.68k.o dialog.68k.o fromucs.68k.o ¶
@@ -185,14 +202,14 @@ PuTTY.68k Ä be_all.68k.o config.68k.o cproxy.68k.o dialog.68k.o ¶
 		otnet.68k.o pinger.68k.o portfwd.68k.o pproxy.68k.o ¶
 		proxy.68k.o raw.68k.o rlogin.68k.o sbcs.68k.o sbcsdat.68k.o ¶
 		settings.68k.o slookup.68k.o ssh.68k.o sshaes.68k.o ¶
-		sshblowf.68k.o sshbn.68k.o sshcrc.68k.o sshcrcda.68k.o ¶
-		sshdes.68k.o sshdh.68k.o sshdss.68k.o sshmd5.68k.o ¶
-		sshpubk.68k.o sshrand.68k.o sshrsa.68k.o sshsh512.68k.o ¶
-		sshsha.68k.o sshzlib.68k.o stricmp.68k.o telnet.68k.o ¶
-		terminal.68k.o testback.68k.o timing.68k.o toucs.68k.o ¶
-		tree234.68k.o utf8.68k.o version.68k.o vsnprint.68k.o ¶
-		wcwidth.68k.o wildcard.68k.o x11fwd.68k.o xenc.68k.o ¶
-		{Libs_68K}
+		ssharcf.68k.o sshblowf.68k.o sshbn.68k.o sshcrc.68k.o ¶
+		sshcrcda.68k.o sshdes.68k.o sshdh.68k.o sshdss.68k.o ¶
+		sshmd5.68k.o sshpubk.68k.o sshrand.68k.o sshrsa.68k.o ¶
+		sshsh256.68k.o sshsh512.68k.o sshsha.68k.o sshzlib.68k.o ¶
+		stricmp.68k.o telnet.68k.o terminal.68k.o testback.68k.o ¶
+		timing.68k.o toucs.68k.o tree234.68k.o utf8.68k.o ¶
+		version.68k.o vsnprint.68k.o wcwidth.68k.o wildcard.68k.o ¶
+		x11fwd.68k.o xenc.68k.o {Libs_68K}
 	SetFile -a BMi {Targ}
 
 PuTTY.cfm68k Ä be_all.cfm68k.o config.cfm68k.o cproxy.cfm68k.o ¶
@@ -207,16 +224,17 @@ PuTTY.cfm68k Ä be_all.cfm68k.o config.cfm68k.o cproxy.cfm68k.o ¶
 		portfwd.cfm68k.o pproxy.cfm68k.o proxy.cfm68k.o raw.cfm68k.o ¶
 		rlogin.cfm68k.o sbcs.cfm68k.o sbcsdat.cfm68k.o ¶
 		settings.cfm68k.o slookup.cfm68k.o ssh.cfm68k.o ¶
-		sshaes.cfm68k.o sshblowf.cfm68k.o sshbn.cfm68k.o ¶
-		sshcrc.cfm68k.o sshcrcda.cfm68k.o sshdes.cfm68k.o ¶
-		sshdh.cfm68k.o sshdss.cfm68k.o sshmd5.cfm68k.o ¶
-		sshpubk.cfm68k.o sshrand.cfm68k.o sshrsa.cfm68k.o ¶
-		sshsh512.cfm68k.o sshsha.cfm68k.o sshzlib.cfm68k.o ¶
-		stricmp.cfm68k.o telnet.cfm68k.o terminal.cfm68k.o ¶
-		testback.cfm68k.o timing.cfm68k.o toucs.cfm68k.o ¶
-		tree234.cfm68k.o utf8.cfm68k.o version.cfm68k.o ¶
-		vsnprint.cfm68k.o wcwidth.cfm68k.o wildcard.cfm68k.o ¶
-		x11fwd.cfm68k.o xenc.cfm68k.o mac_res.rsrc
+		sshaes.cfm68k.o ssharcf.cfm68k.o sshblowf.cfm68k.o ¶
+		sshbn.cfm68k.o sshcrc.cfm68k.o sshcrcda.cfm68k.o ¶
+		sshdes.cfm68k.o sshdh.cfm68k.o sshdss.cfm68k.o ¶
+		sshmd5.cfm68k.o sshpubk.cfm68k.o sshrand.cfm68k.o ¶
+		sshrsa.cfm68k.o sshsh256.cfm68k.o sshsh512.cfm68k.o ¶
+		sshsha.cfm68k.o sshzlib.cfm68k.o stricmp.cfm68k.o ¶
+		telnet.cfm68k.o terminal.cfm68k.o testback.cfm68k.o ¶
+		timing.cfm68k.o toucs.cfm68k.o tree234.cfm68k.o ¶
+		utf8.cfm68k.o version.cfm68k.o vsnprint.cfm68k.o ¶
+		wcwidth.cfm68k.o wildcard.cfm68k.o x11fwd.cfm68k.o ¶
+		xenc.cfm68k.o mac_res.rsrc
 	Duplicate -y mac_res.rsrc {Targ}
 	{Link_CFM68K} -o {Targ} -fragname PuTTY {LinkOptions_CFM68K} ¶
 		be_all.cfm68k.o config.cfm68k.o cproxy.cfm68k.o ¶
@@ -231,16 +249,17 @@ PuTTY.cfm68k Ä be_all.cfm68k.o config.cfm68k.o cproxy.cfm68k.o ¶
 		portfwd.cfm68k.o pproxy.cfm68k.o proxy.cfm68k.o raw.cfm68k.o ¶
 		rlogin.cfm68k.o sbcs.cfm68k.o sbcsdat.cfm68k.o ¶
 		settings.cfm68k.o slookup.cfm68k.o ssh.cfm68k.o ¶
-		sshaes.cfm68k.o sshblowf.cfm68k.o sshbn.cfm68k.o ¶
-		sshcrc.cfm68k.o sshcrcda.cfm68k.o sshdes.cfm68k.o ¶
-		sshdh.cfm68k.o sshdss.cfm68k.o sshmd5.cfm68k.o ¶
-		sshpubk.cfm68k.o sshrand.cfm68k.o sshrsa.cfm68k.o ¶
-		sshsh512.cfm68k.o sshsha.cfm68k.o sshzlib.cfm68k.o ¶
-		stricmp.cfm68k.o telnet.cfm68k.o terminal.cfm68k.o ¶
-		testback.cfm68k.o timing.cfm68k.o toucs.cfm68k.o ¶
-		tree234.cfm68k.o utf8.cfm68k.o version.cfm68k.o ¶
-		vsnprint.cfm68k.o wcwidth.cfm68k.o wildcard.cfm68k.o ¶
-		x11fwd.cfm68k.o xenc.cfm68k.o {Libs_CFM68K}
+		sshaes.cfm68k.o ssharcf.cfm68k.o sshblowf.cfm68k.o ¶
+		sshbn.cfm68k.o sshcrc.cfm68k.o sshcrcda.cfm68k.o ¶
+		sshdes.cfm68k.o sshdh.cfm68k.o sshdss.cfm68k.o ¶
+		sshmd5.cfm68k.o sshpubk.cfm68k.o sshrand.cfm68k.o ¶
+		sshrsa.cfm68k.o sshsh256.cfm68k.o sshsh512.cfm68k.o ¶
+		sshsha.cfm68k.o sshzlib.cfm68k.o stricmp.cfm68k.o ¶
+		telnet.cfm68k.o terminal.cfm68k.o testback.cfm68k.o ¶
+		timing.cfm68k.o toucs.cfm68k.o tree234.cfm68k.o ¶
+		utf8.cfm68k.o version.cfm68k.o vsnprint.cfm68k.o ¶
+		wcwidth.cfm68k.o wildcard.cfm68k.o x11fwd.cfm68k.o ¶
+		xenc.cfm68k.o {Libs_CFM68K}
 	SetFile -a BMi {Targ}
 
 PuTTY.ppc Ä be_all.ppc.o config.ppc.o cproxy.ppc.o dialog.ppc.o ¶
@@ -252,14 +271,14 @@ PuTTY.ppc Ä be_all.ppc.o config.ppc.o cproxy.ppc.o dialog.ppc.o ¶
 		mtcpnet.ppc.o otnet.ppc.o pinger.ppc.o portfwd.ppc.o ¶
 		pproxy.ppc.o proxy.ppc.o raw.ppc.o rlogin.ppc.o sbcs.ppc.o ¶
 		sbcsdat.ppc.o settings.ppc.o slookup.ppc.o ssh.ppc.o ¶
-		sshaes.ppc.o sshblowf.ppc.o sshbn.ppc.o sshcrc.ppc.o ¶
-		sshcrcda.ppc.o sshdes.ppc.o sshdh.ppc.o sshdss.ppc.o ¶
-		sshmd5.ppc.o sshpubk.ppc.o sshrand.ppc.o sshrsa.ppc.o ¶
-		sshsh512.ppc.o sshsha.ppc.o sshzlib.ppc.o stricmp.ppc.o ¶
-		telnet.ppc.o terminal.ppc.o testback.ppc.o timing.ppc.o ¶
-		toucs.ppc.o tree234.ppc.o utf8.ppc.o version.ppc.o ¶
-		vsnprint.ppc.o wcwidth.ppc.o wildcard.ppc.o x11fwd.ppc.o ¶
-		xenc.ppc.o mac_res.rsrc
+		sshaes.ppc.o ssharcf.ppc.o sshblowf.ppc.o sshbn.ppc.o ¶
+		sshcrc.ppc.o sshcrcda.ppc.o sshdes.ppc.o sshdh.ppc.o ¶
+		sshdss.ppc.o sshmd5.ppc.o sshpubk.ppc.o sshrand.ppc.o ¶
+		sshrsa.ppc.o sshsh256.ppc.o sshsh512.ppc.o sshsha.ppc.o ¶
+		sshzlib.ppc.o stricmp.ppc.o telnet.ppc.o terminal.ppc.o ¶
+		testback.ppc.o timing.ppc.o toucs.ppc.o tree234.ppc.o ¶
+		utf8.ppc.o version.ppc.o vsnprint.ppc.o wcwidth.ppc.o ¶
+		wildcard.ppc.o x11fwd.ppc.o xenc.ppc.o mac_res.rsrc
 	Duplicate -y mac_res.rsrc {Targ}
 	{Link_PPC} -o {Targ} -fragname PuTTY {LinkOptions_PPC} be_all.ppc.o ¶
 		config.ppc.o cproxy.ppc.o dialog.ppc.o fromucs.ppc.o ¶
@@ -271,14 +290,14 @@ PuTTY.ppc Ä be_all.ppc.o config.ppc.o cproxy.ppc.o dialog.ppc.o ¶
 		otnet.ppc.o pinger.ppc.o portfwd.ppc.o pproxy.ppc.o ¶
 		proxy.ppc.o raw.ppc.o rlogin.ppc.o sbcs.ppc.o sbcsdat.ppc.o ¶
 		settings.ppc.o slookup.ppc.o ssh.ppc.o sshaes.ppc.o ¶
-		sshblowf.ppc.o sshbn.ppc.o sshcrc.ppc.o sshcrcda.ppc.o ¶
-		sshdes.ppc.o sshdh.ppc.o sshdss.ppc.o sshmd5.ppc.o ¶
-		sshpubk.ppc.o sshrand.ppc.o sshrsa.ppc.o sshsh512.ppc.o ¶
-		sshsha.ppc.o sshzlib.ppc.o stricmp.ppc.o telnet.ppc.o ¶
-		terminal.ppc.o testback.ppc.o timing.ppc.o toucs.ppc.o ¶
-		tree234.ppc.o utf8.ppc.o version.ppc.o vsnprint.ppc.o ¶
-		wcwidth.ppc.o wildcard.ppc.o x11fwd.ppc.o xenc.ppc.o ¶
-		{Libs_PPC}
+		ssharcf.ppc.o sshblowf.ppc.o sshbn.ppc.o sshcrc.ppc.o ¶
+		sshcrcda.ppc.o sshdes.ppc.o sshdh.ppc.o sshdss.ppc.o ¶
+		sshmd5.ppc.o sshpubk.ppc.o sshrand.ppc.o sshrsa.ppc.o ¶
+		sshsh256.ppc.o sshsh512.ppc.o sshsha.ppc.o sshzlib.ppc.o ¶
+		stricmp.ppc.o telnet.ppc.o terminal.ppc.o testback.ppc.o ¶
+		timing.ppc.o toucs.ppc.o tree234.ppc.o utf8.ppc.o ¶
+		version.ppc.o vsnprint.ppc.o wcwidth.ppc.o wildcard.ppc.o ¶
+		x11fwd.ppc.o xenc.ppc.o {Libs_PPC}
 	SetFile -a BMi {Targ}
 
 PuTTY.carbon Ä be_all.carbon.o config.carbon.o cproxy.carbon.o ¶
@@ -293,16 +312,17 @@ PuTTY.carbon Ä be_all.carbon.o config.carbon.o cproxy.carbon.o ¶
 		portfwd.carbon.o pproxy.carbon.o proxy.carbon.o raw.carbon.o ¶
 		rlogin.carbon.o sbcs.carbon.o sbcsdat.carbon.o ¶
 		settings.carbon.o slookup.carbon.o ssh.carbon.o ¶
-		sshaes.carbon.o sshblowf.carbon.o sshbn.carbon.o ¶
-		sshcrc.carbon.o sshcrcda.carbon.o sshdes.carbon.o ¶
-		sshdh.carbon.o sshdss.carbon.o sshmd5.carbon.o ¶
-		sshpubk.carbon.o sshrand.carbon.o sshrsa.carbon.o ¶
-		sshsh512.carbon.o sshsha.carbon.o sshzlib.carbon.o ¶
-		stricmp.carbon.o telnet.carbon.o terminal.carbon.o ¶
-		testback.carbon.o timing.carbon.o toucs.carbon.o ¶
-		tree234.carbon.o utf8.carbon.o version.carbon.o ¶
-		vsnprint.carbon.o wcwidth.carbon.o wildcard.carbon.o ¶
-		x11fwd.carbon.o xenc.carbon.o mac_res.rsrc
+		sshaes.carbon.o ssharcf.carbon.o sshblowf.carbon.o ¶
+		sshbn.carbon.o sshcrc.carbon.o sshcrcda.carbon.o ¶
+		sshdes.carbon.o sshdh.carbon.o sshdss.carbon.o ¶
+		sshmd5.carbon.o sshpubk.carbon.o sshrand.carbon.o ¶
+		sshrsa.carbon.o sshsh256.carbon.o sshsh512.carbon.o ¶
+		sshsha.carbon.o sshzlib.carbon.o stricmp.carbon.o ¶
+		telnet.carbon.o terminal.carbon.o testback.carbon.o ¶
+		timing.carbon.o toucs.carbon.o tree234.carbon.o ¶
+		utf8.carbon.o version.carbon.o vsnprint.carbon.o ¶
+		wcwidth.carbon.o wildcard.carbon.o x11fwd.carbon.o ¶
+		xenc.carbon.o mac_res.rsrc
 	Duplicate -y mac_res.rsrc {Targ}
 	{Link_Carbon} -o {Targ} -fragname PuTTY {LinkOptions_Carbon} ¶
 		be_all.carbon.o config.carbon.o cproxy.carbon.o ¶
@@ -317,16 +337,17 @@ PuTTY.carbon Ä be_all.carbon.o config.carbon.o cproxy.carbon.o ¶
 		portfwd.carbon.o pproxy.carbon.o proxy.carbon.o raw.carbon.o ¶
 		rlogin.carbon.o sbcs.carbon.o sbcsdat.carbon.o ¶
 		settings.carbon.o slookup.carbon.o ssh.carbon.o ¶
-		sshaes.carbon.o sshblowf.carbon.o sshbn.carbon.o ¶
-		sshcrc.carbon.o sshcrcda.carbon.o sshdes.carbon.o ¶
-		sshdh.carbon.o sshdss.carbon.o sshmd5.carbon.o ¶
-		sshpubk.carbon.o sshrand.carbon.o sshrsa.carbon.o ¶
-		sshsh512.carbon.o sshsha.carbon.o sshzlib.carbon.o ¶
-		stricmp.carbon.o telnet.carbon.o terminal.carbon.o ¶
-		testback.carbon.o timing.carbon.o toucs.carbon.o ¶
-		tree234.carbon.o utf8.carbon.o version.carbon.o ¶
-		vsnprint.carbon.o wcwidth.carbon.o wildcard.carbon.o ¶
-		x11fwd.carbon.o xenc.carbon.o {Libs_Carbon}
+		sshaes.carbon.o ssharcf.carbon.o sshblowf.carbon.o ¶
+		sshbn.carbon.o sshcrc.carbon.o sshcrcda.carbon.o ¶
+		sshdes.carbon.o sshdh.carbon.o sshdss.carbon.o ¶
+		sshmd5.carbon.o sshpubk.carbon.o sshrand.carbon.o ¶
+		sshrsa.carbon.o sshsh256.carbon.o sshsh512.carbon.o ¶
+		sshsha.carbon.o sshzlib.carbon.o stricmp.carbon.o ¶
+		telnet.carbon.o terminal.carbon.o testback.carbon.o ¶
+		timing.carbon.o toucs.carbon.o tree234.carbon.o ¶
+		utf8.carbon.o version.carbon.o vsnprint.carbon.o ¶
+		wcwidth.carbon.o wildcard.carbon.o x11fwd.carbon.o ¶
+		xenc.carbon.o {Libs_Carbon}
 	SetFile -a BMi {Targ}
 
 PuTTYgen Ä PuTTYgen.68k PuTTYgen.ppc PuTTYgen.carbon
@@ -541,23 +562,36 @@ macpgen.rsrc Ä ::mac:macpgen.r ::mac:macpgrid.h ::mac:version.r
 
 pageant.rsrc Ä ::windows:pageant.rc ::windows:rcstuff.h ¶
 		::windows:pageant.ico ::windows:pageants.ico ¶
-		::windows:pageant.mft
+		::windows:version.rc2 ::windows:pageant.mft
 	Rez ::windows:pageant.rc -o {Targ} {ROptions}
 
-plink.rsrc Ä ::windows:plink.rc ::windows:putty.ico
+plink.rsrc Ä ::windows:plink.rc ::windows:rcstuff.h ::windows:putty.ico ¶
+		::windows:version.rc2
 	Rez ::windows:plink.rc -o {Targ} {ROptions}
 
-pscp.rsrc Ä ::windows:pscp.rc ::windows:pscp.ico
+pscp.rsrc Ä ::windows:pscp.rc ::windows:rcstuff.h ::windows:pscp.ico ¶
+		::windows:version.rc2
 	Rez ::windows:pscp.rc -o {Targ} {ROptions}
 
+psftp.rsrc Ä ::windows:psftp.rc ::windows:rcstuff.h ::windows:pscp.ico ¶
+		::windows:version.rc2
+	Rez ::windows:psftp.rc -o {Targ} {ROptions}
+
+putty.rsrc Ä ::windows:putty.rc ::windows:rcstuff.h ::windows:win_res.rc2 ¶
+		::windows:putty.mft ::windows:win_res.h ::windows:putty.ico ¶
+		::windows:puttycfg.ico ::windows:version.rc2
+	Rez ::windows:putty.rc -o {Targ} {ROptions}
+
 puttygen.rsrc Ä ::windows:puttygen.rc ::windows:rcstuff.h ¶
-		::windows:puttygen.ico ::windows:puttygen.mft
+		::windows:puttygen.ico ::windows:version.rc2 ¶
+		::windows:puttygen.mft
 	Rez ::windows:puttygen.rc -o {Targ} {ROptions}
 
-win_res.rsrc Ä ::windows:win_res.rc ::windows:rcstuff.h ::windows:win_res.h ¶
-		::windows:putty.ico ::windows:puttycfg.ico ¶
-		::windows:putty.mft
-	Rez ::windows:win_res.rc -o {Targ} {ROptions}
+puttytel.rsrc Ä ::windows:puttytel.rc ::windows:rcstuff.h ¶
+		::windows:win_res.rc2 ::windows:putty.mft ¶
+		::windows:win_res.h ::windows:putty.ico ¶
+		::windows:puttycfg.ico ::windows:version.rc2
+	Rez ::windows:puttytel.rc -o {Targ} {ROptions}
 
 be_all.68k.o Ä ::be_all.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
 		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
@@ -565,11 +599,23 @@ be_all.68k.o Ä ::be_all.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
 		::charset:charset.h
 	{C_68K} ::be_all.c -o {Targ} {COptions_68K}
 
+be_all_s.68k.o Ä ::be_all_s.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
+		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
+		::unix:unix.h ::puttymem.h ::tree234.h ::windows:winhelp.h ¶
+		::charset:charset.h
+	{C_68K} ::be_all_s.c -o {Targ} {COptions_68K}
+
 be_none.68k.o Ä ::be_none.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
 		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
 		::unix:unix.h ::puttymem.h ::tree234.h ::windows:winhelp.h ¶
 		::charset:charset.h
 	{C_68K} ::be_none.c -o {Targ} {COptions_68K}
+
+be_nos_s.68k.o Ä ::be_nos_s.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
+		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
+		::unix:unix.h ::puttymem.h ::tree234.h ::windows:winhelp.h ¶
+		::charset:charset.h
+	{C_68K} ::be_nos_s.c -o {Targ} {COptions_68K}
 
 be_nossh.68k.o Ä ::be_nossh.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
 		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
@@ -620,15 +666,12 @@ gtkcfg.68k.o Ä ::unix:gtkcfg.c ::putty.h ::dialog.h ::storage.h ::puttyps.h ¶
 gtkcols.68k.o Ä ::unix:gtkcols.c ::unix:gtkcols.h
 	{C_68K} ::unix:gtkcols.c -o {Targ} {COptions_68K}
 
-gtkdlg.68k.o Ä ::unix:gtkdlg.c ::unix:gtkcols.h ::unix:gtkpanel.h ::putty.h ¶
-		::storage.h ::dialog.h ::tree234.h ::puttyps.h ::network.h ¶
-		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
-		::macosx:osx.h ::unix:unix.h ::puttymem.h ¶
-		::windows:winhelp.h ::charset:charset.h
+gtkdlg.68k.o Ä ::unix:gtkdlg.c ::unix:gtkcols.h ::putty.h ::storage.h ¶
+		::dialog.h ::tree234.h ::puttyps.h ::network.h ::misc.h ¶
+		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
+		::unix:unix.h ::puttymem.h ::windows:winhelp.h ¶
+		::charset:charset.h
 	{C_68K} ::unix:gtkdlg.c -o {Targ} {COptions_68K}
-
-gtkpanel.68k.o Ä ::unix:gtkpanel.c ::unix:gtkpanel.h
-	{C_68K} ::unix:gtkpanel.c -o {Targ} {COptions_68K}
 
 gtkwin.68k.o Ä ::unix:gtkwin.c ::putty.h ::terminal.h ::puttyps.h ¶
 		::network.h ::misc.h ::tree234.h ::windows:winstuff.h ¶
@@ -852,7 +895,7 @@ proxy.68k.o Ä ::proxy.c ::putty.h ::network.h ::proxy.h ::puttyps.h ::misc.h ¶
 	{C_68K} ::proxy.c -o {Targ} {COptions_68K}
 
 pscp.68k.o Ä ::pscp.c ::putty.h ::psftp.h ::ssh.h ::sftp.h ::storage.h ¶
-		::puttyps.h ::network.h ::misc.h ::puttymem.h ::int64.h ¶
+		::int64.h ::puttyps.h ::network.h ::misc.h ::puttymem.h ¶
 		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
 		::unix:unix.h ::tree234.h ::windows:winhelp.h ¶
 		::charset:charset.h
@@ -883,6 +926,12 @@ sbcs.68k.o Ä ::charset:sbcs.c ::charset:charset.h ::charset:internal.h
 sbcsdat.68k.o Ä ::charset:sbcsdat.c ::charset:charset.h ::charset:internal.h
 	{C_68K} ::charset:sbcsdat.c -o {Targ} {COptions_68K}
 
+sercfg.68k.o Ä ::sercfg.c ::putty.h ::dialog.h ::storage.h ::puttyps.h ¶
+		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	{C_68K} ::sercfg.c -o {Targ} {COptions_68K}
+
 settings.68k.o Ä ::settings.c ::putty.h ::storage.h ::puttyps.h ::network.h ¶
 		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
 		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
@@ -911,6 +960,10 @@ ssh.68k.o Ä ::ssh.c ::putty.h ::tree234.h ::ssh.h ::puttyps.h ::network.h ¶
 sshaes.68k.o Ä ::sshaes.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
 		::misc.h
 	{C_68K} ::sshaes.c -o {Targ} {COptions_68K}
+
+ssharcf.68k.o Ä ::ssharcf.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
+		::misc.h
+	{C_68K} ::ssharcf.c -o {Targ} {COptions_68K}
 
 sshblowf.68k.o Ä ::sshblowf.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
 		::misc.h
@@ -969,6 +1022,10 @@ sshrsa.68k.o Ä ::sshrsa.c ::ssh.h ::misc.h ::puttymem.h ::network.h ¶
 sshrsag.68k.o Ä ::sshrsag.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
 		::misc.h
 	{C_68K} ::sshrsag.c -o {Targ} {COptions_68K}
+
+sshsh256.68k.o Ä ::sshsh256.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
+		::misc.h
+	{C_68K} ::sshsh256.c -o {Targ} {COptions_68K}
 
 sshsh512.68k.o Ä ::sshsh512.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
 		::misc.h
@@ -1116,8 +1173,14 @@ uxsel.68k.o Ä ::unix:uxsel.c ::putty.h ::tree234.h ::puttyps.h ::network.h ¶
 		::windows:winhelp.h ::charset:charset.h
 	{C_68K} ::unix:uxsel.c -o {Targ} {COptions_68K}
 
-uxsftp.68k.o Ä ::unix:uxsftp.c ::putty.h ::psftp.h ::puttyps.h ::network.h ¶
+uxser.68k.o Ä ::unix:uxser.c ::putty.h ::tree234.h ::puttyps.h ::network.h ¶
 		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+		::macosx:osx.h ::unix:unix.h ::puttymem.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	{C_68K} ::unix:uxser.c -o {Targ} {COptions_68K}
+
+uxsftp.68k.o Ä ::unix:uxsftp.c ::putty.h ::psftp.h ::int64.h ::puttyps.h ¶
+		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
 		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
 		::windows:winhelp.h ::charset:charset.h
 	{C_68K} ::unix:uxsftp.c -o {Targ} {COptions_68K}
@@ -1197,6 +1260,18 @@ window.68k.o Ä ::windows:window.c ::putty.h ::terminal.h ::storage.h ¶
 		::windows:winhelp.h ::charset:charset.h
 	{C_68K} ::windows:window.c -o {Targ} {COptions_68K}
 
+winhandl.68k.o Ä ::windows:winhandl.c ::putty.h ::puttyps.h ::network.h ¶
+		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	{C_68K} ::windows:winhandl.c -o {Targ} {COptions_68K}
+
+winhelp.68k.o Ä ::windows:winhelp.c ::putty.h ::puttyps.h ::network.h ¶
+		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	{C_68K} ::windows:winhelp.c -o {Targ} {COptions_68K}
+
 winmisc.68k.o Ä ::windows:winmisc.c ::putty.h ::puttyps.h ::network.h ¶
 		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
 		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
@@ -1247,10 +1322,22 @@ winprint.68k.o Ä ::windows:winprint.c ::putty.h ::puttyps.h ::network.h ¶
 		::windows:winhelp.h ::charset:charset.h
 	{C_68K} ::windows:winprint.c -o {Targ} {COptions_68K}
 
-winsftp.68k.o Ä ::windows:winsftp.c ::putty.h ::psftp.h ::puttyps.h ¶
-		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
-		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
+winproxy.68k.o Ä ::windows:winproxy.c ::tree234.h ::putty.h ::network.h ¶
+		::proxy.h ::puttyps.h ::misc.h ::windows:winstuff.h ¶
+		::mac:macstuff.h ::macosx:osx.h ::unix:unix.h ::puttymem.h ¶
 		::windows:winhelp.h ::charset:charset.h
+	{C_68K} ::windows:winproxy.c -o {Targ} {COptions_68K}
+
+winser.68k.o Ä ::windows:winser.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
+		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
+		::unix:unix.h ::puttymem.h ::tree234.h ::windows:winhelp.h ¶
+		::charset:charset.h
+	{C_68K} ::windows:winser.c -o {Targ} {COptions_68K}
+
+winsftp.68k.o Ä ::windows:winsftp.c ::putty.h ::psftp.h ::int64.h ¶
+		::puttyps.h ::network.h ::misc.h ::windows:winstuff.h ¶
+		::mac:macstuff.h ::macosx:osx.h ::unix:unix.h ::puttymem.h ¶
+		::tree234.h ::windows:winhelp.h ::charset:charset.h
 	{C_68K} ::windows:winsftp.c -o {Targ} {COptions_68K}
 
 winstore.68k.o Ä ::windows:winstore.c ::putty.h ::storage.h ::puttyps.h ¶
@@ -1271,10 +1358,10 @@ winucs.68k.o Ä ::windows:winucs.c ::putty.h ::terminal.h ::misc.h ¶
 		::unix:unix.h ::windows:winhelp.h ::charset:charset.h
 	{C_68K} ::windows:winucs.c -o {Targ} {COptions_68K}
 
-winutils.68k.o Ä ::windows:winutils.c ::windows:winstuff.h ::putty.h ¶
-		::misc.h ::tree234.h ::windows:winhelp.h ::puttyps.h ¶
-		::network.h ::puttymem.h ::mac:macstuff.h ::macosx:osx.h ¶
-		::unix:unix.h ::charset:charset.h
+winutils.68k.o Ä ::windows:winutils.c ::putty.h ::misc.h ::puttyps.h ¶
+		::network.h ::puttymem.h ::windows:winstuff.h ¶
+		::mac:macstuff.h ::macosx:osx.h ::unix:unix.h ::tree234.h ¶
+		::windows:winhelp.h ::charset:charset.h
 	{C_68K} ::windows:winutils.c -o {Targ} {COptions_68K}
 
 x11fwd.68k.o Ä ::x11fwd.c ::putty.h ::ssh.h ::tree234.h ::puttyps.h ¶
@@ -1289,17 +1376,41 @@ xenc.68k.o Ä ::charset:xenc.c ::charset:charset.h ::charset:internal.h
 xkeysym.68k.o Ä ::unix:xkeysym.c ::misc.h ::puttymem.h
 	{C_68K} ::unix:xkeysym.c -o {Targ} {COptions_68K}
 
+xpmptcfg.68k.o Ä ::unix:xpmptcfg.c
+	{C_68K} ::unix:xpmptcfg.c -o {Targ} {COptions_68K}
+
+xpmpterm.68k.o Ä ::unix:xpmpterm.c
+	{C_68K} ::unix:xpmpterm.c -o {Targ} {COptions_68K}
+
+xpmpucfg.68k.o Ä ::unix:xpmpucfg.c
+	{C_68K} ::unix:xpmpucfg.c -o {Targ} {COptions_68K}
+
+xpmputty.68k.o Ä ::unix:xpmputty.c
+	{C_68K} ::unix:xpmputty.c -o {Targ} {COptions_68K}
+
 be_all.cfm68k.o Ä ::be_all.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
 		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
 		::unix:unix.h ::puttymem.h ::tree234.h ::windows:winhelp.h ¶
 		::charset:charset.h
 	{C_CFM68K} ::be_all.c -o {Targ} {COptions_CFM68K}
 
+be_all_s.cfm68k.o Ä ::be_all_s.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
+		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
+		::unix:unix.h ::puttymem.h ::tree234.h ::windows:winhelp.h ¶
+		::charset:charset.h
+	{C_CFM68K} ::be_all_s.c -o {Targ} {COptions_CFM68K}
+
 be_none.cfm68k.o Ä ::be_none.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
 		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
 		::unix:unix.h ::puttymem.h ::tree234.h ::windows:winhelp.h ¶
 		::charset:charset.h
 	{C_CFM68K} ::be_none.c -o {Targ} {COptions_CFM68K}
+
+be_nos_s.cfm68k.o Ä ::be_nos_s.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
+		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
+		::unix:unix.h ::puttymem.h ::tree234.h ::windows:winhelp.h ¶
+		::charset:charset.h
+	{C_CFM68K} ::be_nos_s.c -o {Targ} {COptions_CFM68K}
 
 be_nossh.cfm68k.o Ä ::be_nossh.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
 		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
@@ -1351,15 +1462,12 @@ gtkcfg.cfm68k.o Ä ::unix:gtkcfg.c ::putty.h ::dialog.h ::storage.h ¶
 gtkcols.cfm68k.o Ä ::unix:gtkcols.c ::unix:gtkcols.h
 	{C_CFM68K} ::unix:gtkcols.c -o {Targ} {COptions_CFM68K}
 
-gtkdlg.cfm68k.o Ä ::unix:gtkdlg.c ::unix:gtkcols.h ::unix:gtkpanel.h ¶
-		::putty.h ::storage.h ::dialog.h ::tree234.h ::puttyps.h ¶
-		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
-		::macosx:osx.h ::unix:unix.h ::puttymem.h ¶
-		::windows:winhelp.h ::charset:charset.h
+gtkdlg.cfm68k.o Ä ::unix:gtkdlg.c ::unix:gtkcols.h ::putty.h ::storage.h ¶
+		::dialog.h ::tree234.h ::puttyps.h ::network.h ::misc.h ¶
+		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
+		::unix:unix.h ::puttymem.h ::windows:winhelp.h ¶
+		::charset:charset.h
 	{C_CFM68K} ::unix:gtkdlg.c -o {Targ} {COptions_CFM68K}
-
-gtkpanel.cfm68k.o Ä ::unix:gtkpanel.c ::unix:gtkpanel.h
-	{C_CFM68K} ::unix:gtkpanel.c -o {Targ} {COptions_CFM68K}
 
 gtkwin.cfm68k.o Ä ::unix:gtkwin.c ::putty.h ::terminal.h ::puttyps.h ¶
 		::network.h ::misc.h ::tree234.h ::windows:winstuff.h ¶
@@ -1586,7 +1694,7 @@ proxy.cfm68k.o Ä ::proxy.c ::putty.h ::network.h ::proxy.h ::puttyps.h ¶
 	{C_CFM68K} ::proxy.c -o {Targ} {COptions_CFM68K}
 
 pscp.cfm68k.o Ä ::pscp.c ::putty.h ::psftp.h ::ssh.h ::sftp.h ::storage.h ¶
-		::puttyps.h ::network.h ::misc.h ::puttymem.h ::int64.h ¶
+		::int64.h ::puttyps.h ::network.h ::misc.h ::puttymem.h ¶
 		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
 		::unix:unix.h ::tree234.h ::windows:winhelp.h ¶
 		::charset:charset.h
@@ -1618,6 +1726,12 @@ sbcsdat.cfm68k.o Ä ::charset:sbcsdat.c ::charset:charset.h ¶
 		::charset:internal.h
 	{C_CFM68K} ::charset:sbcsdat.c -o {Targ} {COptions_CFM68K}
 
+sercfg.cfm68k.o Ä ::sercfg.c ::putty.h ::dialog.h ::storage.h ::puttyps.h ¶
+		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	{C_CFM68K} ::sercfg.c -o {Targ} {COptions_CFM68K}
+
 settings.cfm68k.o Ä ::settings.c ::putty.h ::storage.h ::puttyps.h ¶
 		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
 		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
@@ -1648,6 +1762,10 @@ ssh.cfm68k.o Ä ::ssh.c ::putty.h ::tree234.h ::ssh.h ::puttyps.h ::network.h ¶
 sshaes.cfm68k.o Ä ::sshaes.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
 		::misc.h
 	{C_CFM68K} ::sshaes.c -o {Targ} {COptions_CFM68K}
+
+ssharcf.cfm68k.o Ä ::ssharcf.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
+		::misc.h
+	{C_CFM68K} ::ssharcf.c -o {Targ} {COptions_CFM68K}
 
 sshblowf.cfm68k.o Ä ::sshblowf.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
 		::misc.h
@@ -1708,6 +1826,10 @@ sshrsa.cfm68k.o Ä ::sshrsa.c ::ssh.h ::misc.h ::puttymem.h ::network.h ¶
 sshrsag.cfm68k.o Ä ::sshrsag.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
 		::misc.h
 	{C_CFM68K} ::sshrsag.c -o {Targ} {COptions_CFM68K}
+
+sshsh256.cfm68k.o Ä ::sshsh256.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
+		::misc.h
+	{C_CFM68K} ::sshsh256.c -o {Targ} {COptions_CFM68K}
 
 sshsh512.cfm68k.o Ä ::sshsh512.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
 		::misc.h
@@ -1855,7 +1977,13 @@ uxsel.cfm68k.o Ä ::unix:uxsel.c ::putty.h ::tree234.h ::puttyps.h ¶
 		::windows:winhelp.h ::charset:charset.h
 	{C_CFM68K} ::unix:uxsel.c -o {Targ} {COptions_CFM68K}
 
-uxsftp.cfm68k.o Ä ::unix:uxsftp.c ::putty.h ::psftp.h ::puttyps.h ¶
+uxser.cfm68k.o Ä ::unix:uxser.c ::putty.h ::tree234.h ::puttyps.h ¶
+		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+		::macosx:osx.h ::unix:unix.h ::puttymem.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	{C_CFM68K} ::unix:uxser.c -o {Targ} {COptions_CFM68K}
+
+uxsftp.cfm68k.o Ä ::unix:uxsftp.c ::putty.h ::psftp.h ::int64.h ::puttyps.h ¶
 		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
 		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
 		::windows:winhelp.h ::charset:charset.h
@@ -1936,6 +2064,18 @@ window.cfm68k.o Ä ::windows:window.c ::putty.h ::terminal.h ::storage.h ¶
 		::windows:winhelp.h ::charset:charset.h
 	{C_CFM68K} ::windows:window.c -o {Targ} {COptions_CFM68K}
 
+winhandl.cfm68k.o Ä ::windows:winhandl.c ::putty.h ::puttyps.h ::network.h ¶
+		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	{C_CFM68K} ::windows:winhandl.c -o {Targ} {COptions_CFM68K}
+
+winhelp.cfm68k.o Ä ::windows:winhelp.c ::putty.h ::puttyps.h ::network.h ¶
+		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	{C_CFM68K} ::windows:winhelp.c -o {Targ} {COptions_CFM68K}
+
 winmisc.cfm68k.o Ä ::windows:winmisc.c ::putty.h ::puttyps.h ::network.h ¶
 		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
 		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
@@ -1986,10 +2126,22 @@ winprint.cfm68k.o Ä ::windows:winprint.c ::putty.h ::puttyps.h ::network.h ¶
 		::windows:winhelp.h ::charset:charset.h
 	{C_CFM68K} ::windows:winprint.c -o {Targ} {COptions_CFM68K}
 
-winsftp.cfm68k.o Ä ::windows:winsftp.c ::putty.h ::psftp.h ::puttyps.h ¶
-		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+winproxy.cfm68k.o Ä ::windows:winproxy.c ::tree234.h ::putty.h ::network.h ¶
+		::proxy.h ::puttyps.h ::misc.h ::windows:winstuff.h ¶
+		::mac:macstuff.h ::macosx:osx.h ::unix:unix.h ::puttymem.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	{C_CFM68K} ::windows:winproxy.c -o {Targ} {COptions_CFM68K}
+
+winser.cfm68k.o Ä ::windows:winser.c ::putty.h ::puttyps.h ::network.h ¶
+		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
 		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
 		::windows:winhelp.h ::charset:charset.h
+	{C_CFM68K} ::windows:winser.c -o {Targ} {COptions_CFM68K}
+
+winsftp.cfm68k.o Ä ::windows:winsftp.c ::putty.h ::psftp.h ::int64.h ¶
+		::puttyps.h ::network.h ::misc.h ::windows:winstuff.h ¶
+		::mac:macstuff.h ::macosx:osx.h ::unix:unix.h ::puttymem.h ¶
+		::tree234.h ::windows:winhelp.h ::charset:charset.h
 	{C_CFM68K} ::windows:winsftp.c -o {Targ} {COptions_CFM68K}
 
 winstore.cfm68k.o Ä ::windows:winstore.c ::putty.h ::storage.h ::puttyps.h ¶
@@ -2010,10 +2162,10 @@ winucs.cfm68k.o Ä ::windows:winucs.c ::putty.h ::terminal.h ::misc.h ¶
 		::unix:unix.h ::windows:winhelp.h ::charset:charset.h
 	{C_CFM68K} ::windows:winucs.c -o {Targ} {COptions_CFM68K}
 
-winutils.cfm68k.o Ä ::windows:winutils.c ::windows:winstuff.h ::putty.h ¶
-		::misc.h ::tree234.h ::windows:winhelp.h ::puttyps.h ¶
-		::network.h ::puttymem.h ::mac:macstuff.h ::macosx:osx.h ¶
-		::unix:unix.h ::charset:charset.h
+winutils.cfm68k.o Ä ::windows:winutils.c ::putty.h ::misc.h ::puttyps.h ¶
+		::network.h ::puttymem.h ::windows:winstuff.h ¶
+		::mac:macstuff.h ::macosx:osx.h ::unix:unix.h ::tree234.h ¶
+		::windows:winhelp.h ::charset:charset.h
 	{C_CFM68K} ::windows:winutils.c -o {Targ} {COptions_CFM68K}
 
 x11fwd.cfm68k.o Ä ::x11fwd.c ::putty.h ::ssh.h ::tree234.h ::puttyps.h ¶
@@ -2028,6 +2180,18 @@ xenc.cfm68k.o Ä ::charset:xenc.c ::charset:charset.h ::charset:internal.h
 xkeysym.cfm68k.o Ä ::unix:xkeysym.c ::misc.h ::puttymem.h
 	{C_CFM68K} ::unix:xkeysym.c -o {Targ} {COptions_CFM68K}
 
+xpmptcfg.cfm68k.o Ä ::unix:xpmptcfg.c
+	{C_CFM68K} ::unix:xpmptcfg.c -o {Targ} {COptions_CFM68K}
+
+xpmpterm.cfm68k.o Ä ::unix:xpmpterm.c
+	{C_CFM68K} ::unix:xpmpterm.c -o {Targ} {COptions_CFM68K}
+
+xpmpucfg.cfm68k.o Ä ::unix:xpmpucfg.c
+	{C_CFM68K} ::unix:xpmpucfg.c -o {Targ} {COptions_CFM68K}
+
+xpmputty.cfm68k.o Ä ::unix:xpmputty.c
+	{C_CFM68K} ::unix:xpmputty.c -o {Targ} {COptions_CFM68K}
+
 be_all.ppc.o Ä ::be_all.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
 		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
 		::unix:unix.h ::puttymem.h ::tree234.h ::windows:winhelp.h ¶
@@ -2036,6 +2200,14 @@ be_all.ppc.o Ä ::be_all.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
 	setfile -t XCOF {Targ}
 	{C_PPC} ::be_all.c -o {Targ} {COptions_PPC}
 
+be_all_s.ppc.o Ä ::be_all_s.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
+		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
+		::unix:unix.h ::puttymem.h ::tree234.h ::windows:winhelp.h ¶
+		::charset:charset.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_PPC} ::be_all_s.c -o {Targ} {COptions_PPC}
+
 be_none.ppc.o Ä ::be_none.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
 		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
 		::unix:unix.h ::puttymem.h ::tree234.h ::windows:winhelp.h ¶
@@ -2043,6 +2215,14 @@ be_none.ppc.o Ä ::be_none.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
 	echo -n > {Targ}
 	setfile -t XCOF {Targ}
 	{C_PPC} ::be_none.c -o {Targ} {COptions_PPC}
+
+be_nos_s.ppc.o Ä ::be_nos_s.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
+		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
+		::unix:unix.h ::puttymem.h ::tree234.h ::windows:winhelp.h ¶
+		::charset:charset.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_PPC} ::be_nos_s.c -o {Targ} {COptions_PPC}
 
 be_nossh.ppc.o Ä ::be_nossh.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
 		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
@@ -2111,19 +2291,14 @@ gtkcols.ppc.o Ä ::unix:gtkcols.c ::unix:gtkcols.h
 	setfile -t XCOF {Targ}
 	{C_PPC} ::unix:gtkcols.c -o {Targ} {COptions_PPC}
 
-gtkdlg.ppc.o Ä ::unix:gtkdlg.c ::unix:gtkcols.h ::unix:gtkpanel.h ::putty.h ¶
-		::storage.h ::dialog.h ::tree234.h ::puttyps.h ::network.h ¶
-		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
-		::macosx:osx.h ::unix:unix.h ::puttymem.h ¶
-		::windows:winhelp.h ::charset:charset.h
+gtkdlg.ppc.o Ä ::unix:gtkdlg.c ::unix:gtkcols.h ::putty.h ::storage.h ¶
+		::dialog.h ::tree234.h ::puttyps.h ::network.h ::misc.h ¶
+		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
+		::unix:unix.h ::puttymem.h ::windows:winhelp.h ¶
+		::charset:charset.h
 	echo -n > {Targ}
 	setfile -t XCOF {Targ}
 	{C_PPC} ::unix:gtkdlg.c -o {Targ} {COptions_PPC}
-
-gtkpanel.ppc.o Ä ::unix:gtkpanel.c ::unix:gtkpanel.h
-	echo -n > {Targ}
-	setfile -t XCOF {Targ}
-	{C_PPC} ::unix:gtkpanel.c -o {Targ} {COptions_PPC}
 
 gtkwin.ppc.o Ä ::unix:gtkwin.c ::putty.h ::terminal.h ::puttyps.h ¶
 		::network.h ::misc.h ::tree234.h ::windows:winstuff.h ¶
@@ -2421,7 +2596,7 @@ proxy.ppc.o Ä ::proxy.c ::putty.h ::network.h ::proxy.h ::puttyps.h ::misc.h ¶
 	{C_PPC} ::proxy.c -o {Targ} {COptions_PPC}
 
 pscp.ppc.o Ä ::pscp.c ::putty.h ::psftp.h ::ssh.h ::sftp.h ::storage.h ¶
-		::puttyps.h ::network.h ::misc.h ::puttymem.h ::int64.h ¶
+		::int64.h ::puttyps.h ::network.h ::misc.h ::puttymem.h ¶
 		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
 		::unix:unix.h ::tree234.h ::windows:winhelp.h ¶
 		::charset:charset.h
@@ -2464,6 +2639,14 @@ sbcsdat.ppc.o Ä ::charset:sbcsdat.c ::charset:charset.h ::charset:internal.h
 	setfile -t XCOF {Targ}
 	{C_PPC} ::charset:sbcsdat.c -o {Targ} {COptions_PPC}
 
+sercfg.ppc.o Ä ::sercfg.c ::putty.h ::dialog.h ::storage.h ::puttyps.h ¶
+		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_PPC} ::sercfg.c -o {Targ} {COptions_PPC}
+
 settings.ppc.o Ä ::settings.c ::putty.h ::storage.h ::puttyps.h ::network.h ¶
 		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
 		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
@@ -2504,6 +2687,12 @@ sshaes.ppc.o Ä ::sshaes.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
 	echo -n > {Targ}
 	setfile -t XCOF {Targ}
 	{C_PPC} ::sshaes.c -o {Targ} {COptions_PPC}
+
+ssharcf.ppc.o Ä ::ssharcf.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
+		::misc.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_PPC} ::ssharcf.c -o {Targ} {COptions_PPC}
 
 sshblowf.ppc.o Ä ::sshblowf.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
 		::misc.h
@@ -2590,6 +2779,12 @@ sshrsag.ppc.o Ä ::sshrsag.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
 	echo -n > {Targ}
 	setfile -t XCOF {Targ}
 	{C_PPC} ::sshrsag.c -o {Targ} {COptions_PPC}
+
+sshsh256.ppc.o Ä ::sshsh256.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
+		::misc.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_PPC} ::sshsh256.c -o {Targ} {COptions_PPC}
 
 sshsh512.ppc.o Ä ::sshsh512.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
 		::misc.h
@@ -2791,8 +2986,16 @@ uxsel.ppc.o Ä ::unix:uxsel.c ::putty.h ::tree234.h ::puttyps.h ::network.h ¶
 	setfile -t XCOF {Targ}
 	{C_PPC} ::unix:uxsel.c -o {Targ} {COptions_PPC}
 
-uxsftp.ppc.o Ä ::unix:uxsftp.c ::putty.h ::psftp.h ::puttyps.h ::network.h ¶
+uxser.ppc.o Ä ::unix:uxser.c ::putty.h ::tree234.h ::puttyps.h ::network.h ¶
 		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+		::macosx:osx.h ::unix:unix.h ::puttymem.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_PPC} ::unix:uxser.c -o {Targ} {COptions_PPC}
+
+uxsftp.ppc.o Ä ::unix:uxsftp.c ::putty.h ::psftp.h ::int64.h ::puttyps.h ¶
+		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
 		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
 		::windows:winhelp.h ::charset:charset.h
 	echo -n > {Targ}
@@ -2900,6 +3103,22 @@ window.ppc.o Ä ::windows:window.c ::putty.h ::terminal.h ::storage.h ¶
 	setfile -t XCOF {Targ}
 	{C_PPC} ::windows:window.c -o {Targ} {COptions_PPC}
 
+winhandl.ppc.o Ä ::windows:winhandl.c ::putty.h ::puttyps.h ::network.h ¶
+		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_PPC} ::windows:winhandl.c -o {Targ} {COptions_PPC}
+
+winhelp.ppc.o Ä ::windows:winhelp.c ::putty.h ::puttyps.h ::network.h ¶
+		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_PPC} ::windows:winhelp.c -o {Targ} {COptions_PPC}
+
 winmisc.ppc.o Ä ::windows:winmisc.c ::putty.h ::puttyps.h ::network.h ¶
 		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
 		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
@@ -2966,10 +3185,26 @@ winprint.ppc.o Ä ::windows:winprint.c ::putty.h ::puttyps.h ::network.h ¶
 	setfile -t XCOF {Targ}
 	{C_PPC} ::windows:winprint.c -o {Targ} {COptions_PPC}
 
-winsftp.ppc.o Ä ::windows:winsftp.c ::putty.h ::psftp.h ::puttyps.h ¶
-		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
-		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
+winproxy.ppc.o Ä ::windows:winproxy.c ::tree234.h ::putty.h ::network.h ¶
+		::proxy.h ::puttyps.h ::misc.h ::windows:winstuff.h ¶
+		::mac:macstuff.h ::macosx:osx.h ::unix:unix.h ::puttymem.h ¶
 		::windows:winhelp.h ::charset:charset.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_PPC} ::windows:winproxy.c -o {Targ} {COptions_PPC}
+
+winser.ppc.o Ä ::windows:winser.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
+		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
+		::unix:unix.h ::puttymem.h ::tree234.h ::windows:winhelp.h ¶
+		::charset:charset.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_PPC} ::windows:winser.c -o {Targ} {COptions_PPC}
+
+winsftp.ppc.o Ä ::windows:winsftp.c ::putty.h ::psftp.h ::int64.h ¶
+		::puttyps.h ::network.h ::misc.h ::windows:winstuff.h ¶
+		::mac:macstuff.h ::macosx:osx.h ::unix:unix.h ::puttymem.h ¶
+		::tree234.h ::windows:winhelp.h ::charset:charset.h
 	echo -n > {Targ}
 	setfile -t XCOF {Targ}
 	{C_PPC} ::windows:winsftp.c -o {Targ} {COptions_PPC}
@@ -2998,10 +3233,10 @@ winucs.ppc.o Ä ::windows:winucs.c ::putty.h ::terminal.h ::misc.h ¶
 	setfile -t XCOF {Targ}
 	{C_PPC} ::windows:winucs.c -o {Targ} {COptions_PPC}
 
-winutils.ppc.o Ä ::windows:winutils.c ::windows:winstuff.h ::putty.h ¶
-		::misc.h ::tree234.h ::windows:winhelp.h ::puttyps.h ¶
-		::network.h ::puttymem.h ::mac:macstuff.h ::macosx:osx.h ¶
-		::unix:unix.h ::charset:charset.h
+winutils.ppc.o Ä ::windows:winutils.c ::putty.h ::misc.h ::puttyps.h ¶
+		::network.h ::puttymem.h ::windows:winstuff.h ¶
+		::mac:macstuff.h ::macosx:osx.h ::unix:unix.h ::tree234.h ¶
+		::windows:winhelp.h ::charset:charset.h
 	echo -n > {Targ}
 	setfile -t XCOF {Targ}
 	{C_PPC} ::windows:winutils.c -o {Targ} {COptions_PPC}
@@ -3024,6 +3259,26 @@ xkeysym.ppc.o Ä ::unix:xkeysym.c ::misc.h ::puttymem.h
 	setfile -t XCOF {Targ}
 	{C_PPC} ::unix:xkeysym.c -o {Targ} {COptions_PPC}
 
+xpmptcfg.ppc.o Ä ::unix:xpmptcfg.c
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_PPC} ::unix:xpmptcfg.c -o {Targ} {COptions_PPC}
+
+xpmpterm.ppc.o Ä ::unix:xpmpterm.c
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_PPC} ::unix:xpmpterm.c -o {Targ} {COptions_PPC}
+
+xpmpucfg.ppc.o Ä ::unix:xpmpucfg.c
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_PPC} ::unix:xpmpucfg.c -o {Targ} {COptions_PPC}
+
+xpmputty.ppc.o Ä ::unix:xpmputty.c
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_PPC} ::unix:xpmputty.c -o {Targ} {COptions_PPC}
+
 be_all.carbon.o Ä ::be_all.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
 		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
 		::unix:unix.h ::puttymem.h ::tree234.h ::windows:winhelp.h ¶
@@ -3032,6 +3287,14 @@ be_all.carbon.o Ä ::be_all.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
 	setfile -t XCOF {Targ}
 	{C_Carbon} ::be_all.c -o {Targ} {COptions_Carbon}
 
+be_all_s.carbon.o Ä ::be_all_s.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
+		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
+		::unix:unix.h ::puttymem.h ::tree234.h ::windows:winhelp.h ¶
+		::charset:charset.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_Carbon} ::be_all_s.c -o {Targ} {COptions_Carbon}
+
 be_none.carbon.o Ä ::be_none.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
 		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
 		::unix:unix.h ::puttymem.h ::tree234.h ::windows:winhelp.h ¶
@@ -3039,6 +3302,14 @@ be_none.carbon.o Ä ::be_none.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
 	echo -n > {Targ}
 	setfile -t XCOF {Targ}
 	{C_Carbon} ::be_none.c -o {Targ} {COptions_Carbon}
+
+be_nos_s.carbon.o Ä ::be_nos_s.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
+		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
+		::unix:unix.h ::puttymem.h ::tree234.h ::windows:winhelp.h ¶
+		::charset:charset.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_Carbon} ::be_nos_s.c -o {Targ} {COptions_Carbon}
 
 be_nossh.carbon.o Ä ::be_nossh.c ::putty.h ::puttyps.h ::network.h ::misc.h ¶
 		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
@@ -3108,19 +3379,14 @@ gtkcols.carbon.o Ä ::unix:gtkcols.c ::unix:gtkcols.h
 	setfile -t XCOF {Targ}
 	{C_Carbon} ::unix:gtkcols.c -o {Targ} {COptions_Carbon}
 
-gtkdlg.carbon.o Ä ::unix:gtkdlg.c ::unix:gtkcols.h ::unix:gtkpanel.h ¶
-		::putty.h ::storage.h ::dialog.h ::tree234.h ::puttyps.h ¶
-		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
-		::macosx:osx.h ::unix:unix.h ::puttymem.h ¶
-		::windows:winhelp.h ::charset:charset.h
+gtkdlg.carbon.o Ä ::unix:gtkdlg.c ::unix:gtkcols.h ::putty.h ::storage.h ¶
+		::dialog.h ::tree234.h ::puttyps.h ::network.h ::misc.h ¶
+		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
+		::unix:unix.h ::puttymem.h ::windows:winhelp.h ¶
+		::charset:charset.h
 	echo -n > {Targ}
 	setfile -t XCOF {Targ}
 	{C_Carbon} ::unix:gtkdlg.c -o {Targ} {COptions_Carbon}
-
-gtkpanel.carbon.o Ä ::unix:gtkpanel.c ::unix:gtkpanel.h
-	echo -n > {Targ}
-	setfile -t XCOF {Targ}
-	{C_Carbon} ::unix:gtkpanel.c -o {Targ} {COptions_Carbon}
 
 gtkwin.carbon.o Ä ::unix:gtkwin.c ::putty.h ::terminal.h ::puttyps.h ¶
 		::network.h ::misc.h ::tree234.h ::windows:winstuff.h ¶
@@ -3421,7 +3687,7 @@ proxy.carbon.o Ä ::proxy.c ::putty.h ::network.h ::proxy.h ::puttyps.h ¶
 	{C_Carbon} ::proxy.c -o {Targ} {COptions_Carbon}
 
 pscp.carbon.o Ä ::pscp.c ::putty.h ::psftp.h ::ssh.h ::sftp.h ::storage.h ¶
-		::puttyps.h ::network.h ::misc.h ::puttymem.h ::int64.h ¶
+		::int64.h ::puttyps.h ::network.h ::misc.h ::puttymem.h ¶
 		::windows:winstuff.h ::mac:macstuff.h ::macosx:osx.h ¶
 		::unix:unix.h ::tree234.h ::windows:winhelp.h ¶
 		::charset:charset.h
@@ -3465,6 +3731,14 @@ sbcsdat.carbon.o Ä ::charset:sbcsdat.c ::charset:charset.h ¶
 	setfile -t XCOF {Targ}
 	{C_Carbon} ::charset:sbcsdat.c -o {Targ} {COptions_Carbon}
 
+sercfg.carbon.o Ä ::sercfg.c ::putty.h ::dialog.h ::storage.h ::puttyps.h ¶
+		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_Carbon} ::sercfg.c -o {Targ} {COptions_Carbon}
+
 settings.carbon.o Ä ::settings.c ::putty.h ::storage.h ::puttyps.h ¶
 		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
 		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
@@ -3507,6 +3781,12 @@ sshaes.carbon.o Ä ::sshaes.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
 	echo -n > {Targ}
 	setfile -t XCOF {Targ}
 	{C_Carbon} ::sshaes.c -o {Targ} {COptions_Carbon}
+
+ssharcf.carbon.o Ä ::ssharcf.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
+		::misc.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_Carbon} ::ssharcf.c -o {Targ} {COptions_Carbon}
 
 sshblowf.carbon.o Ä ::sshblowf.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
 		::misc.h
@@ -3595,6 +3875,12 @@ sshrsag.carbon.o Ä ::sshrsag.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
 	echo -n > {Targ}
 	setfile -t XCOF {Targ}
 	{C_Carbon} ::sshrsag.c -o {Targ} {COptions_Carbon}
+
+sshsh256.carbon.o Ä ::sshsh256.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
+		::misc.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_Carbon} ::sshsh256.c -o {Targ} {COptions_Carbon}
 
 sshsh512.carbon.o Ä ::sshsh512.c ::ssh.h ::puttymem.h ::network.h ::int64.h ¶
 		::misc.h
@@ -3796,7 +4082,15 @@ uxsel.carbon.o Ä ::unix:uxsel.c ::putty.h ::tree234.h ::puttyps.h ¶
 	setfile -t XCOF {Targ}
 	{C_Carbon} ::unix:uxsel.c -o {Targ} {COptions_Carbon}
 
-uxsftp.carbon.o Ä ::unix:uxsftp.c ::putty.h ::psftp.h ::puttyps.h ¶
+uxser.carbon.o Ä ::unix:uxser.c ::putty.h ::tree234.h ::puttyps.h ¶
+		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+		::macosx:osx.h ::unix:unix.h ::puttymem.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_Carbon} ::unix:uxser.c -o {Targ} {COptions_Carbon}
+
+uxsftp.carbon.o Ä ::unix:uxsftp.c ::putty.h ::psftp.h ::int64.h ::puttyps.h ¶
 		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
 		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
 		::windows:winhelp.h ::charset:charset.h
@@ -3905,6 +4199,22 @@ window.carbon.o Ä ::windows:window.c ::putty.h ::terminal.h ::storage.h ¶
 	setfile -t XCOF {Targ}
 	{C_Carbon} ::windows:window.c -o {Targ} {COptions_Carbon}
 
+winhandl.carbon.o Ä ::windows:winhandl.c ::putty.h ::puttyps.h ::network.h ¶
+		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_Carbon} ::windows:winhandl.c -o {Targ} {COptions_Carbon}
+
+winhelp.carbon.o Ä ::windows:winhelp.c ::putty.h ::puttyps.h ::network.h ¶
+		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_Carbon} ::windows:winhelp.c -o {Targ} {COptions_Carbon}
+
 winmisc.carbon.o Ä ::windows:winmisc.c ::putty.h ::puttyps.h ::network.h ¶
 		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
 		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
@@ -3971,10 +4281,26 @@ winprint.carbon.o Ä ::windows:winprint.c ::putty.h ::puttyps.h ::network.h ¶
 	setfile -t XCOF {Targ}
 	{C_Carbon} ::windows:winprint.c -o {Targ} {COptions_Carbon}
 
-winsftp.carbon.o Ä ::windows:winsftp.c ::putty.h ::psftp.h ::puttyps.h ¶
-		::network.h ::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
+winproxy.carbon.o Ä ::windows:winproxy.c ::tree234.h ::putty.h ::network.h ¶
+		::proxy.h ::puttyps.h ::misc.h ::windows:winstuff.h ¶
+		::mac:macstuff.h ::macosx:osx.h ::unix:unix.h ::puttymem.h ¶
+		::windows:winhelp.h ::charset:charset.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_Carbon} ::windows:winproxy.c -o {Targ} {COptions_Carbon}
+
+winser.carbon.o Ä ::windows:winser.c ::putty.h ::puttyps.h ::network.h ¶
+		::misc.h ::windows:winstuff.h ::mac:macstuff.h ¶
 		::macosx:osx.h ::unix:unix.h ::puttymem.h ::tree234.h ¶
 		::windows:winhelp.h ::charset:charset.h
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_Carbon} ::windows:winser.c -o {Targ} {COptions_Carbon}
+
+winsftp.carbon.o Ä ::windows:winsftp.c ::putty.h ::psftp.h ::int64.h ¶
+		::puttyps.h ::network.h ::misc.h ::windows:winstuff.h ¶
+		::mac:macstuff.h ::macosx:osx.h ::unix:unix.h ::puttymem.h ¶
+		::tree234.h ::windows:winhelp.h ::charset:charset.h
 	echo -n > {Targ}
 	setfile -t XCOF {Targ}
 	{C_Carbon} ::windows:winsftp.c -o {Targ} {COptions_Carbon}
@@ -4003,10 +4329,10 @@ winucs.carbon.o Ä ::windows:winucs.c ::putty.h ::terminal.h ::misc.h ¶
 	setfile -t XCOF {Targ}
 	{C_Carbon} ::windows:winucs.c -o {Targ} {COptions_Carbon}
 
-winutils.carbon.o Ä ::windows:winutils.c ::windows:winstuff.h ::putty.h ¶
-		::misc.h ::tree234.h ::windows:winhelp.h ::puttyps.h ¶
-		::network.h ::puttymem.h ::mac:macstuff.h ::macosx:osx.h ¶
-		::unix:unix.h ::charset:charset.h
+winutils.carbon.o Ä ::windows:winutils.c ::putty.h ::misc.h ::puttyps.h ¶
+		::network.h ::puttymem.h ::windows:winstuff.h ¶
+		::mac:macstuff.h ::macosx:osx.h ::unix:unix.h ::tree234.h ¶
+		::windows:winhelp.h ::charset:charset.h
 	echo -n > {Targ}
 	setfile -t XCOF {Targ}
 	{C_Carbon} ::windows:winutils.c -o {Targ} {COptions_Carbon}
@@ -4028,4 +4354,24 @@ xkeysym.carbon.o Ä ::unix:xkeysym.c ::misc.h ::puttymem.h
 	echo -n > {Targ}
 	setfile -t XCOF {Targ}
 	{C_Carbon} ::unix:xkeysym.c -o {Targ} {COptions_Carbon}
+
+xpmptcfg.carbon.o Ä ::unix:xpmptcfg.c
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_Carbon} ::unix:xpmptcfg.c -o {Targ} {COptions_Carbon}
+
+xpmpterm.carbon.o Ä ::unix:xpmpterm.c
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_Carbon} ::unix:xpmpterm.c -o {Targ} {COptions_Carbon}
+
+xpmpucfg.carbon.o Ä ::unix:xpmpucfg.c
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_Carbon} ::unix:xpmpucfg.c -o {Targ} {COptions_Carbon}
+
+xpmputty.carbon.o Ä ::unix:xpmputty.c
+	echo -n > {Targ}
+	setfile -t XCOF {Targ}
+	{C_Carbon} ::unix:xpmputty.c -o {Targ} {COptions_Carbon}
 

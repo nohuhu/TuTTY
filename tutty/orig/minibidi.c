@@ -1,5 +1,5 @@
 /************************************************************************
- * $Id: minibidi.c 5120 2005-01-16 14:33:43Z owen $
+ * $Id: minibidi.c 6910 2006-11-18 15:10:48Z simon $
  *
  * ------------
  * Description:
@@ -14,9 +14,9 @@
  * -----------------
  * Revision Details:    (Updated by Revision Control System)
  * -----------------
- *  $Date: 2005-01-16 14:33:43 +0000 (Sun, 16 Jan 2005) $
- *  $Author: owen $
- *  $Revision: 5120 $
+ *  $Date: 2006-11-18 15:10:48 +0000 (Sat, 18 Nov 2006) $
+ *  $Author: simon $
+ *  $Revision: 6910 $
  *
  * (www.arabeyes.org - under MIT license)
  *
@@ -875,6 +875,40 @@ unsigned char getType(int ch)
      * characters _explicitly_ listed as ON (to save space!).
      */
     return ON;
+}
+
+/*
+ * Function exported to front ends to allow them to identify
+ * bidi-active characters (in case, for example, the platform's
+ * text display function can't conveniently be prevented from doing
+ * its own bidi and so special treatment is required for characters
+ * that would cause the bidi algorithm to activate).
+ * 
+ * This function is passed a single Unicode code point, and returns
+ * nonzero if the presence of this code point can possibly cause
+ * the bidi algorithm to do any reordering. Thus, any string
+ * composed entirely of characters for which is_rtl() returns zero
+ * should be safe to pass to a bidi-active platform display
+ * function without fear.
+ * 
+ * (is_rtl() must therefore also return true for any character
+ * which would be affected by Arabic shaping, but this isn't
+ * important because all such characters are right-to-left so it
+ * would have flagged them anyway.)
+ */
+int is_rtl(int c)
+{
+    /*
+     * After careful reading of the Unicode bidi algorithm (URL as
+     * given at the top of this file) I believe that the only
+     * character classes which can possibly cause trouble are R,
+     * AL, RLE and RLO. I think that any string containing no
+     * character in any of those classes will be displayed
+     * uniformly left-to-right by the Unicode bidi algorithm.
+     */
+    const int mask = (1<<R) | (1<<AL) | (1<<RLE) | (1<<RLO);
+
+    return mask & (1 << (getType(c)));
 }
 
 /*

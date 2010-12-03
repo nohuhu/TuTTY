@@ -1,4 +1,4 @@
-\define{versionidusing} \versionid $Id: using.but 5593 2005-04-05 18:01:32Z jacob $
+\define{versionidusing} \versionid $Id: using.but 7295 2007-02-18 14:02:39Z jacob $
 
 \C{using} Using PuTTY
 
@@ -123,9 +123,13 @@ Event Log into your bug report.
 
 Depending on the protocol used for the current session, there may be
 a submenu of \q{special commands}. These are protocol-specific
-tokens, such as a \i{\q{break} signal}, that can be sent down a
+tokens, such as a \q{break} signal, that can be sent down a
 connection in addition to normal data. Their precise effect is usually
-up to the server. Currently only Telnet and SSH have special commands.
+up to the server. Currently only Telnet, SSH, and serial connections
+have special commands.
+
+The \q{break} signal can also be invoked from the keyboard with
+\i{Ctrl-Break}.
 
 The following \I{Telnet special commands}special commands are
 available in Telnet:
@@ -207,6 +211,9 @@ Only available in SSH-2, and only during a session. Sends various
 POSIX signals. Not honoured by all servers.
 }
 
+With a serial connection, the only available special command is
+\I{Break, serial special command}\q{Break}.
+
 \S2{using-newsession} Starting new sessions
 
 PuTTY's system menu provides some shortcut ways to start new
@@ -240,6 +247,10 @@ Some of the options that are available in the main configuration box
 are not shown in the cut-down Change Settings box. These are usually
 options which don't make sense to change in the middle of a session
 (for example, you can't switch from SSH to Telnet in mid-session).
+
+You can save the current settings to a saved session for future use
+from this dialog box. See \k{config-saving} for more on saved
+sessions.
 
 \S2{using-copyall} \i{Copy All to Clipboard}
 
@@ -487,6 +498,37 @@ protocol}\q{Raw}, from the \q{Protocol} buttons in the \q{Session}
 configuration panel. (See \k{config-hostname}.) You can then enter a
 host name and a port number, and make the connection.
 
+\H{using-serial} Connecting to a local serial line
+
+PuTTY can connect directly to a local serial line as an alternative
+to making a network connection. In this mode, text typed into the
+PuTTY window will be sent straight out of your computer's serial
+port, and data received through that port will be displayed in the
+PuTTY window. You might use this mode, for example, if your serial
+port is connected to another computer which has a serial connection.
+
+To make a connection of this type, simply select \q{Serial} from the
+\q{Connection type} radio buttons on the \q{Session} configuration
+panel (see \k{config-hostname}). The \q{Host Name} and \q{Port}
+boxes will transform into \q{Serial line} and \q{Speed}, allowing
+you to specify which serial line to use (if your computer has more
+than one) and what speed (baud rate) to use when transferring data.
+For further configuration options (data bits, stop bits, parity,
+flow control), you can use the \q{Serial} configuration panel (see
+\k{config-serial}).
+
+After you start up PuTTY in serial mode, you might find that you
+have to make the first move, by sending some data out of the serial
+line in order to notify the device at the other end that someone is
+there for it to talk to. This probably depends on the device. If you
+start up a PuTTY serial session and nothing appears in the window,
+try pressing Return a few times and see if that helps.
+
+A serial line provides no well defined means for one end of the
+connection to notify the other that the connection is finished.
+Therefore, PuTTY in serial mode will remain connected until you
+close the window using the close button.
+
 \H{using-cmdline} The PuTTY command line
 
 PuTTY can be made to do various things without user intervention by
@@ -645,11 +687,14 @@ a remote command or script from a file
 The \i\c{-m} option performs a similar function to the \q{\ii{Remote
 command}} box in the SSH panel of the PuTTY configuration box (see
 \k{config-command}). However, the \c{-m} option expects to be given
-a local file name, and it will read a command from that file. On
-most Unix systems, you can even put multiple lines in this file and
-execute more than one command in sequence, or a whole shell script;
-but this will not work on all servers (and is known not to work
-with certain \q{embedded} servers such as routers).
+a local file name, and it will read a command from that file.
+
+With some servers (particularly Unix systems), you can even put
+multiple lines in this file and execute more than one command in
+sequence, or a whole shell script; but this is arguably an abuse, and
+cannot be expected to work on all servers. In particular, it is known
+\e{not} to work with certain \q{embedded} servers, such as \i{Cisco}
+routers.
 
 This option is not available in the file transfer tools PSCP and
 PSFTP.
@@ -680,6 +725,19 @@ authentication instead. See \k{pubkey} for details.
 Note that the \c{-pw} option only works when you are using the SSH
 protocol. Due to fundamental limitations of Telnet and Rlogin, these
 protocols do not support automated password authentication.
+
+\S2{using-cmdline-agentauth} \i\c{-agent} and \i\c{-noagent}:
+control use of Pageant for authentication
+
+The \c{-agent} option turns on SSH authentication using Pageant, and
+\c{-noagent} turns it off. These options are only meaningful if you
+are using SSH.
+
+See \k{pageant} for general information on \i{Pageant}.
+
+These options are equivalent to the agent authentication checkbox in
+the Auth panel of the PuTTY configuration box (see
+\k{config-ssh-tryagent}).
 
 \S2{using-cmdline-agent} \I{-A-upper}\c{-A} and \i\c{-a}: control \i{agent
 forwarding}
@@ -744,6 +802,47 @@ at all} checkbox in the SSH panel of the PuTTY configuration box
 
 This option is not available in the file transfer tools PSCP and
 PSFTP.
+
+\S2{using-cmdline-ncmode} \I{-nc}\c{-nc}: make a \i{remote network
+connection} in place of a remote shell or command
+
+The \c{-nc} option prevents Plink (or PuTTY) from attempting to
+start a shell or command on the remote server. Instead, it will
+instruct the remote server to open a network connection to a host
+name and port number specified by you, and treat that network
+connection as if it were the main session.
+
+You specify a host and port as an argument to the \c{-nc} option,
+with a colon separating the host name from the port number, like
+this:
+
+\c plink host1.example.com -nc host2.example.com:1234
+
+You might want to use this feature if you needed to make an SSH
+connection to a target host which you can only reach by going
+through a proxy host, and rather than using port forwarding you
+prefer to use the local proxy feature (see \k{config-proxy-type} for
+more about local proxies). In this situation you might select
+\q{Local} proxy type, set your local proxy command to be \cq{plink
+%proxyhost -nc %host:%port}, enter the target host name on the
+Session panel, and enter the directly reachable proxy host name on
+the Proxy panel.
+
+This feature is only available in SSH protocol version 2 (since the
+version 1 protocol assumes you will always want to run a shell). It
+is not available in the file transfer tools PSCP and PSFTP. It is
+available in PuTTY itself, although it is unlikely to be very useful
+in any tool other than Plink. Also, \c{-nc} uses the same server
+functionality as port forwarding, so it will not work if your server
+administrator has disabled port forwarding.
+
+(The option is named \c{-nc} after the Unix program
+\W{http://www.vulnwatch.org/netcat/}\c{nc}, short for \q{netcat}.
+The command \cq{plink host1 -nc host2:port} is very similar in
+functionality to \cq{plink host1 nc host2 port}, which invokes
+\c{nc} on the server and tells it to connect to the specified
+destination. However, Plink's built-in \c{-nc} option does not
+depend on the \c{nc} program being installed on the server.)
 
 \S2{using-cmdline-compress} \I{-C-upper}\c{-C}: enable \i{compression}
 

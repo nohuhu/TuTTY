@@ -1,3 +1,8 @@
+/*
+ * cmdline.c - command-line parsing shared between many of the
+ * PuTTY applications
+ */
+
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -63,23 +68,40 @@ void cmdline_cleanup(void)
     if (need_save) { cmdline_save_param(p, value, pri); return ret; } \
 } while (0)
 
-char *cmdline_password = NULL;
+static char *cmdline_password = NULL;
 
-static int cmdline_get_line(const char *prompt, char *str,
-                            int maxlen, int is_pw)
-{
+/*
+ * Similar interface to get_userpass_input(), except that here a -1
+ * return means that we aren't capable of processing the prompt and
+ * someone else should do it.
+ */
+int cmdline_get_passwd_input(prompts_t *p, unsigned char *in, int inlen) {
+
     static int tried_once = 0;
 
-    assert(is_pw && cmdline_password);
-
-    if (tried_once) {
-	return 0;
-    } else {
-	strncpy(str, cmdline_password, maxlen);
-	str[maxlen - 1] = '\0';
-	tried_once = 1;
-	return 1;
+    /*
+     * We only handle prompts which don't echo (which we assume to be
+     * passwords), and (currently) we only cope with a password prompt
+     * that comes in a prompt-set on its own.
+     */
+    if (!cmdline_password || in || p->n_prompts != 1 || p->prompts[0]->echo) {
+	return -1;
     }
+
+    /*
+     * If we've tried once, return utter failure (no more passwords left
+     * to try).
+     */
+    if (tried_once)
+	return 0;
+
+    strncpy(p->prompts[0]->result, cmdline_password,
+	    p->prompts[0]->result_len);
+    p->prompts[0]->result[p->prompts[0]->result_len-1] = '\0';
+    memset(cmdline_password, 0, strlen(cmdline_password));
+    tried_once = 1;
+    return 1;
+
 }
 
 /*
@@ -227,6 +249,28 @@ int cmdline_process_param(char *p, char *value, int need_save, Config *cfg)
 	cfg->portfwd[sizeof(cfg->portfwd) - 2] = '\0';
 	ptr[strlen(ptr)+1] = '\000';    /* append 2nd '\000' */
     }
+    if ((!strcmp(p, "-nc"))) {
+	char *host, *portp;
+
+	RETURN(2);
+	UNAVAILABLE_IN(TOOLTYPE_FILETRANSFER | TOOLTYPE_NONNETWORK);
+	SAVEABLE(0);
+
+	host = portp = value;
+	while (*portp && *portp != ':')
+	    portp++;
+	if (*portp) {
+	    unsigned len = portp - host;
+	    if (len >= sizeof(cfg->ssh_nc_host))
+		len = sizeof(cfg->ssh_nc_host) - 1;
+	    strncpy(cfg->ssh_nc_host, value, len);
+	    cfg->ssh_nc_host[sizeof(cfg->ssh_nc_host) - 1] = '\0';
+	    cfg->ssh_nc_port = atoi(portp+1);
+	} else {
+	    cmdline_error("-nc expects argument of form 'host:port'");
+	    return ret;
+	}
+    }
     if (!strcmp(p, "-m")) {
 	char *filename, *command;
 	int cmdlen, cmdsize;
@@ -271,9 +315,34 @@ int cmdline_process_param(char *p, char *value, int need_save, Config *cfg)
     if (!strcmp(p, "-pw")) {
 	RETURN(2);
 	UNAVAILABLE_IN(TOOLTYPE_NONNETWORK);
-	cmdline_password = value;
-	ssh_get_line = cmdline_get_line;
-	ssh_getline_pw_only = TRUE;
+	SAVEABLE(1);
+	/* We delay evaluating this until after the protocol is decided,
+	 * so that we can warn if it's of no use with the selected protocol */
+	if (cfg->protocol != PROT_SSH)
+	    cmdline_error("the -pw option can only be used with the "
+			  "SSH protocol");
+	else {
+	    cmdline_password = dupstr(value);
+	    /* Assuming that `value' is directly from argv, make a good faith
+	     * attempt to trample it, to stop it showing up in `ps' output
+	     * on Unix-like systems. Not guaranteed, of course. */
+	    memset(value, 0, strlen(value));
+	}
+    }
+
+    if (!strcmp(p, "-agent") || !strcmp(p, "-pagent") ||
+	!strcmp(p, "-pageant")) {
+	RETURN(1);
+	UNAVAILABLE_IN(TOOLTYPE_NONNETWORK);
+	SAVEABLE(0);
+	cfg->tryagent = TRUE;
+    }
+    if (!strcmp(p, "-noagent") || !strcmp(p, "-nopagent") ||
+	!strcmp(p, "-nopageant")) {
+	RETURN(1);
+	UNAVAILABLE_IN(TOOLTYPE_NONNETWORK);
+	SAVEABLE(0);
+	cfg->tryagent = FALSE;
     }
 
     if (!strcmp(p, "-A")) {
@@ -305,13 +374,13 @@ int cmdline_process_param(char *p, char *value, int need_save, Config *cfg)
     if (!strcmp(p, "-t")) {
 	RETURN(1);
 	UNAVAILABLE_IN(TOOLTYPE_FILETRANSFER | TOOLTYPE_NONNETWORK);
-	SAVEABLE(0);
+	SAVEABLE(1);	/* lower priority than -m */
 	cfg->nopty = 0;
     }
     if (!strcmp(p, "-T")) {
 	RETURN(1);
 	UNAVAILABLE_IN(TOOLTYPE_FILETRANSFER | TOOLTYPE_NONNETWORK);
-	SAVEABLE(0);
+	SAVEABLE(1);
 	cfg->nopty = 1;
     }
 

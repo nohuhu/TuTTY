@@ -1,13 +1,17 @@
 #ifndef PUTTY_UNIX_H
 #define PUTTY_UNIX_H
 
+#ifdef HAVE_CONFIG_H
+# include "uxconfig.h" /* Space to hide it from mkfiles.pl */
+#endif
+
 #include <stdio.h>		       /* for FILENAME_MAX */
 #include "charset.h"
 
 struct Filename {
     char path[FILENAME_MAX];
 };
-#define f_open(filename, mode) ( fopen((filename).path, (mode)) )
+FILE *f_open(struct Filename, char const *, int);
 
 struct FontSpec {
     char name[256];
@@ -76,7 +80,7 @@ int reallyclose(void *frontend);
 
 /* Things pterm.c needs from {ptermm,uxputty}.c */
 char *make_default_wintitle(char *hostname);
-int process_nonoption_arg(char *arg, Config *cfg);
+int process_nonoption_arg(char *arg, Config *cfg, int *allow_launch);
 
 /* pterm.c needs this special function in xkeysym.c */
 int keysym_to_unicode(int keysym);
@@ -101,7 +105,7 @@ void uxsel_input_remove(int id);
 
 /* uxcfg.c */
 struct controlbox;
-void unix_setup_config_box(struct controlbox *b, int midsession);
+void unix_setup_config_box(struct controlbox *b, int midsession, int protocol);
 
 /* gtkcfg.c */
 void gtk_setup_config_box(struct controlbox *b, int midsession, void *window);
@@ -124,6 +128,9 @@ void gtk_setup_config_box(struct controlbox *b, int midsession, void *window);
 void (*putty_signal(int sig, void (*func)(int)))(int);
 void block_signal(int sig, int block_it);
 
+/* uxmisc.c */
+int cloexec(int);
+
 /*
  * Exports from unicode.c.
  */
@@ -144,5 +151,10 @@ void *sk_getxdmdata(void *sock, int *lenp);
     FD_SET(fd, &set); \
     if (max < fd + 1) max = fd + 1; \
 } while (0)
+
+/*
+ * Exports from winser.c.
+ */
+extern Backend serial_backend;
 
 #endif

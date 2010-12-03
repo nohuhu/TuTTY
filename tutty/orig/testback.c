@@ -1,4 +1,4 @@
-/* $Id: testback.c 5251 2005-02-05 10:55:09Z simon $ */
+/* $Id: testback.c 7296 2007-02-18 15:59:38Z simon $ */
 /*
  * Copyright (c) 1999 Simon Tatham
  * Copyright (c) 1999 Ben Harris
@@ -46,7 +46,7 @@ static int null_sendbuffer(void *);
 static void null_size(void *, int, int);
 static void null_special(void *, Telnet_Special);
 static const struct telnet_special *null_get_specials(void *handle);
-static Socket null_socket(void *);
+static int null_connected(void *);
 static int null_exitcode(void *);
 static int null_sendok(void *);
 static int null_ldisc(void *, int);
@@ -57,14 +57,14 @@ static int null_cfg_info(void *);
 
 Backend null_backend = {
     null_init, null_free, null_reconfig, null_send, null_sendbuffer, null_size,
-    null_special, null_get_specials, null_socket, null_exitcode, null_sendok,
+    null_special, null_get_specials, null_connected, null_exitcode, null_sendok,
     null_ldisc, null_provide_ldisc, null_provide_logctx, null_unthrottle,
     null_cfg_info, 0
 };
 
 Backend loop_backend = {
     loop_init, loop_free, null_reconfig, loop_send, null_sendbuffer, null_size,
-    null_special, null_get_specials, null_socket, null_exitcode, null_sendok,
+    null_special, null_get_specials, null_connected, null_exitcode, null_sendok,
     null_ldisc, null_provide_ldisc, null_provide_logctx, null_unthrottle,
     null_cfg_info, 0
 };
@@ -134,9 +134,9 @@ static const struct telnet_special *null_get_specials (void *handle) {
     return NULL;
 }
 
-static Socket null_socket(void *handle) {
+static int null_connected(void *handle) {
 
-    return NULL;
+    return 0;
 }
 
 static int null_exitcode(void *handle) {

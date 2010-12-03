@@ -1,4 +1,4 @@
-\define{versionidindex} \versionid $Id: index.but 5594 2005-04-05 18:03:13Z jacob $
+\define{versionidindex} \versionid $Id: index.but 6836 2006-08-29 21:46:56Z jacob $
 
 \IM{Unix version} Unix version of PuTTY tools
 \IM{Unix version} Linux version of PuTTY tools
@@ -92,10 +92,16 @@ from SSH and Telnet
 \IM{right mouse button, with Ctrl} Ctrl, with right mouse button
 
 \IM{system menu} system menu
+\IM{system menu} menu, system
 \IM{system menu} window menu
 
 \IM{context menu} context menu
+\IM{context menu} menu, context
 \IM{context menu} right mouse button menu
+
+\IM{Event Log} Event Log
+\IM{Event Log} PuTTY Event Log
+\IM{Event Log} Log, Event
 
 \IM{Telnet special commands} Telnet special commands
 \IM{Telnet special commands} special commands, in Telnet
@@ -120,6 +126,12 @@ from SSH and Telnet
 \IM{port forwarding}{port forwardings} forwarding ports in SSH
 \IM{port forwarding}{port forwardings} tunnelling using SSH
 \IM{port forwarding}{port forwardings} SSH tunnelling
+
+\IM{port forwarding, changing mid-session} port forwarding in SSH, changing mid-session
+\IM{port forwarding, changing mid-session} SSH port forwarding, changing mid-session
+\IM{port forwarding, changing mid-session} forwarding ports in SSH, changing mid-session
+\IM{port forwarding, changing mid-session} tunnelling using SSH, changing mid-session
+\IM{port forwarding, changing mid-session} SSH tunnelling, changing mid-session
 
 \IM{local port forwarding} local-to-remote port forwarding
 \IM{remote port forwarding} remote-to-local port forwarding
@@ -184,6 +196,11 @@ saved sessions from
 \IM{pseudo-terminal allocation} pseudo-terminal allocation
 \IM{pseudo-terminal allocation} pty allocation
 \IM{pseudo-terminal allocation} allocation, of pseudo-terminal
+
+\IM{ERASE special character} \cw{ERASE}, special character
+\IM{ERASE special character} \cw{VERASE}, special character
+\IM{QUIT special character} \cw{QUIT}, special character
+\IM{QUIT special character} \cw{VQUIT}, special character
 
 \IM{-telnet} \c{-telnet} command-line option
 \IM{-raw} \c{-raw} command-line option
@@ -279,8 +296,8 @@ saved sessions from
 \IM{inactive window} window, inactive
 \IM{inactive window} terminal window, inactive
 
-\IM{Log SSH packet data} SSH packet log
-\IM{Log SSH packet data} packet log, SSH
+\IM{SSH packet log} SSH packet log
+\IM{SSH packet log} packet log, SSH
 
 \IM{auto wrap mode}{auto wrap} auto wrap mode
 \IM{auto wrap mode}{auto wrap} wrapping, automatic
@@ -524,6 +541,10 @@ saved sessions from
 \IM{Telnet proxy} ad-hoc proxy
 \IM{Telnet proxy} proxy, Telnet
 
+\IM{Local proxy} local proxy
+\IM{Local proxy} proxy command
+\IM{Local proxy} command, proxy
+
 \IM{proxy DNS} proxy DNS
 \IM{proxy DNS} DNS, with proxy
 \IM{proxy DNS} name resolution, with proxy
@@ -594,6 +615,9 @@ saved sessions from
 \IM{AES} AES
 \IM{AES} Advanced Encryption Standard
 \IM{AES} Rijndael
+
+\IM{Arcfour} Arcfour
+\IM{Arcfour} RC4
 
 \IM{triple-DES} triple-DES
 

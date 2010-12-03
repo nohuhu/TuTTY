@@ -7,13 +7,26 @@
 
 #if defined SNAPSHOT
 
-char ver[] = "Development snapshot " STR(SNAPSHOT);
-char sshver[] = "PuTTY-Snapshot-" STR(SNAPSHOT);
+#if defined SVN_REV
+#define SNAPSHOT_TEXT STR(SNAPSHOT) ":r" STR(SVN_REV)
+#else
+#define SNAPSHOT_TEXT STR(SNAPSHOT)
+#endif
+
+char ver[] = "Development snapshot " SNAPSHOT_TEXT;
+char sshver[] = "PuTTY-Snapshot-" SNAPSHOT_TEXT;
+
+#undef SNAPSHOT_TEXT
 
 #elif defined RELEASE
 
 char ver[] = "Release " STR(RELEASE);
 char sshver[] = "PuTTY-Release-" STR(RELEASE);
+
+#elif defined SVN_REV
+
+char ver[] = "Custom build r" STR(SVN_REV);
+char sshver[] = "PuTTY-Custom-r" STR(SVN_REV);
 
 #else
 

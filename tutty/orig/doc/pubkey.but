@@ -1,4 +1,4 @@
-\define{versionidpubkey} \versionid $Id: pubkey.but 5593 2005-04-05 18:01:32Z jacob $
+\define{versionidpubkey} \versionid $Id: pubkey.but 6905 2006-11-15 12:56:48Z jacob $
 
 \C{pubkey} Using public keys for SSH authentication
 
@@ -212,7 +212,7 @@ utility, will list key fingerprints rather than the whole public key.
 
 If you have more than one key and use them for different purposes,
 you don't need to memorise the key fingerprints in order to tell
-them apart. PuTTY allows you to enter a \e{comment} for your key,
+them apart. PuTTYgen allows you to enter a \e{comment} for your key,
 which will be displayed whenever PuTTY or Pageant asks you for the
 passphrase.
 
@@ -235,7 +235,7 @@ choose a passphrase for your key. The passphrase will be used to
 \i{encrypt} the key on disk, so you will not be able to use the key
 without first entering the passphrase.
 
-When you save the key, PuTTY will check that the \q{Key passphrase}
+When you save the key, PuTTYgen will check that the \q{Key passphrase}
 and \q{Confirm passphrase} boxes both contain exactly the same
 passphrase, and will refuse to save the key otherwise.
 
@@ -291,8 +291,8 @@ will need to tell PuTTY to use for authentication (see
 
 \cfg{winhelp-topic}{puttygen.savepub}
 
-The SSH-2 protocol drafts specify a \I{SSH-2 public key format}standard
-format for storing public keys on disk. Some SSH servers (such as
+RFC 4716 specifies a \I{SSH-2 public key format}standard format for
+storing SSH-2 public keys on disk. Some SSH servers (such as
 \i\cw{ssh.com}'s) require a public key in this format in order to accept
 authentication with the corresponding private key. (Others, such as
 OpenSSH, use a different format; see \k{puttygen-pastekey}.)

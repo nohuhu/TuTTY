@@ -94,7 +94,7 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\..\..\be_all.c
+SOURCE=..\..\..\be_all_s.c
 # End Source File
 # Begin Source File
 
@@ -123,10 +123,6 @@ SOURCE=..\..\..\pinger.c
 # Begin Source File
 
 SOURCE=..\..\..\portfwd.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\pproxy.c
 # End Source File
 # Begin Source File
 
@@ -160,6 +156,10 @@ SOURCE=..\..\..\ssh.c
 # Begin Source File
 
 SOURCE=..\..\..\sshaes.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\ssharcf.c
 # End Source File
 # Begin Source File
 
@@ -207,6 +207,10 @@ SOURCE=..\..\..\sshrsa.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\sshsh256.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\sshsh512.c
 # End Source File
 # Begin Source File
@@ -247,6 +251,10 @@ SOURCE=..\..\..\windows\windefs.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\windows\winhandl.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\windows\winmisc.c
 # End Source File
 # Begin Source File
@@ -264,6 +272,14 @@ SOURCE=..\..\..\windows\winpgntc.c
 # Begin Source File
 
 SOURCE=..\..\..\windows\winplink.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\windows\winproxy.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\windows\winser.c
 # End Source File
 # Begin Source File
 
@@ -344,6 +360,10 @@ SOURCE=..\..\..\tree234.h
 # Begin Source File
 
 SOURCE=..\..\..\unix\unix.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\windows\rcstuff.h
 # End Source File
 # Begin Source File
 

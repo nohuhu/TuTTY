@@ -1,4 +1,4 @@
-/* $Id: macmisc.c 5250 2005-02-05 00:29:20Z owen $ */
+/* $Id: macmisc.c 7084 2007-01-09 18:14:30Z simon $ */
 /*
  * Copyright (c) 1999, 2003 Ben Harris
  * All rights reserved.
@@ -156,7 +156,7 @@ int filename_is_null(Filename fn)
     return fn.fss.vRefNum == 0 && fn.fss.parID == 0 && fn.fss.name[0] == 0;
 }
 
-FILE *f_open(Filename fn, char const *mode)
+FILE *f_open(Filename fn, char const *mode, int is_private)
 {
     short savevol;
     long savedir;

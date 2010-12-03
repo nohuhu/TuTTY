@@ -155,6 +155,8 @@ Filename platform_default_filename(const char *name)
 
 char *platform_default_s(const char *name)
 {
+    if (!strcmp(name, "SerialLine"))
+	return dupstr("/dev/ttyS0");
     return NULL;
 }
 
@@ -177,10 +179,32 @@ void ldisc_update(void *frontend, int echo, int edit)
      */
 }
 
+char *get_ttymode(void *frontend, const char *mode)
+{
+    struct gui_data *inst = (struct gui_data *)frontend;
+    return term_get_ttymode(inst->term, mode);
+}
+
 int from_backend(void *frontend, int is_stderr, const char *data, int len)
 {
     struct gui_data *inst = (struct gui_data *)frontend;
     return term_data(inst->term, is_stderr, data, len);
+}
+
+int from_backend_untrusted(void *frontend, const char *data, int len)
+{
+    struct gui_data *inst = (struct gui_data *)frontend;
+    return term_data_untrusted(inst->term, data, len);
+}
+
+int get_userpass_input(prompts_t *p, unsigned char *in, int inlen)
+{
+    struct gui_data *inst = (struct gui_data *)p->frontend;
+    int ret;
+    ret = cmdline_get_passwd_input(p, in, inlen);
+    if (ret == -1)
+	ret = term_get_userpass_input(inst->term, p, in, inlen);
+    return ret;
 }
 
 void logevent(void *frontend, const char *string)
@@ -639,13 +663,12 @@ gint key_event(GtkWidget *widget, GdkEventKey *event, gpointer data)
 	    end = 2;
 	}
 
-	/* Control-Break is the same as Control-C */
+	/* Control-Break sends a Break special to the backend */
 	if (event->keyval == GDK_Break &&
 	    (event->state & GDK_CONTROL_MASK)) {
-	    output[1] = '\003';
-	    use_ucsoutput = FALSE;
-	    end = 2;
-	    special = TRUE;
+	    if (inst->back)
+		inst->back->special(inst->backhandle, TS_BRK);
+	    return TRUE;
 	}
 
 	/* We handle Return ourselves, because it needs to be flagged as
@@ -707,19 +730,21 @@ gint key_event(GtkWidget *widget, GdkEventKey *event, gpointer data)
 	if (inst->cfg.nethack_keypad) {
 	    char *keys = NULL;
 	    switch (event->keyval) {
-	      case GDK_KP_1: case GDK_KP_End: keys = "bB"; break;
-	      case GDK_KP_2: case GDK_KP_Down: keys = "jJ"; break;
-	      case GDK_KP_3: case GDK_KP_Page_Down: keys = "nN"; break;
-	      case GDK_KP_4: case GDK_KP_Left: keys = "hH"; break;
-	      case GDK_KP_5: case GDK_KP_Begin: keys = ".."; break;
-	      case GDK_KP_6: case GDK_KP_Right: keys = "lL"; break;
-	      case GDK_KP_7: case GDK_KP_Home: keys = "yY"; break;
-	      case GDK_KP_8: case GDK_KP_Up: keys = "kK"; break;
-	      case GDK_KP_9: case GDK_KP_Page_Up: keys = "uU"; break;
+	      case GDK_KP_1: case GDK_KP_End: keys = "bB\002"; break;
+	      case GDK_KP_2: case GDK_KP_Down: keys = "jJ\012"; break;
+	      case GDK_KP_3: case GDK_KP_Page_Down: keys = "nN\016"; break;
+	      case GDK_KP_4: case GDK_KP_Left: keys = "hH\010"; break;
+	      case GDK_KP_5: case GDK_KP_Begin: keys = "..."; break;
+	      case GDK_KP_6: case GDK_KP_Right: keys = "lL\014"; break;
+	      case GDK_KP_7: case GDK_KP_Home: keys = "yY\031"; break;
+	      case GDK_KP_8: case GDK_KP_Up: keys = "kK\013"; break;
+	      case GDK_KP_9: case GDK_KP_Page_Up: keys = "uU\025"; break;
 	    }
 	    if (keys) {
 		end = 2;
-		if (event->state & GDK_SHIFT_MASK)
+		if (event->state & GDK_CONTROL_MASK)
+		    output[1] = keys[2];
+		else if (event->state & GDK_SHIFT_MASK)
 		    output[1] = keys[1];
 		else
 		    output[1] = keys[0];
@@ -1179,6 +1204,7 @@ void notify_remote_exit(void *frontend)
 	    inst->back->free(inst->backhandle);
 	    inst->backhandle = NULL;
 	    inst->back = NULL;
+            term_provide_resize_fn(inst->term, NULL, NULL);
 	    update_specials_menu(inst);
 	}
 	gtk_widget_show(inst->restartitem);
@@ -1346,7 +1372,7 @@ static void real_palette_set(struct gui_data *inst, int n, int r, int g, int b)
 
     gdk_colormap_free_colors(inst->colmap, inst->cols + n, 1);
     gdk_colormap_alloc_colors(inst->colmap, inst->cols + n, 1,
-			      FALSE, FALSE, success);
+			      FALSE, TRUE, success);
     if (!success[0])
 	g_error("%s: couldn't allocate colour %d (#%02x%02x%02x)\n", appname,
 		n, r, g, b);
@@ -1368,8 +1394,13 @@ void palette_set(void *frontend, int n, int r, int g, int b)
     if (n > NALLCOLOURS)
 	return;
     real_palette_set(inst, n, r, g, b);
-    if (n == 258)
+    if (n == 258) {
+	/* Default Background changed. Ensure space between text area and
+	 * window border is redrawn */
 	set_window_background(inst);
+	draw_backing_rect(inst);
+	gtk_widget_queue_draw(inst->area);
+    }
 }
 
 void palette_reset(void *frontend)
@@ -1401,19 +1432,19 @@ void palette_reset(void *frontend)
     for (i = 0; i < NEXTCOLOURS; i++) {
 	if (i < 216) {
 	    int r = i / 36, g = (i / 6) % 6, b = i % 6;
-	    inst->cols[i+16].red = r * 0x3333;
-	    inst->cols[i+16].green = g * 0x3333;
-	    inst->cols[i+16].blue = b * 0x3333;
+	    inst->cols[i+16].red = r ? r * 0x2828 + 0x3737 : 0;
+	    inst->cols[i+16].green = g ? g * 0x2828 + 0x3737 : 0;
+	    inst->cols[i+16].blue = b ? b * 0x2828 + 0x3737 : 0;
 	} else {
 	    int shade = i - 216;
-	    shade = (shade + 1) * 0xFFFF / (NEXTCOLOURS - 216 + 1);
+	    shade = shade * 0x0a0a + 0x0808;
 	    inst->cols[i+16].red = inst->cols[i+16].green =
 		inst->cols[i+16].blue = shade;
 	}
     }
 
     gdk_colormap_alloc_colors(inst->colmap, inst->cols, NALLCOLOURS,
-			      FALSE, FALSE, success);
+			      FALSE, TRUE, success);
     for (i = 0; i < NALLCOLOURS; i++) {
 	if (!success[i])
 	    g_error("%s: couldn't allocate colour %d (#%02x%02x%02x)\n",
@@ -1421,7 +1452,13 @@ void palette_reset(void *frontend)
                     inst->cfg.colours[i][1], inst->cfg.colours[i][2]);
     }
 
+    /* Since Default Background may have changed, ensure that space
+     * between text area and window border is refreshed. */
     set_window_background(inst);
+    if (inst->area) {
+	draw_backing_rect(inst);
+	gtk_widget_queue_draw(inst->area);
+    }
 }
 
 /* Ensure that all the cut buffers exist - according to the ICCCM, we must
@@ -1429,22 +1466,23 @@ void palette_reset(void *frontend)
  */
 void init_cutbuffers()
 {
+    unsigned char empty[] = "";
     XChangeProperty(GDK_DISPLAY(), GDK_ROOT_WINDOW(),
-		    XA_CUT_BUFFER0, XA_STRING, 8, PropModeAppend, "", 0);
+		    XA_CUT_BUFFER0, XA_STRING, 8, PropModeAppend, empty, 0);
     XChangeProperty(GDK_DISPLAY(), GDK_ROOT_WINDOW(),
-		    XA_CUT_BUFFER1, XA_STRING, 8, PropModeAppend, "", 0);
+		    XA_CUT_BUFFER1, XA_STRING, 8, PropModeAppend, empty, 0);
     XChangeProperty(GDK_DISPLAY(), GDK_ROOT_WINDOW(),
-		    XA_CUT_BUFFER2, XA_STRING, 8, PropModeAppend, "", 0);
+		    XA_CUT_BUFFER2, XA_STRING, 8, PropModeAppend, empty, 0);
     XChangeProperty(GDK_DISPLAY(), GDK_ROOT_WINDOW(),
-		    XA_CUT_BUFFER3, XA_STRING, 8, PropModeAppend, "", 0);
+		    XA_CUT_BUFFER3, XA_STRING, 8, PropModeAppend, empty, 0);
     XChangeProperty(GDK_DISPLAY(), GDK_ROOT_WINDOW(),
-		    XA_CUT_BUFFER4, XA_STRING, 8, PropModeAppend, "", 0);
+		    XA_CUT_BUFFER4, XA_STRING, 8, PropModeAppend, empty, 0);
     XChangeProperty(GDK_DISPLAY(), GDK_ROOT_WINDOW(),
-		    XA_CUT_BUFFER5, XA_STRING, 8, PropModeAppend, "", 0);
+		    XA_CUT_BUFFER5, XA_STRING, 8, PropModeAppend, empty, 0);
     XChangeProperty(GDK_DISPLAY(), GDK_ROOT_WINDOW(),
-		    XA_CUT_BUFFER6, XA_STRING, 8, PropModeAppend, "", 0);
+		    XA_CUT_BUFFER6, XA_STRING, 8, PropModeAppend, empty, 0);
     XChangeProperty(GDK_DISPLAY(), GDK_ROOT_WINDOW(),
-		    XA_CUT_BUFFER7, XA_STRING, 8, PropModeAppend, "", 0);
+		    XA_CUT_BUFFER7, XA_STRING, 8, PropModeAppend, empty, 0);
 }
 
 /* Store the data in a cut-buffer. */
@@ -1469,7 +1507,7 @@ char * retrieve_cutbuffer(int * nbytes)
     return ptr;
 }
 
-void write_clip(void *frontend, wchar_t * data, int len, int must_deselect)
+void write_clip(void *frontend, wchar_t * data, int *attr, int len, int must_deselect)
 {
     struct gui_data *inst = (struct gui_data *)frontend;
     if (inst->pasteout_data)
@@ -1564,15 +1602,16 @@ void selection_get(GtkWidget *widget, GtkSelectionData *seldata,
     struct gui_data *inst = (struct gui_data *)data;
     if (seldata->target == utf8_string_atom)
 	gtk_selection_data_set(seldata, seldata->target, 8,
-			       inst->pasteout_data_utf8,
+			       (unsigned char *)inst->pasteout_data_utf8,
 			       inst->pasteout_data_utf8_len);
     else if (seldata->target == compound_text_atom)
 	gtk_selection_data_set(seldata, seldata->target, 8,
-			       inst->pasteout_data_ctext,
+			       (unsigned char *)inst->pasteout_data_ctext,
 			       inst->pasteout_data_ctext_len);
     else
 	gtk_selection_data_set(seldata, seldata->target, 8,
-			       inst->pasteout_data, inst->pasteout_data_len);
+			       (unsigned char *)inst->pasteout_data,
+			       inst->pasteout_data_len);
 }
 
 gint selection_clear(GtkWidget *widget, GdkEventSelection *seldata,
@@ -1826,9 +1865,9 @@ void sys_cursor(void *frontend, int x, int y)
  * may want to perform additional actions on any kind of bell (for
  * example, taskbar flashing in Windows).
  */
-void beep(void *frontend, int mode)
+void do_beep(void *frontend, int mode)
 {
-    if (mode != BELL_VISUAL)
+    if (mode == BELL_DEFAULT)
 	gdk_beep();
 }
 
@@ -1879,6 +1918,7 @@ void do_text_internal(Context ctx, int x, int y, wchar_t *text, int len,
     GdkGC *gc = dctx->gc;
     int ncombining, combining;
     int nfg, nbg, t, fontid, shadow, rlen, widefactor;
+    int monochrome = gtk_widget_get_visual(inst->area)->depth == 1;
 
     if (attr & TATTR_COMBINING) {
 	ncombining = len;
@@ -1886,9 +1926,9 @@ void do_text_internal(Context ctx, int x, int y, wchar_t *text, int len,
     } else
 	ncombining = 1;
 
-    nfg = ((attr & ATTR_FGMASK) >> ATTR_FGSHIFT);
-    nbg = ((attr & ATTR_BGMASK) >> ATTR_BGSHIFT);
-    if (attr & ATTR_REVERSE) {
+    nfg = ((monochrome ? ATTR_DEFFG : (attr & ATTR_FGMASK)) >> ATTR_FGSHIFT);
+    nbg = ((monochrome ? ATTR_DEFBG : (attr & ATTR_BGMASK)) >> ATTR_BGSHIFT);
+    if (!!(attr & ATTR_REVERSE) ^ (monochrome && (attr & TATTR_ACTCURS))) {
 	t = nfg;
 	nfg = nbg;
 	nbg = t;
@@ -1901,7 +1941,7 @@ void do_text_internal(Context ctx, int x, int y, wchar_t *text, int len,
 	if (nbg < 16) nbg |= 8;
 	else if (nbg >= 256) nbg |= 1;
     }
-    if (attr & TATTR_ACTCURS) {
+    if ((attr & TATTR_ACTCURS) && !monochrome) {
 	nfg = 260;
 	nbg = 261;
     }
@@ -1960,12 +2000,18 @@ void do_text_internal(Context ctx, int x, int y, wchar_t *text, int len,
 	    wcs[i] = text[i];
 	}
 
+	if (inst->fonts[fontid] == NULL && (fontid & 2)) {
+	    /*
+	     * We've been given ATTR_WIDE, but have no wide font.
+	     * Fall back to the non-wide font.
+	     */
+	    fontid &= ~2;
+	}
+
 	if (inst->fonts[fontid] == NULL) {
 	    /*
-	     * The font for this contingency does not exist.
-	     * Typically this means we've been given ATTR_WIDE
-	     * character and have no wide font. So we display
-	     * nothing at all; such is life.
+	     * The font for this contingency does not exist. So we
+	     * display nothing at all; such is life.
 	     */
 	} else if (inst->fontinfo[fontid].is_wide) {
 	    /*
@@ -2362,7 +2408,7 @@ static void help(FILE *fp) {
     }
 }
 
-int do_cmdline(int argc, char **argv, int do_everything,
+int do_cmdline(int argc, char **argv, int do_everything, int *allow_launch,
                struct gui_data *inst, Config *cfg)
 {
     int err = 0;
@@ -2444,15 +2490,16 @@ int do_cmdline(int argc, char **argv, int do_everything,
 	    cfg->line_codepage[sizeof(cfg->line_codepage)-1] = '\0';
 
 	} else if (!strcmp(p, "-geometry")) {
-	    int flags, x, y, w, h;
+	    int flags, x, y;
+	    unsigned int w, h;
 	    EXPECTS_ARG;
 	    SECOND_PASS_ONLY;
 
 	    flags = XParseGeometry(val, &x, &y, &w, &h);
 	    if (flags & WidthValue)
-		cfg->width = w;
+		cfg->width = (int)w;
 	    if (flags & HeightValue)
-		cfg->height = h;
+		cfg->height = (int)h;
 
             if (flags & (XValue | YValue)) {
                 inst->xpos = x;
@@ -2567,7 +2614,8 @@ int do_cmdline(int argc, char **argv, int do_everything,
             exit(1);
 
 	} else if(p[0] != '-' && (!do_everything ||
-                                  process_nonoption_arg(p, cfg))) {
+                                  process_nonoption_arg(p, cfg,
+							allow_launch))) {
             /* do nothing */
 
 	} else {
@@ -2835,7 +2883,7 @@ void clear_scrollback_menuitem(GtkMenuItem *item, gpointer data)
 void reset_terminal_menuitem(GtkMenuItem *item, gpointer data)
 {
     struct gui_data *inst = (struct gui_data *)data;
-    term_pwron(inst->term);
+    term_pwron(inst->term, TRUE);
     if (inst->ldisc)
 	ldisc_send(inst->ldisc, NULL, 0, 0);
 }
@@ -3206,6 +3254,7 @@ void restart_session_menuitem(GtkMenuItem *item, gpointer data)
 
     if (!inst->back) {
 	logevent(inst, "----- Session restarted -----");
+	term_pwron(inst->term, FALSE);
 	start_backend(inst);
 	inst->exited = FALSE;
     }
@@ -3224,6 +3273,63 @@ void saved_session_freedata(GtkMenuItem *item, gpointer data)
     char *str = (char *)gtk_object_get_data(GTK_OBJECT(item), "user-data");
 
     sfree(str);
+}
+
+static void update_savedsess_menu(GtkMenuItem *menuitem, gpointer data)
+{
+    struct gui_data *inst = (struct gui_data *)data;
+    struct sesslist sesslist;
+    int i;
+
+    gtk_container_foreach(GTK_CONTAINER(inst->sessionsmenu),
+			  (GtkCallback)gtk_widget_destroy, NULL);
+
+    get_sesslist(&sesslist, TRUE);
+    for (i = 1; i < sesslist.nsessions; i++) {
+	GtkWidget *menuitem =
+	    gtk_menu_item_new_with_label(sesslist.sessions[i]);
+	gtk_container_add(GTK_CONTAINER(inst->sessionsmenu), menuitem);
+	gtk_widget_show(menuitem);
+	gtk_object_set_data(GTK_OBJECT(menuitem), "user-data",
+			    dupstr(sesslist.sessions[i]));
+	gtk_signal_connect(GTK_OBJECT(menuitem), "activate",
+			   GTK_SIGNAL_FUNC(saved_session_menuitem),
+			   inst);
+	gtk_signal_connect(GTK_OBJECT(menuitem), "destroy",
+			   GTK_SIGNAL_FUNC(saved_session_freedata),
+			   inst);
+    }
+    get_sesslist(&sesslist, FALSE); /* free up */
+}
+
+void set_window_icon(GtkWidget *window, const char *const *const *icon,
+		     int n_icon)
+{
+    GdkPixmap *iconpm;
+    GdkBitmap *iconmask;
+#if GTK_CHECK_VERSION(2,0,0)
+    GList *iconlist;
+    int n;
+#endif
+
+    if (!n_icon)
+	return;
+
+    gtk_widget_realize(window);
+    iconpm = gdk_pixmap_create_from_xpm_d(window->window, &iconmask,
+					  NULL, (gchar **)icon[0]);
+    gdk_window_set_icon(window->window, NULL, iconpm, iconmask);
+
+#if GTK_CHECK_VERSION(2,0,0)
+    iconlist = NULL;
+    for (n = 0; n < n_icon; n++) {
+	iconlist =
+	    g_list_append(iconlist,
+			  gdk_pixbuf_new_from_xpm_data((const gchar **)
+						       icon[n]));
+    }
+    gdk_window_set_icon_list(window->window, iconlist);
+#endif
 }
 
 void update_specials_menu(void *frontend)
@@ -3322,6 +3428,8 @@ static void start_backend(struct gui_data *inst)
 	set_icon(inst, title);
 	sfree(title);
     }
+    sfree(realhost);
+
     inst->back->provide_logctx(inst->backhandle, inst->logctx);
 
     term_provide_resize_fn(inst->term, inst->back->size, inst->backhandle);
@@ -3370,15 +3478,23 @@ int pt_main(int argc, char **argv)
 	/* Splatter this argument so it doesn't clutter a ps listing */
 	memset(argv[1], 0, strlen(argv[1]));
     } else {
-	if (do_cmdline(argc, argv, 0, inst, &inst->cfg))
+	/* By default, we bring up the config dialog, rather than launching
+	 * a session. This gets set to TRUE if something happens to change
+	 * that (e.g., a hostname is specified on the command-line). */
+	int allow_launch = FALSE;
+	if (do_cmdline(argc, argv, 0, &allow_launch, inst, &inst->cfg))
 	    exit(1);		       /* pre-defaults pass to get -class */
 	do_defaults(NULL, &inst->cfg);
-	if (do_cmdline(argc, argv, 1, inst, &inst->cfg))
+	if (do_cmdline(argc, argv, 1, &allow_launch, inst, &inst->cfg))
 	    exit(1);		       /* post-defaults, do everything */
 
 	cmdline_run_saved(&inst->cfg);
 
-	if (!*inst->cfg.host && !cfgbox(&inst->cfg))
+	if (loaded_session)
+	    allow_launch = TRUE;
+
+	if ((!allow_launch || !cfg_launchable(&inst->cfg)) &&
+	    !cfgbox(&inst->cfg))
 	    exit(0);		       /* config box hit Cancel */
     }
 
@@ -3475,6 +3591,12 @@ int pt_main(int argc, char **argv)
 			  GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK |
 			  GDK_POINTER_MOTION_MASK | GDK_BUTTON_MOTION_MASK);
 
+    {
+	extern const char *const *const main_icon[];
+	extern const int n_main_icon;
+	set_window_icon(inst->window, main_icon, n_main_icon);
+    }
+
     gtk_widget_show(inst->window);
 
     set_window_background(inst);
@@ -3505,28 +3627,10 @@ int pt_main(int argc, char **argv)
 	gtk_widget_hide(inst->restartitem);
         MKMENUITEM("Duplicate Session", dup_session_menuitem);
 	if (saved_sessions) {
-	    struct sesslist sesslist;
-	    int i;
-
 	    inst->sessionsmenu = gtk_menu_new();
-
-	    get_sesslist(&sesslist, TRUE);
-	    for (i = 1; i < sesslist.nsessions; i++) {
-		menuitem = gtk_menu_item_new_with_label(sesslist.sessions[i]);
-		gtk_container_add(GTK_CONTAINER(inst->sessionsmenu), menuitem);
-		gtk_widget_show(menuitem);
-		gtk_object_set_data(GTK_OBJECT(menuitem), "user-data",
-				    dupstr(sesslist.sessions[i]));
-		gtk_signal_connect(GTK_OBJECT(menuitem), "activate",
-				   GTK_SIGNAL_FUNC(saved_session_menuitem),
-				   inst);
-		gtk_signal_connect(GTK_OBJECT(menuitem), "destroy",
-				   GTK_SIGNAL_FUNC(saved_session_freedata),
-				   inst);
-	    }
-	    get_sesslist(&sesslist, FALSE);
-
-	    MKMENUITEM("Saved Sessions", NULL);
+	    /* sessionsmenu will be updated when it's invoked */
+	    /* XXX is this the right way to do dynamic menus in Gtk? */
+	    MKMENUITEM("Saved Sessions", update_savedsess_menu);
 	    gtk_menu_item_set_submenu(GTK_MENU_ITEM(menuitem),
 				      inst->sessionsmenu);
 	}

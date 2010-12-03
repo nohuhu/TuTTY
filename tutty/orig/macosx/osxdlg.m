@@ -123,12 +123,10 @@
     int hmin = 0;
     int panelht = 0;
 
-    get_sesslist(&sl, TRUE);
-
     ctrlbox = ctrl_new_box();
-    setup_config_box(ctrlbox, &sl, FALSE /*midsession*/, aCfg.protocol,
+    setup_config_box(ctrlbox, FALSE /*midsession*/, aCfg.protocol,
 		     0 /* protcfginfo */);
-    unix_setup_config_box(ctrlbox, FALSE /*midsession*/);
+    unix_setup_config_box(ctrlbox, FALSE /*midsession*/, aCfg.protocol);
 
     cfg = aCfg;			       /* structure copy */
 

@@ -94,7 +94,7 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\..\..\be_all.c
+SOURCE=..\..\..\be_all_s.c
 # End Source File
 # Begin Source File
 
@@ -142,10 +142,6 @@ SOURCE=..\..\..\portfwd.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\pproxy.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\proxy.c
 # End Source File
 # Begin Source File
@@ -155,6 +151,10 @@ SOURCE=..\..\..\raw.c
 # Begin Source File
 
 SOURCE=..\..\..\rlogin.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\sercfg.c
 # End Source File
 # Begin Source File
 
@@ -176,6 +176,10 @@ SOURCE=..\..\..\ssh.c
 # Begin Source File
 
 SOURCE=..\..\..\sshaes.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\ssharcf.c
 # End Source File
 # Begin Source File
 
@@ -220,6 +224,10 @@ SOURCE=..\..\..\sshrand.c
 # Begin Source File
 
 SOURCE=..\..\..\sshrsa.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\sshsh256.c
 # End Source File
 # Begin Source File
 
@@ -287,6 +295,14 @@ SOURCE=..\..\..\windows\window.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\windows\winhandl.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\windows\winhelp.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\windows\winmisc.c
 # End Source File
 # Begin Source File
@@ -304,6 +320,14 @@ SOURCE=..\..\..\windows\winpgntc.c
 # Begin Source File
 
 SOURCE=..\..\..\windows\winprint.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\windows\winproxy.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\windows\winser.c
 # End Source File
 # Begin Source File
 
@@ -423,11 +447,11 @@ SOURCE=..\..\..\windows\putty.ico
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\windows\puttycfg.ico
+SOURCE=..\..\..\windows\putty.rc
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\windows\win_res.rc
+SOURCE=..\..\..\windows\puttycfg.ico
 # End Source File
 # End Group
 # End Target

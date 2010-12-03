@@ -1,4 +1,4 @@
-\define{versionidconfig} \versionid $Id: config.but 5593 2005-04-05 18:01:32Z jacob $
+\define{versionidconfig} \versionid $Id: config.but 7345 2007-02-28 21:30:06Z jacob $
 
 \C{config} Configuring PuTTY
 
@@ -25,18 +25,25 @@ filled in before PuTTY can open a session at all.
 \b The \q{Host Name} box is where you type the name, or the \i{IP
 address}, of the server you want to connect to.
 
-\b The \q{Protocol} radio buttons let you choose what type of
+\b The \q{Connection type} radio buttons let you choose what type of
 connection you want to make: a \I{raw TCP connections}raw
-connection, a \i{Telnet} connection, an \i{Rlogin} connection
-or an \i{SSH} connection. (See \k{which-one} for a
-summary of the differences between SSH, Telnet and rlogin, and
-\k{using-rawprot} for an explanation of \q{raw} connections.)
+connection, a \i{Telnet} connection, an \i{Rlogin} connection, an
+\i{SSH} connection, or a connection to a local \i{serial line}. (See
+\k{which-one} for a summary of the differences between SSH, Telnet
+and rlogin; see \k{using-rawprot} for an explanation of \q{raw}
+connections; see \k{using-serial} for information about using a
+serial line.)
 
-\b The \q{Port} box lets you specify which \i{port number} on the server
-to connect to. If you select Telnet, Rlogin, or SSH, this box will
-be filled in automatically to the usual value, and you will only
-need to change it if you have an unusual server. If you select Raw
-mode, you will almost certainly need to fill in the \q{Port} box.
+\b The \q{Port} box lets you specify which \i{port number} on the
+server to connect to. If you select Telnet, Rlogin, or SSH, this box
+will be filled in automatically to the usual value, and you will
+only need to change it if you have an unusual server. If you select
+Raw mode, you will almost certainly need to fill in the \q{Port} box
+yourself.
+
+If you select \q{Serial} from the \q{Connection type} radio buttons,
+the \q{Host Name} and \q{Port} boxes are replaced by \q{Serial line}
+and \q{Speed}; see \k{config-serial} for more details of these.
 
 \S{config-saving} \ii{Loading and storing saved sessions}
 
@@ -140,19 +147,19 @@ The Logging configuration panel allows you to save \i{log file}s of your
 PuTTY sessions, for debugging, analysis or future reference.
 
 The main option is a radio-button set that specifies whether PuTTY
-will log anything at all. The options are
+will log anything at all. The options are:
 
-\b \q{Logging turned off completely}. This is the default option; in
-this mode PuTTY will not create a log file at all.
+\b \q{None}. This is the default option; in this mode PuTTY will not
+create a log file at all.
 
-\b \q{Log printable output only}. In this mode, a log file will be
+\b \q{Printable output}. In this mode, a log file will be
 created and written to, but only printable text will be saved into
 it. The various terminal control codes that are typically sent down
 an interactive session alongside the printable text will be omitted.
 This might be a useful mode if you want to read a log file in a text
 editor and hope to be able to make sense of it.
 
-\b \q{Log all session output}. In this mode, \e{everything} sent by
+\b \q{All session output}. In this mode, \e{everything} sent by
 the server into your terminal session is logged. If you view the log
 file in a text editor, therefore, you may well find it full of
 strange control characters. This is a particularly useful mode if
@@ -161,14 +168,26 @@ can record everything that went to the terminal, so that someone
 else can replay the session later in slow motion and watch to see
 what went wrong.
 
-\b \q{\i{Log SSH packet data}}. In this mode (which is only used by SSH
-connections), the SSH message packets sent over the encrypted
-connection are written to the log file. You might need this to debug
-a network-level problem, or more likely to send to the PuTTY authors
-as part of a bug report. \e{BE WARNED} that if you log in using a
-password, the password can appear in the log file; see
-\k{config-logssh} for options that may help to remove sensitive
-material from the log file before you send it to anyone else.
+\b \I{SSH packet log}\q{SSH packets}. In this mode (which is only used
+by SSH connections), the SSH message packets sent over the encrypted
+connection are written to the log file (as well as \i{Event Log}
+entries). You might need this to debug a network-level problem, or
+more likely to send to the PuTTY authors as part of a bug report.
+\e{BE WARNED} that if you log in using a password, the password can
+appear in the log file; see \k{config-logssh} for options that may
+help to remove sensitive material from the log file before you send it
+to anyone else.
+
+\b \q{SSH packets and raw data}. In this mode, as well as the
+decrypted packets (as in the previous mode), the \e{raw} (encrypted,
+compressed, etc) packets are \e{also} logged. This could be useful to
+diagnose corruption in transit. (The same caveats as the previous mode
+apply, of course.)
+
+Note that the non-SSH logging options (\q{Printable output} and
+\q{All session output}) only work with PuTTY proper; in programs
+without terminal emulation (such as Plink), they will have no effect,
+even if enabled via saved settings.
 
 \S{config-logfilename} \q{Log file name}
 
@@ -247,10 +266,11 @@ glean a lot of useful information from even these obfuscated logs
 
 \cfg{winhelp-topic}{logging.ssh.omitpassword}
 
-When checked, password fields are removed from the log of transmitted
-packets. (This includes any user responses to challenge-response
-authentication methods such as \q{keyboard-interactive}.) This does
-not include X11 authentication data if using X11 forwarding.
+When checked, decrypted password fields are removed from the log of
+transmitted packets. (This includes any user responses to
+challenge-response authentication methods such as
+\q{keyboard-interactive}.) This does not include X11 authentication
+data if using X11 forwarding.
 
 Note that this will only omit data that PuTTY \e{knows} to be a
 password. However, if you start another login session within your
@@ -264,10 +284,10 @@ This option is enabled by default.
 
 \cfg{winhelp-topic}{logging.ssh.omitdata}
 
-When checked, all \q{session data} is omitted; this is defined as data
-in terminal sessions and in forwarded channels (TCP, X11, and
-authentication agent). This will usually substantially reduce the size
-of the resulting log file.
+When checked, all decrypted \q{session data} is omitted; this is
+defined as data in terminal sessions and in forwarded channels (TCP,
+X11, and authentication agent). This will usually substantially reduce
+the size of the resulting log file.
 
 This option is disabled by default.
 
@@ -416,7 +436,7 @@ other problems.
 
 Note that this is \e{not} the feature of PuTTY which the server will
 typically use to determine your terminal type. That feature is the
-\q{Terminal-type string} in the Connection panel; see
+\q{\ii{Terminal-type} string} in the Connection panel; see
 \k{config-termtype} for details.
 
 You can include control characters in the answerback string using
@@ -502,7 +522,13 @@ state.
 \H{config-keyboard} The Keyboard panel
 
 The Keyboard configuration panel allows you to control the behaviour
-of the \i{keyboard} in PuTTY.
+of the \i{keyboard} in PuTTY.  The correct state for many of these
+settings depends on what the server to which PuTTY is connecting
+expects.  With a \i{Unix} server, this is likely to depend on the
+\i\c{termcap} or \i\c{terminfo} entry it uses, which in turn is likely to
+be controlled by the \q{\ii{Terminal-type} string} setting in the Connection
+panel; see \k{config-termtype} for details.  If none of the settings here
+seems to help, you may find \k{faq-keyboard} to be useful.
 
 \S{config-backspace} Changing the action of the \ii{Backspace key}
 
@@ -515,9 +541,12 @@ known as \i{Control-?}) so that it can be distinguished from Control-H.
 This option allows you to choose which code PuTTY generates when you
 press Backspace.
 
-If you are connecting to a Unix system, you will probably find that
+If you are connecting over SSH, PuTTY by default tells the server
+the value of this option (see \k{config-ttymodes}), so you may find
+that the Backspace key does the right thing either way. Similarly,
+if you are connecting to a \i{Unix} system, you will probably find that
 the Unix \i\c{stty} command lets you configure which the server
-expects to see, so you might not need to change which one PuTTY
+expects to see, so again you might not need to change which one PuTTY
 generates. On other systems, the server's expectation might be fixed
 and you might have no choice but to configure PuTTY.
 
@@ -529,7 +558,7 @@ help.
 (Typing \i{Shift-Backspace} will cause PuTTY to send whichever code
 isn't configured here as the default.)
 
-\S{config-homeend} Changing the action of the \I{Home and End keys}
+\S{config-homeend} Changing the action of the \i{Home and End keys}
 
 \cfg{winhelp-topic}{keyboard.homeend}
 
@@ -638,10 +667,11 @@ In this mode, the numeric keypad keys 1-9 generate the NetHack
 movement commands (\cw{hjklyubn}). The 5 key generates the \c{.}
 command (do nothing).
 
-Better still, pressing Shift with the keypad keys generates the
-capital forms of the commands (\cw{HJKLYUBN}), which tells NetHack
-to keep moving you in the same direction until you encounter
-something interesting.
+In addition, pressing Shift or Ctrl with the keypad keys generate
+the Shift- or Ctrl-keys you would expect (e.g. keypad-7 generates
+\cq{y}, so Shift-keypad-7 generates \cq{Y} and Ctrl-keypad-7
+generates Ctrl-Y); these commands tell NetHack to keep moving you in
+the same direction until you encounter something interesting.
 
 For some reason, this feature only works properly when \i{Num Lock} is
 on. We don't know why.
@@ -857,7 +887,7 @@ commands from the server. If you find PuTTY is doing this
 unexpectedly or inconveniently, you can tell PuTTY not to respond to
 those server commands.
 
-\S{config-features-qtitle} Disabling remote \i{window title} querying
+\S{config-features-qtitle} Response to remote \i{window title} querying
 
 \cfg{winhelp-topic}{features.qtitle}
 
@@ -874,8 +904,28 @@ service to have the new window title sent back to the server as if
 typed at the keyboard. This allows an attacker to fake keypresses
 and potentially cause your server-side applications to do things you
 didn't want. Therefore this feature is disabled by default, and we
-recommend you do not turn it on unless you \e{really} know what you
-are doing.
+recommend you do not set it to \q{Window title} unless you \e{really}
+know what you are doing.
+
+There are three settings for this option:
+
+\dt \q{None}
+
+\dd PuTTY makes no response whatsoever to the relevant escape
+sequence. This may upset server-side software that is expecting some
+sort of response.
+
+\dt \q{Empty string}
+
+\dd PuTTY makes a well-formed response, but leaves it blank. Thus,
+server-side software that expects a response is kept happy, but an
+attacker cannot influence the response string. This is probably the
+setting you want if you have no better ideas.
+
+\dt \q{Window title}
+
+\dd PuTTY responds with the actual window title. This is dangerous for
+the reasons described above.
 
 \S{config-features-dbackspace} Disabling \i{destructive backspace}
 
@@ -953,7 +1003,7 @@ The Window configuration panel allows you to control aspects of the
 
 \cfg{winhelp-topic}{window.size}
 
-The \q{\ii{Rows}} and \q{\ii{Columns}} boxes let you set the PuTTY
+The \q{\ii{Columns}} and \q{\ii{Rows}} boxes let you set the PuTTY
 window to a precise size. Of course you can also \I{window resizing}drag
 the window to a new size while a session is running.
 
@@ -1316,11 +1366,10 @@ work in the PuTTY window.
 
 If you enable \q{Paste to clipboard in RTF as well as plain text},
 PuTTY will write formatting information to the clipboard as well as
-the actual text you copy. Currently the only effect of this will be
+the actual text you copy. The effect of this is
 that if you paste into (say) a word processor, the text will appear
-in the word processor in the same \i{font} PuTTY was using to display
-it. In future it is likely that other formatting information (bold,
-underline, colours) will be copied as well.
+in the word processor in the same \i{font}, \i{colour}, and style 
+(e.g. bold, underline) PuTTY was using to display it.
 
 This option can easily be inconvenient, so by default it is
 disabled.
@@ -1524,7 +1573,9 @@ use the list box to select which colour you want to modify. The \i{RGB
 values} for that colour will appear on the right-hand side of the
 list box. Now, if you press the \q{Modify} button, you will be
 presented with a colour selector, in which you can choose a new
-colour to go in place of the old one.
+colour to go in place of the old one. (You may also edit the RGB
+values directly in the edit boxes, if you wish; each value is an
+integer from 0 to 255.)
 
 PuTTY allows you to set the \i{cursor colour}, the \i{default foreground}
 and \I{default background}background, and the precise shades of all the
@@ -1580,7 +1631,11 @@ connectivity is restored, the other side will find that the first
 side doesn't believe there is an open connection any more.
 Keepalives can make this sort of problem worse, because they
 increase the probability that PuTTY will attempt to send data during
-a break in connectivity. Therefore, you might find they help
+a break in connectivity. (Other types of periodic network activity
+can cause this behaviour; in particular, SSH-2 re-keys can have
+this effect. See \k{config-ssh-kex-rekey}.)
+
+Therefore, you might find that keepalives help
 connection loss, or you might find they make it worse, depending on
 what \e{kind} of network problems you have between you and the
 server.
@@ -1678,7 +1733,11 @@ connected to from lots of different types of terminal. In order to
 send the right \i{control sequence}s to each one, the server will need
 to know what type of terminal it is dealing with. Therefore, each of
 the SSH, Telnet and Rlogin protocols allow a text string to be sent
-down the connection describing the terminal.
+down the connection describing the terminal.  On a \i{Unix} server,
+this selects an entry from the \i\c{termcap} or \i\c{terminfo} database
+that tells applications what \i{control sequences} to send to the
+terminal, and what character sequences to expect the \i{keyboard}
+to generate.
 
 PuTTY attempts to emulate the Unix \i\c{xterm} program, and by default
 it reflects this by sending \c{xterm} as a terminal-type string. If
@@ -1746,7 +1805,7 @@ To remove one from the list, select it in the list box and press
 The \ii{Proxy} panel allows you to configure PuTTY to use various types
 of proxy in order to make its network connections. The settings in
 this panel affect the primary network connection forming your PuTTY
-session, but also any extra connections made as a result of SSH \i{port
+session, and also any extra connections made as a result of SSH \i{port
 forwarding} (see \k{using-port-forwarding}).
 
 \S{config-proxy-type} Setting the proxy type
@@ -1770,6 +1829,23 @@ user can make a Telnet connection directly to the firewall machine
 and enter a command such as \c{connect myhost.com 22} to connect
 through to an external host. Selecting \I{Telnet proxy}\q{Telnet}
 allows you to tell PuTTY to use this type of proxy.
+
+\b Selecting \I{Local proxy}\q{Local} allows you to specify an arbitrary
+command on the local machine to act as a proxy. When the session is
+started, instead of creating a TCP connection, PuTTY runs the command
+(specified in \k{config-proxy-command}), and uses its standard input and
+output streams.
+
+\lcont{
+This could be used, for instance, to talk to some kind of network proxy
+that PuTTY does not natively support; or you could tunnel a connection
+over something other than TCP/IP entirely.
+
+If you want your local proxy command to make a secondary SSH
+connection to a proxy host and then tunnel the primary connection
+over that, you might well want the \c{-nc} command-line option in
+Plink. See \k{using-cmdline-ncmode} for more information.
+}
 
 \S{config-proxy-exclude} Excluding parts of the network from proxying
 
@@ -1828,9 +1904,9 @@ set it to \q{Yes}, PuTTY will always pass host names straight to the
 proxy without trying to look them up first.
 
 If you set this option to \q{Auto} (the default), PuTTY will do
-something it considers appropriate for each type of proxy. Telnet
-and HTTP proxies will have host names passed straight to them; SOCKS
-proxies will not.
+something it considers appropriate for each type of proxy. Telnet,
+HTTP, and SOCKS5 proxies will have host names passed straight to
+them; SOCKS4 proxies will not.
 
 Note that if you are doing DNS at the proxy, you should make sure
 that your proxy exclusion settings (see \k{config-proxy-exclude}) do
@@ -1875,9 +1951,9 @@ in \I{plaintext password}plain text.
 passwords.
 
 \b You can specify a way to include a username and password in the
-Telnet proxy command (see \k{config-proxy-command}).
+Telnet/Local proxy command (see \k{config-proxy-command}).
 
-\S{config-proxy-command} Specifying the Telnet proxy command
+\S{config-proxy-command} Specifying the Telnet or Local proxy command
 
 \cfg{winhelp-topic}{proxy.command}
 
@@ -1885,6 +1961,9 @@ If you are using the \i{Telnet proxy} type, the usual command required
 by the firewall's Telnet server is \c{connect}, followed by a host
 name and a port number. If your proxy needs a different command,
 you can enter an alternative here.
+
+If you are using the \i{Local proxy} type, the local command to run
+is specified here.
 
 In this string, you can use \c{\\n} to represent a new-line, \c{\\r}
 to represent a carriage return, \c{\\t} to represent a tab
@@ -1895,9 +1974,12 @@ itself.
 Also, the special strings \c{%host} and \c{%port} will be replaced
 by the host name and port number you want to connect to. The strings
 \c{%user} and \c{%pass} will be replaced by the proxy username and 
-password you specify. To get a literal \c{%} sign, enter \c{%%}.
+password you specify. The strings \c{%proxyhost} and \c{%proxyport}
+will be replaced by the host details specified on the \e{Proxy} panel,
+if any (this is most likely to be useful for the Local proxy type).
+To get a literal \c{%} sign, enter \c{%%}.
 
-If the Telnet proxy server prompts for a username and password
+If a Telnet proxy server prompts for a username and password
 before commands can be sent, you can use a command such as:
 
 \c %user\n%pass\nconnect %host %port\n
@@ -2049,21 +2131,8 @@ Instead, you can choose to run a single specific command (such as a
 mail user agent, for example). If you want to do this, enter the
 command in the \q{\ii{Remote command}} box.
 
-\S{config-ssh-pty} \I{pseudo-terminal allocation}\q{Don't allocate
-a pseudo-terminal}
-
-\cfg{winhelp-topic}{ssh.nopty}
-
-When connecting to a \i{Unix} system, most \I{interactive
-connections}interactive shell sessions are run in a \e{pseudo-terminal},
-which allows the Unix system to pretend it's talking to a real physical
-terminal device but allows the SSH server to catch all the data coming
-from that fake device and send it back to the client.
-
-Occasionally you might find you have a need to run a session \e{not}
-in a pseudo-terminal. In PuTTY, this is generally only useful for
-very specialist purposes; although in Plink (see \k{plink}) it is
-the usual way of working.
+Note that most servers will close the session after executing the
+command.
 
 \S{config-ssh-noshell} \q{Don't start a \I{remote shell}shell or
 \I{remote command}command at all}
@@ -2125,11 +2194,13 @@ use that.
 
 PuTTY currently supports the following algorithms:
 
-\b \i{AES} (Rijndael) - 256, 192, or 128-bit CBC (SSH-2 only)
+\b \i{AES} (Rijndael) - 256, 192, or 128-bit SDCTR or CBC (SSH-2 only)
 
-\b \i{Blowfish} - 128-bit CBC
+\b \i{Arcfour} (RC4) - 256 or 128-bit stream cipher (SSH-2 only)
 
-\b \ii{Triple-DES} - 168-bit CBC
+\b \i{Blowfish} - 256-bit SDCTR (SSH-2 only) or 128-bit CBC
+
+\b \ii{Triple-DES} - 168-bit SDCTR (SSH-2 only) or CBC
 
 \b \ii{Single-DES} - 56-bit CBC (see below for SSH-2)
 
@@ -2154,7 +2225,7 @@ separate configuration of the preference orders. As a result you may
 get two warnings similar to the one above, possibly with different
 encryptions.
 
-Single-DES is not recommended in the SSH-2 draft protocol
+Single-DES is not recommended in the SSH-2 protocol
 standards, but one or two server implementations do support it.
 PuTTY can use single-DES to interoperate with
 these servers if you enable the \q{Enable legacy use of single-DES in
@@ -2235,7 +2306,7 @@ These options control how often PuTTY will initiate a repeat key
 exchange (\q{rekey}). You can also force a key exchange at any time
 from the Special Commands menu (see \k{using-specials}).
 
-\# FIXME: do we have any additions to the SSH-2 drafts' advice on
+\# FIXME: do we have any additions to the SSH-2 specs' advice on
 these values? Do we want to enforce any limits?
 
 \b \q{Max minutes before rekey} specifies the amount of time that is
@@ -2289,16 +2360,51 @@ protection than SSH-2 without rekeys.
 The Auth panel allows you to configure \i{authentication} options for
 SSH sessions.
 
+\S{config-ssh-noauth} \q{Bypass authentication entirely}
+
+\cfg{winhelp-topic}{ssh.auth.bypass}
+
+In SSH-2, it is possible to establish a connection without using SSH's
+mechanisms to identify or authenticate oneself to the server. Some
+servers may prefer to handle authentication in the data channel, for
+instance, or may simply require no authentication whatsoever.
+
+By default, PuTTY assumes the server requires authentication (most
+do), and thus must provide a username. If you find you are getting
+unwanted username prompts, you could try checking this option.
+
+This option only affects SSH-2 connections. SSH-1 connections always
+require an authentication step.
+
+\S{config-ssh-tryagent} \q{Attempt authentication using Pageant}
+
+\cfg{winhelp-topic}{ssh.auth.pageant}
+
+If this option is enabled, then PuTTY will look for Pageant (the SSH
+private-key storage agent) and attempt to authenticate with any
+suitable public keys Pageant currently holds.
+
+This behaviour is almost always desirable, and is therefore enabled
+by default. In rare cases you might need to turn it off in order to
+force authentication by some non-public-key method such as
+passwords.
+
+This option can also be controlled using the \c{-noagent}
+command-line option. See \k{using-cmdline-agentauth}.
+
+See \k{pageant} for more information about Pageant in general.
+
 \S{config-ssh-tis} \q{Attempt \I{TIS authentication}TIS or
 \i{CryptoCard authentication}}
 
 \cfg{winhelp-topic}{ssh.auth.tis}
 
-TIS and CryptoCard authentication are simple \I{challenge/response
-authentication}challenge/response forms of authentication available in
-SSH protocol version 1 only. You might use them if you were using \i{S/Key}
-\i{one-time passwords}, for example, or if you had a physical \i{security
-token} that generated responses to authentication challenges.
+TIS and CryptoCard authentication are (despite their names) generic
+forms of simple \I{challenge/response authentication}challenge/response
+authentication available in SSH protocol version 1 only. You might use
+them if you were using \i{S/Key} \i{one-time passwords}, for example,
+or if you had a physical \i{security token} that generated responses
+to authentication challenges.
 
 With this switch enabled, PuTTY will attempt these forms of
 authentication if the server is willing to try them. You will be
@@ -2369,6 +2475,117 @@ about public key authentication in SSH.
 This key must be in PuTTY's native format (\c{*.\i{PPK}}). If you have a
 private key in another format that you want to use with PuTTY, see
 \k{puttygen-conversions}.
+
+If a key file is specified here, and \i{Pageant} is running (see
+\k{pageant}), PuTTY will first try asking Pageant to authenticate with
+that key, and ignore any other keys Pageant may have. If that fails,
+PuTTY will ask for a passphrase as normal.
+
+\H{config-ssh-tty} The TTY panel
+
+The TTY panel lets you configure the remote pseudo-terminal.
+
+\S{config-ssh-pty} \I{pseudo-terminal allocation}\q{Don't allocate
+a pseudo-terminal}
+
+\cfg{winhelp-topic}{ssh.nopty}
+
+When connecting to a \i{Unix} system, most \I{interactive
+connections}interactive shell sessions are run in a \e{pseudo-terminal},
+which allows the Unix system to pretend it's talking to a real physical
+terminal device but allows the SSH server to catch all the data coming
+from that fake device and send it back to the client.
+
+Occasionally you might find you have a need to run a session \e{not}
+in a pseudo-terminal. In PuTTY, this is generally only useful for
+very specialist purposes; although in Plink (see \k{plink}) it is
+the usual way of working.
+
+\S{config-ttymodes} Sending \i{terminal modes}
+
+\cfg{winhelp-topic}{ssh.ttymodes}
+
+The SSH protocol allows the client to send \q{terminal modes} for
+the remote pseudo-terminal. These usually control the server's
+expectation of the local terminal's behaviour.
+
+If your server does not have sensible defaults for these modes, you
+may find that changing them here helps. If you don't understand any of
+this, it's safe to leave these settings alone.
+
+(None of these settings will have any effect if no pseudo-terminal
+is requested or allocated.)
+
+You can add or modify a mode by selecting it from the drop-down list,
+choosing whether it's set automatically or to a specific value with
+the radio buttons and edit box, and hitting \q{Add}. A mode (or
+several) can be removed from the list by selecting them and hitting
+\q{Remove}. The effect of the mode list is as follows:
+
+\b If a mode is not on the list, it will not be specified to the
+server under any circumstances.
+
+\b If a mode is on the list:
+
+\lcont{
+
+\b If the \q{Auto} option is selected, the PuTTY tools will decide
+whether to specify that mode to the server, and if so, will send
+a sensible value.
+
+\lcont{
+
+PuTTY proper will send modes that it has an opinion on (currently only
+the code for the Backspace key, \cw{ERASE}). Plink on Unix
+will propagate appropriate modes from the local terminal, if any.
+
+}
+
+\b If a value is specified, it will be sent to the server under all
+circumstances. The precise syntax of the value box depends on the
+mode.
+
+}
+
+By default, all of the available modes are listed as \q{Auto},
+which should do the right thing in most circumstances.
+
+The precise effect of each setting, if any, is up to the server. Their
+names come from \i{POSIX} and other Unix systems, and they are most
+likely to have a useful effect on such systems. (These are the same
+settings that can usually be changed using the \i\c{stty} command once
+logged in to such servers.)
+
+Some notable modes are described below; for fuller explanations, see
+your server documentation.
+
+\b \I{ERASE special character}\cw{ERASE} is the character that when typed
+by the user will delete one space to the left. When set to \q{Auto}
+(the default setting), this follows the setting of the local Backspace
+key in PuTTY (see \k{config-backspace}).
+
+\lcont{
+This and other \i{special character}s are specified using \c{^C} notation
+for Ctrl-C, and so on. Use \c{^<27>} or \c{^<0x1B>} to specify a
+character numerically, and \c{^~} to get a literal \c{^}. Other
+non-control characters are denoted by themselves. Leaving the box
+entirely blank indicates that \e{no} character should be assigned to
+the specified function, although this may not be supported by all
+servers.
+}
+
+\b \I{QUIT special character}\cw{QUIT} is a special character that
+usually forcefully ends the current process on the server
+(\cw{SIGQUIT}). On many servers its default setting is Ctrl-backslash
+(\c{^\\}), which is easy to accidentally invoke on many keyboards. If
+this is getting in your way, you may want to change it to another
+character or turn it off entirely.
+
+\b Boolean modes such as \cw{ECHO} and \cw{ICANON} can be specified in
+PuTTY in a variety of ways, such as \cw{true}/\cw{false},
+\cw{yes}/\cw{no}, and \cw{0}/\cw{1}.
+
+\b Terminal speeds are configured elsewhere; see \k{config-termspeed}.
 
 \H{config-ssh-x11} The X11 panel
 
@@ -2460,7 +2677,9 @@ on whether you want to \I{local port forwarding}forward a local port
 to a remote destination (\q{Local}) or \I{remote port forwarding}forward
 a remote port to a local destination (\q{Remote}). Alternatively,
 select \q{Dynamic} if you want PuTTY to \I{dynamic port forwarding}provide
-a local SOCKS 4/4A/5 proxy on a local port.
+a local SOCKS 4/4A/5 proxy on a local port (note that this proxy only
+supports TCP connections; the SSH protocol does not support forwarding
+\i{UDP}).
 
 \b Enter a source \i{port number} into the \q{Source port} box. For
 local forwardings, PuTTY will listen on this port of your PC. For
@@ -2491,11 +2710,12 @@ In place of port numbers, you can enter \i{service names}, if they are
 known to the local system. For instance, in the \q{Destination} box,
 you could enter \c{popserver.example.com:pop3}.
 
-You can modify the currently active set of port forwardings in
-mid-session using \q{Change Settings} (see \k{using-changesettings}).
-If you delete a local or dynamic port forwarding in mid-session, PuTTY
-will stop listening for connections on that port, so it can be re-used
-by another program. If you delete a remote port forwarding, note that:
+You can \I{port forwarding, changing mid-session}modify the currently
+active set of port forwardings in mid-session using \q{Change
+Settings} (see \k{using-changesettings}). If you delete a local or
+dynamic port forwarding in mid-session, PuTTY will stop listening for
+connections on that port, so it can be re-used by another program. If
+you delete a remote port forwarding, note that:
 
 \b The SSH-1 protocol contains no mechanism for asking the server to
 stop listening on a remote port.
@@ -2594,10 +2814,11 @@ to try to guess whether or not the server has the bug.
 An ignore message (SSH_MSG_IGNORE) is a message in the SSH protocol
 which can be sent from the client to the server, or from the server
 to the client, at any time. Either side is required to ignore the
-message whenever it receives it. PuTTY uses ignore messages to hide
-the password packet in SSH-1, so that a listener cannot tell the
-length of the user's password; it also uses ignore messages for
-connection keepalives (see \k{config-keepalive}).
+message whenever it receives it. PuTTY uses ignore messages to
+\I{password camouflage}hide the password packet in SSH-1, so that
+a listener cannot tell the length of the user's password; it also
+uses ignore messages for connection \i{keepalives} (see
+\k{config-keepalive}).
 
 If this bug is detected, PuTTY will stop using ignore messages. This
 means that keepalives will stop working, and PuTTY will have to fall
@@ -2624,9 +2845,10 @@ camouflage. In this sense, for a server to refuse to accept a padded
 password packet is not really a bug, but it does make life
 inconvenient if the server can also not handle ignore messages.
 
-If this \q{bug} is detected, PuTTY will have no choice but to send
-the user's password with no form of camouflage, so that an
-eavesdropping user will be easily able to find out the exact length
+If this \q{bug} is detected, PuTTY will assume that neither ignore
+messages nor padding are acceptable, and that it thus has no choice
+but to send the user's password with no form of camouflage, so that
+an eavesdropping user will be easily able to find out the exact length
 of the password. If this bug is enabled when talking to a correct
 server, the session will succeed, but will be more vulnerable to
 eavesdroppers than it could be.
@@ -2689,7 +2911,7 @@ This is an SSH-2-specific bug.
 
 Versions below 3.3 of \i{OpenSSH} require SSH-2 RSA signatures to be
 padded with zero bytes to the same length as the RSA key modulus.
-The SSH-2 draft specification says that an unpadded signature MUST be
+The SSH-2 specification says that an unpadded signature MUST be
 accepted, so this is a bug. A typical symptom of this problem is
 that PuTTY mysteriously fails RSA authentication once in every few
 hundred attempts, and falls back to passwords.
@@ -2739,6 +2961,95 @@ the session should still function, but may be less secure than you
 would expect.
 
 This is an SSH-2-specific bug.
+
+\H{config-serial} The Serial panel
+
+The \i{Serial} panel allows you to configure options that only apply
+when PuTTY is connecting to a local \I{serial port}\i{serial line}.
+
+\S{config-serial-line} Selecting a serial line to connect to
+
+\cfg{winhelp-topic}{serial.line}
+
+The \q{Serial line to connect to} box allows you to choose which
+serial line you want PuTTY to talk to, if your computer has more
+than one serial port.
+
+On Windows, the first serial line is called \i\cw{COM1}, and if there
+is a second it is called \cw{COM2}, and so on.
+
+This configuration setting is also visible on the Session panel,
+where it replaces the \q{Host Name} box (see \k{config-hostname}) if
+the connection type is set to \q{Serial}.
+
+\S{config-serial-speed} Selecting the speed of your serial line
+
+\cfg{winhelp-topic}{serial.speed}
+
+The \q{Speed} box allows you to choose the speed (or \q{baud rate})
+at which to talk to the serial line. Typical values might be 9600,
+19200, 38400 or 57600. Which one you need will depend on the device
+at the other end of the serial cable; consult the manual for that
+device if you are in doubt.
+
+This configuration setting is also visible on the Session panel,
+where it replaces the \q{Port} box (see \k{config-hostname}) if the
+connection type is set to \q{Serial}.
+
+\S{config-serial-databits} Selecting the number of data bits
+
+\cfg{winhelp-topic}{serial.databits}
+
+The \q{Data bits} box allows you to choose how many data bits are
+transmitted in each byte sent or received through the serial line.
+Typical values are 7 or 8.
+
+\S{config-serial-stopbits} Selecting the number of stop bits
+
+\cfg{winhelp-topic}{serial.stopbits}
+
+The \q{Stop bits} box allows you to choose how many stop bits are
+used in the serial line protocol. Typical values are 1, 1.5 or 2.
+
+\S{config-serial-parity} Selecting the serial parity checking scheme
+
+\cfg{winhelp-topic}{serial.parity}
+
+The \q{Parity} box allows you to choose what type of parity checking
+is used on the serial line. The settings are:
+
+\b \q{None}: no parity bit is sent at all.
+
+\b \q{Odd}: an extra parity bit is sent alongside each byte, and
+arranged so that the total number of 1 bits is odd.
+
+\b \q{Even}: an extra parity bit is sent alongside each byte, and
+arranged so that the total number of 1 bits is even.
+
+\b \q{Mark}: an extra parity bit is sent alongside each byte, and
+always set to 1.
+
+\b \q{Space}: an extra parity bit is sent alongside each byte, and
+always set to 0.
+
+\S{config-serial-flow} Selecting the serial flow control scheme
+
+\cfg{winhelp-topic}{serial.flow}
+
+The \q{Flow control} box allows you to choose what type of flow
+control checking is used on the serial line. The settings are:
+
+\b \q{None}: no flow control is done. Data may be lost if either
+side attempts to send faster than the serial line permits.
+
+\b \q{XON/XOFF}: flow control is done by sending XON and XOFF
+characters within the data stream.
+
+\b \q{RTS/CTS}: flow control is done using the RTS and CTS wires on
+the serial line.
+
+\b \q{DSR/DTR}: flow control is done using the DSR and DTR wires on
+the serial line.
 
 \H{config-file} \ii{Storing configuration in a file}
 

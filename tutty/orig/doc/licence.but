@@ -1,12 +1,13 @@
-\define{versionidlicence} \versionid $Id: licence.but 5593 2005-04-05 18:01:32Z jacob $
+\define{versionidlicence} \versionid $Id: licence.but 7048 2007-01-01 21:19:14Z jacob $
 
 \A{licence} PuTTY \ii{Licence}
 
-PuTTY is \i{copyright} 1997-2005 Simon Tatham.
+PuTTY is \i{copyright} 1997-2007 Simon Tatham.
 
 Portions copyright Robert de Bath, Joris van Rantwijk, Delian
 Delchev, Andreas Schultz, Jeroen Massar, Wez Furlong, Nicolas Barry,
-Justin Bradford, Ben Harris, Malcolm Smith, Markus Kuhn, and CORE SDI S.A.
+Justin Bradford, Ben Harris, Malcolm Smith, Ahmad Khalifa, Markus Kuhn,
+and CORE SDI S.A.
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation files

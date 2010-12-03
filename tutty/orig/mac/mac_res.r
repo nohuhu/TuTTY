@@ -1,4 +1,4 @@
-/* $Id: mac_res.r 5548 2005-03-23 20:23:07Z jacob $ */
+/* $Id: mac_res.r 7048 2007-01-01 21:19:14Z jacob $ */
 /*
  * Copyright (c) 1999, 2002, 2003 Ben Harris
  * All rights reserved.
@@ -1221,7 +1221,7 @@ resource 'DITL' (wAbout, "about", purgeable) {
 	StaticText { disabled, "PuTTY"},
 	{ 42, 13, 74, 227 },
 	StaticText { disabled, "Some version or other\n"
-			       "Copyright © 1997-2005 Simon Tatham"},
+			       "Copyright © 1997-2007 Simon Tatham"},
     }
 };
 
@@ -1242,12 +1242,12 @@ type 'TEXT' {
 };
 
 resource 'TEXT' (wLicence, "licence", purgeable) {
-    "PuTTY is copyright 1997-2005 Simon Tatham.\n"
+    "PuTTY is copyright 1997-2007 Simon Tatham.\n"
     "\n"
     "Portions copyright Robert de Bath, Joris van Rantwijk, Delian "
     "Delchev, Andreas Schultz, Jeroen Massar, Wez Furlong, Nicolas Barry, "
-    "Justin Bradford, Ben Harris, Malcolm Smith, Markus Kuhn, and "
-    "CORE SDI S.A.\n"
+    "Justin Bradford, Ben Harris, Malcolm Smith, Ahmad Khalifa, Markus "
+    "Kuhn, and CORE SDI S.A.\n"
     "\n"    
     "Permission is hereby granted, free of charge, to any person "
     "obtaining a copy of this software and associated documentation "

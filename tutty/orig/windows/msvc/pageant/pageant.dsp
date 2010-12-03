@@ -142,6 +142,10 @@ SOURCE=..\..\..\version.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\windows\winhelp.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\windows\winmisc.c
 # End Source File
 # Begin Source File

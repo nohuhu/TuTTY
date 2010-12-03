@@ -126,10 +126,6 @@ SOURCE=..\..\..\portfwd.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\pproxy.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\proxy.c
 # End Source File
 # Begin Source File
@@ -160,6 +156,10 @@ SOURCE=..\..\..\ssh.c
 # Begin Source File
 
 SOURCE=..\..\..\sshaes.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\ssharcf.c
 # End Source File
 # Begin Source File
 
@@ -207,6 +207,10 @@ SOURCE=..\..\..\sshrsa.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\sshsh256.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\sshsh512.c
 # End Source File
 # Begin Source File
@@ -243,6 +247,10 @@ SOURCE=..\..\..\windows\windefs.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\windows\winhandl.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\windows\winmisc.c
 # End Source File
 # Begin Source File
@@ -256,6 +264,10 @@ SOURCE=..\..\..\windows\winnoise.c
 # Begin Source File
 
 SOURCE=..\..\..\windows\winpgntc.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\windows\winproxy.c
 # End Source File
 # Begin Source File
 
@@ -340,6 +352,10 @@ SOURCE=..\..\..\tree234.h
 # Begin Source File
 
 SOURCE=..\..\..\unix\unix.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\windows\rcstuff.h
 # End Source File
 # Begin Source File
 

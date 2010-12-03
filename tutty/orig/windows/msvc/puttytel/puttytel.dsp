@@ -94,16 +94,7 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\..\..\be_nossh.c
-
-!IF  "$(CFG)" == "puttytel - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "puttytel - Win32 Debug"
-
-# ADD CPP /Zi
-
-!ENDIF 
-
+SOURCE=..\..\..\be_nos_s.c
 # End Source File
 # Begin Source File
 
@@ -147,10 +138,6 @@ SOURCE=..\..\..\pinger.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\pproxy.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\proxy.c
 # End Source File
 # Begin Source File
@@ -160,6 +147,10 @@ SOURCE=..\..\..\raw.c
 # Begin Source File
 
 SOURCE=..\..\..\rlogin.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\sercfg.c
 # End Source File
 # Begin Source File
 
@@ -215,6 +206,14 @@ SOURCE=..\..\..\windows\window.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\windows\winhandl.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\windows\winhelp.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\windows\winmisc.c
 # End Source File
 # Begin Source File
@@ -224,6 +223,14 @@ SOURCE=..\..\..\windows\winnet.c
 # Begin Source File
 
 SOURCE=..\..\..\windows\winprint.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\windows\winproxy.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\windows\winser.c
 # End Source File
 # Begin Source File
 
@@ -343,7 +350,7 @@ SOURCE=..\..\..\windows\puttycfg.ico
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\windows\win_res.rc
+SOURCE=..\..\..\windows\puttytel.rc
 # End Source File
 # End Group
 # End Target
