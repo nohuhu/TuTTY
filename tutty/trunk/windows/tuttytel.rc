@@ -1,10 +1,11 @@
 #include "rcstuff.h"
 
-#define APPNAME "PuTTY"
-#define APPDESC "SSH, Telnet and Rlogin client"
+#define APPNAME "TuTTYtel"
+#define APPDESC "Telnet and Rlogin client based on PuTTYtel"
 
 #include "win_res.rc2"
 
 #ifndef NO_MANIFESTS
+/* FIXME */
 1 RT_MANIFEST "putty.mft"
 #endif /* NO_MANIFESTS */
