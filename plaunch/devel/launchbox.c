@@ -160,39 +160,41 @@ static DLGPROC childdialogprocedures[TAB_CHILDDIALOGS] =
       LaunchBoxChildDialogProc4 };
 
 /*
- * trivial case for tree-view: we don't mind whether this is a folder
- * or a session, just plain case-sensitive comparison.
- * default settings come first, of course
- */
-static int treeview_sessioncmp(const char *a, const char *b)
-{
-    /*
-     * Alphabetical order, except that "Default Settings" is a
-     * special case and comes first.
-     */
-    if (!strcmp(a, "Default Settings"))
-	return -1;		/* a comes first */
-    if (!strcmp(b, "Default Settings"))
-	return +1;		/* b comes first */
-    /*
-     * FIXME: perhaps we should ignore the first & in determining
-     * sort order.
-     */
-    return strcmp(a, b);	/* otherwise, compare normally */
-};
-
-/*
  * Launch Box: tree view compare function.
+ * We want to sort 'em case sensitive, folders come first.
+ * Default Settings is special case and always goes firstmost.
  */
 
 static int CALLBACK treeview_compare(LPARAM p1, LPARAM p2, LPARAM sort)
 {
-    char item1[BUFSIZE], item2[BUFSIZE];
+    char item1_n[BUFSIZE], item1_p[BUFSIZE],
+	 item2_n[BUFSIZE], item2_p[BUFSIZE];
+    int item1_f = 0, item2_f = 0;
 
-    treeview_getitemname((HWND) sort, (HTREEITEM) p1, item1, BUFSIZE);
-    treeview_getitemname((HWND) sort, (HTREEITEM) p2, item2, BUFSIZE);
+    treeview_getitemname((HWND) sort, (HTREEITEM) p1, item1_n, BUFSIZE);
+    treeview_getitemname((HWND) sort, (HTREEITEM) p2, item2_n, BUFSIZE);
 
-    return treeview_sessioncmp(item1, item2);
+    /*
+     * Alphabetical order, except that "Default Settings" is a
+     * special case and comes first.
+     */
+    if (!strcmp(item1_n, "Default Settings"))
+	return -1;		/* item1 comes first */
+    if (!strcmp(item2_n, "Default Settings"))
+	return +1;		/* item2 comes first */
+
+    treeview_getitempath((HWND) sort, (HTREEITEM) p1, item1_p, BUFSIZE);
+    treeview_getitempath((HWND) sort, (HTREEITEM) p2, item2_p, BUFSIZE);
+
+    item1_f = ses_is_folder(&config->sessionroot, item1_p);
+    item2_f = ses_is_folder(&config->sessionroot, item2_p);
+
+    if (item1_f && !item2_f)
+	return -1;		/* item1 comes first */
+    if (!item1_f && item2_f)
+	return 1;		/* item2 comes first */
+
+    return strcmp(item1_n, item2_n);
 };
 
 /*
@@ -383,7 +385,7 @@ static int CALLBACK LaunchBoxChildDialogProc0(HWND hwnd, UINT msg,
 	     */
 
 	    treeview_getitemname(treeview, item, name, BUFSIZE);
-	    treeview_getitempath(treeview, item, path);
+	    treeview_getitempath(treeview, item, path, BUFSIZE);
 	    isfolder = ses_is_folder(&config->sessionroot, path);
 
 	    /*
@@ -473,7 +475,7 @@ static int CALLBACK LaunchBoxChildDialogProc0(HWND hwnd, UINT msg,
 		};
 
 		item = TreeView_GetSelection(treeview);
-		treeview_getitempath(treeview, item, path);
+		treeview_getitempath(treeview, item, path, BUFSIZE);
 
 		if (!SendMessage(editbox, EM_GETMODIFY, 0, 0))
 		    break;
@@ -664,7 +666,7 @@ static int CALLBACK LaunchBoxChildDialogProc1(HWND hwnd, UINT msg,
 	     */
 
 	    treeview_getitemname(treeview, item, name, BUFSIZE);
-	    treeview_getitempath(treeview, item, path);
+	    treeview_getitempath(treeview, item, path, BUFSIZE);
 	    isfolder = ses_is_folder(&config->sessionroot, path);
 
 	    /*
@@ -747,7 +749,7 @@ static int CALLBACK LaunchBoxChildDialogProc1(HWND hwnd, UINT msg,
 		    memset(path, 0, BUFSIZE);
 
 		    treeview_getitemname(treeview, item, name, BUFSIZE);
-		    treeview_getitempath(treeview, item, path);
+		    treeview_getitempath(treeview, item, path, BUFSIZE);
 
 		    switch (LOWORD(wParam)) {
 		    case IDC_LAUNCHBOX_TAB1_CHECKBOX_ATSTART:
@@ -980,7 +982,7 @@ static int CALLBACK LaunchBoxChildDialogProc2(HWND hwnd, UINT msg,
 	     */
 
 	    treeview_getitemname(treeview, item, name, BUFSIZE);
-	    treeview_getitempath(treeview, item, path);
+	    treeview_getitempath(treeview, item, path, BUFSIZE);
 	    isfolder = ses_is_folder(&config->sessionroot, path);
 
 	    /*
@@ -1076,7 +1078,7 @@ static int CALLBACK LaunchBoxChildDialogProc2(HWND hwnd, UINT msg,
 		memset(buf, 0, BUFSIZE);
 
 		treeview_getitemname(treeview, item, name, BUFSIZE);
-		treeview_getitempath(treeview, item, path);
+		treeview_getitempath(treeview, item, path, BUFSIZE);
 
 		GetWindowText((HWND) lParam, buf, BUFSIZE);
 
@@ -1125,7 +1127,7 @@ static int CALLBACK LaunchBoxChildDialogProc2(HWND hwnd, UINT msg,
 		    memset(path, 0, BUFSIZE);
 
 		    treeview_getitemname(treeview, item, name, BUFSIZE);
-		    treeview_getitempath(treeview, item, path);
+		    treeview_getitempath(treeview, item, path, BUFSIZE);
 
 		    value = (IsDlgButtonChecked(hwnd, LOWORD(wParam)) == BST_CHECKED);
 
@@ -1290,7 +1292,7 @@ static int CALLBACK LaunchBoxChildDialogProc3(HWND hwnd, UINT msg,
 		SendMessage(cb_find, CB_ADDSTRING, 0, (LPARAM) SEARCHFOR_STRINGS[i]);
 
 	    eb_find = GetDlgItem(hwnd, IDC_LAUNCHBOX_TABGENERIC1_EDITBOX_FIND);
-	    SetWindowText(eb_find, "");
+//	    SetWindowText(eb_find, "0");
 
 	    spin_find = GetDlgItem(hwnd, IDC_LAUNCHBOX_TABGENERIC1_SPIN_FIND);
 	    SendMessage(spin_find, UDM_SETRANGE, 0, MAKELONG(255, 8));
@@ -1368,7 +1370,7 @@ static int CALLBACK LaunchBoxChildDialogProc3(HWND hwnd, UINT msg,
 	    memset(buf, 0, BUFSIZE);
 
 	    treeview_getitemname(treeview, item, name, BUFSIZE);
-	    treeview_getitempath(treeview, item, path);
+	    treeview_getitempath(treeview, item, path, BUFSIZE);
 
 	    start = (int) wParam;
 
@@ -1420,7 +1422,7 @@ static int CALLBACK LaunchBoxChildDialogProc3(HWND hwnd, UINT msg,
 	     */
 
 	    treeview_getitemname(treeview, item, name, BUFSIZE);
-	    treeview_getitempath(treeview, item, path);
+	    treeview_getitempath(treeview, item, path, BUFSIZE);
 
 	    SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
 
@@ -1483,7 +1485,7 @@ static int CALLBACK LaunchBoxChildDialogProc3(HWND hwnd, UINT msg,
 		memset(buf, 0, BUFSIZE);
 
 		treeview_getitemname(treeview, item, name, BUFSIZE);
-		treeview_getitempath(treeview, item, path);
+		treeview_getitempath(treeview, item, path, BUFSIZE);
 
 		GetWindowText(eb_find, buf, BUFSIZE);
 
@@ -1519,7 +1521,7 @@ static int CALLBACK LaunchBoxChildDialogProc3(HWND hwnd, UINT msg,
 		memset(buf, 0, BUFSIZE);
 
 		treeview_getitemname(treeview, item, name, BUFSIZE);
-		treeview_getitempath(treeview, item, path);
+		treeview_getitempath(treeview, item, path, BUFSIZE);
 
 		switch (LOWORD(wParam)) {
 		case IDC_LAUNCHBOX_TABGENERIC1_COMBOBOX_FIND:
@@ -1731,7 +1733,7 @@ static int CALLBACK LaunchBoxChildDialogProc4(HWND hwnd, UINT msg,
 	    memset(buf, 0, BUFSIZE);
 
 	    treeview_getitemname(treeview, item, name, BUFSIZE);
-	    treeview_getitempath(treeview, item, path);
+	    treeview_getitempath(treeview, item, path, BUFSIZE);
 
 	    start = (int) wParam;
 
@@ -1783,7 +1785,7 @@ static int CALLBACK LaunchBoxChildDialogProc4(HWND hwnd, UINT msg,
 	     */
 
 	    treeview_getitemname(treeview, item, name, BUFSIZE);
-	    treeview_getitempath(treeview, item, path);
+	    treeview_getitempath(treeview, item, path, BUFSIZE);
 
 	    SendMessage(hwnd, WM_EMPTYITEMS, 0, 0);
 
@@ -1832,7 +1834,7 @@ static int CALLBACK LaunchBoxChildDialogProc4(HWND hwnd, UINT msg,
 		memset(buf, 0, BUFSIZE);
 
 		treeview_getitemname(treeview, item, name, BUFSIZE);
-		treeview_getitempath(treeview, item, path);
+		treeview_getitempath(treeview, item, path, BUFSIZE);
 
 		switch (LOWORD(wParam)) {
 		case IDC_LAUNCHBOX_TABGENERIC2_COMBOBOX_ACTION1:
@@ -2121,12 +2123,12 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 	    char curpos[BUFSIZE];
 	    void *handle;
 
-	    if ((handle = reg_open_key_r(&config->sessionroot, PLAUNCH_REGISTRY_ROOT)) &&
-		reg_read_s(&config->sessionroot, handle, PLAUNCH_SAVEDCURSORPOS, 
+	    if ((handle = reg_open_key_r(PLAUNCH_REGISTRY_ROOT)) &&
+		reg_read_s(handle, PLAUNCH_SAVEDCURSORPOS, 
 		NULL, curpos, BUFSIZE)) {
 		HTREEITEM pos;
 
-		reg_close_key(&config->sessionroot, handle);
+		reg_close_key(handle);
 		pos = treeview_getitemfrompath(treeview, curpos);
 
 		if (pos && pos != TVI_ROOT) {
@@ -2149,9 +2151,9 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 	    smallpt.x = bigpt.x;
 	    smallpt.y = r2.top - r1.top;
 	    morestate = 1;
-	    handle = reg_open_key_r(&config->sessionroot, PLAUNCH_REGISTRY_ROOT);
-	    reg_read_i(&config->sessionroot, handle, PLAUNCH_SAVEMOREBUTTON, 0, &i);
-	    reg_close_key(&config->sessionroot, handle);
+	    handle = reg_open_key_r(PLAUNCH_REGISTRY_ROOT);
+	    reg_read_i(handle, PLAUNCH_SAVEMOREBUTTON, 0, &i);
+	    reg_close_key(handle);
 	    if (!i)
 		SendMessage(hwnd, WM_COMMAND, IDC_LAUNCHBOX_BUTTON_MORE, 0);
 	};
@@ -2222,7 +2224,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		memset(name, 0, BUFSIZE);
 
 		treeview_getitemname(treeview, item, name, BUFSIZE);
-		treeview_getitempath(treeview, item, path);
+		treeview_getitempath(treeview, item, path, BUFSIZE);
 		isfolder = ses_is_folder(&config->sessionroot, path);
 
 		if (!name) {
@@ -2479,9 +2481,9 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		{
 		    void *handle;
 
-		    handle = reg_open_key_w(&config->sessionroot, PLAUNCH_REGISTRY_ROOT);
-		    reg_write_i(&config->sessionroot, handle, PLAUNCH_SAVEMOREBUTTON, morestate);
-		    reg_close_key(&config->sessionroot, handle);
+		    handle = reg_open_key_w(PLAUNCH_REGISTRY_ROOT);
+		    reg_write_i(handle, PLAUNCH_SAVEMOREBUTTON, morestate);
+		    reg_close_key(handle);
 		};
 		
 		SendMessage(hwnd, WM_REFRESHBUTTONS, 0, 0);
@@ -2500,10 +2502,10 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		    void *handle;
 
 		    item = TreeView_GetSelection(treeview);
-		    treeview_getitempath(treeview, item, path);
-		    handle = reg_open_key_w(&config->sessionroot, PLAUNCH_REGISTRY_ROOT);
-		    reg_write_s(&config->sessionroot, handle,	PLAUNCH_SAVEDCURSORPOS, path);
-		    reg_close_key(&config->sessionroot, handle);
+		    treeview_getitempath(treeview, item, path, BUFSIZE);
+		    handle = reg_open_key_w(PLAUNCH_REGISTRY_ROOT);
+		    reg_write_s(handle,	PLAUNCH_SAVEDCURSORPOS, path);
+		    reg_close_key(handle);
 		};
 
 	    };
@@ -2514,7 +2516,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 
 		item = TreeView_GetSelection(treeview);
 
-		if (!treeview_getitempath(treeview, item, path)) {
+		if (!treeview_getitempath(treeview, item, path, BUFSIZE)) {
 		    EndDialog(hwnd, 0);
 		    return FALSE;
 		};
@@ -2563,7 +2565,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 
 		item = TreeView_GetSelection(treeview);
 		treeview_getitemname(treeview, item, name, BUFSIZE);
-		treeview_getitempath(treeview, item, path);
+		treeview_getitempath(treeview, item, path, BUFSIZE);
 
 		if (ses_is_folder(&config->sessionroot, path))
 		    s = "folder and all its contents?";
@@ -2653,7 +2655,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 
 		if (tv_curitem) {
 		    tv_parent = TreeView_GetParent(treeview, tv_curitem);
-		    treeview_getitempath(treeview, tv_curitem, cur_path);
+		    treeview_getitempath(treeview, tv_curitem, cur_path, BUFSIZE);
 		} else {
 		    tv_parent = NULL;
 		    cur_path[0] = '\0';
@@ -2664,7 +2666,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		    strcpy(parent_path, cur_path);
 		} else if (tv_parent) {
 		    tv_parent = tv_parent;
-		    treeview_getitempath(treeview, tv_parent, parent_path);
+		    treeview_getitempath(treeview, tv_parent, parent_path, BUFSIZE);
 		} else {
 		    tv_parent = TVI_ROOT;
 		    parent_path[0] = '\0';
@@ -2673,7 +2675,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 		if (cut_or_copy) {
 		    treeview_getitemname(treeview, tv_copyitem, copy_name,
 					 BUFSIZE);
-		    treeview_getitempath(treeview, tv_copyitem, copy_path);
+		    treeview_getitempath(treeview, tv_copyitem, copy_path, BUFSIZE);
 		    isfolder = ses_is_folder(&config->sessionroot, copy_path);
 		    ses_make_path(NULL, copy_path, from_path, BUFSIZE);
 		} else {
@@ -2858,7 +2860,7 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			TreeView_SetItem(treeview, &tv->itemNew);
 
 			treeview_getitempath(treeview, tv->itemNew.hItem,
-					     path);
+					     path, BUFSIZE);
 
 			if (!config->sessionroot.readonly)
 			    ses_write_i(&config->sessionroot, path, 
@@ -2901,11 +2903,11 @@ static int CALLBACK LaunchBoxProc(HWND hwnd, UINT msg,
 			parent = TreeView_GetParent(treeview, item);
 			if (parent)
 			    treeview_getitempath(treeview, parent,
-						 parent_path);
+						 parent_path, BUFSIZE);
 			else
 			    parent_path[0] = '\0';
 
-			treeview_getitempath(treeview, item, path);
+			treeview_getitempath(treeview, item, path, BUFSIZE);
 
 			strcpy(from, path);
 			ses_make_path(parent_path, di->item.pszText, to, BUFSIZE);

@@ -141,7 +141,7 @@ HTREEITEM treeview_addtree(HWND hwndTV, HTREEITEM _parent, char *root);
 unsigned int treeview_getitemname(HWND treeview, HTREEITEM item, char *buf,
 				  unsigned int bufsize);
 unsigned int treeview_getitempath(HWND treeview, HTREEITEM item,
-				  char *buf);
+				  char *buf, unsigned int bufsize);
 HTREEITEM treeview_getitemfrompath(HWND treeview, char *path);
 
 void center_window(HWND window);

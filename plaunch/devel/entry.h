@@ -47,7 +47,7 @@ char *minirtl_strstr(const char *str1, const char *str2);
 int minirtl_atoi(char *);
 char *minirtl_getenv(const char *option);
 
-int minirtl_snprintf(char *, size_t, const char *, ...);
+int __cdecl minirtl_snprintf(char *, size_t, const char *, ...);
 
 #define	sprintf	wsprintf
 #define	strlen	lstrlen

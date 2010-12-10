@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /Gr /Zp4 /W3 /Og /Os /I "c:\usr\apps\vc98\include" /D "NDEBUG" /D "MINIRTL" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "NO_PARSE_CMD_LINE" /FAcs /FD /Gs /c
+# ADD CPP /nologo /Gr /Zp4 /W3 /Og /Os /I "..\.." /I "..\..\sapi" /D "NDEBUG" /D "MINIRTL" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "PLAUNCH" /FAcs /FD /Gs /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "NDEBUG"
@@ -70,17 +70,17 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
+# ADD CPP /nologo /Zp4 /W3 /Gm /GX /ZI /Od /I "..\.." /I "..\..\sapi" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_WINDOWS" /D "PLAUNCH" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x419 /d "_DEBUG"
-# ADD RSC /l 0x419 /d "_DEBUG"
+# ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 comctl32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
 
 !ENDIF 
 
@@ -93,47 +93,55 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=.\aboutbox.c
+SOURCE=..\..\aboutbox.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\dlgtmpl.c
+SOURCE=..\..\dlgtmpl.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\entry.c
+SOURCE=..\..\entry.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\hotkey.c
+SOURCE=..\..\hotkey.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\launchbox.c
+SOURCE=..\..\launchbox.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\licensebox.c
+SOURCE=..\..\licensebox.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\misc.c
+SOURCE=..\..\misc.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\optionsbox.c
+SOURCE=..\..\optionsbox.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\plaunch.c
+SOURCE=..\..\plaunch.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\registry.c
+SOURCE=..\..\sapi\registry.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\windowlistbox.c
+SOURCE=..\..\sapi\session.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\windowlistbox.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\winmenu.c
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -141,31 +149,43 @@ SOURCE=.\windowlistbox.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=.\dlgtmpl.h
+SOURCE=..\..\build.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\entry.h
+SOURCE=..\..\dlgtmpl.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\hotkey.h
+SOURCE=..\..\entry.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\misc.h
+SOURCE=..\..\hotkey.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\plaunch.h
+SOURCE=..\..\misc.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\registry.h
+SOURCE=..\..\plaunch.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\resource.h
+SOURCE=..\..\sapi\registry.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\resource.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\sapi\session.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\winmenu.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
@@ -173,16 +193,16 @@ SOURCE=.\resource.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=.\plaunch.rc
+SOURCE=..\..\plaunch.rc
 # End Source File
 # Begin Source File
 
-SOURCE=.\putty.ico
+SOURCE=..\..\putty.ico
 # End Source File
 # End Group
 # Begin Source File
 
-SOURCE=.\plaunch.manifest
+SOURCE=..\..\plaunch.manifest
 # End Source File
 # End Target
 # End Project

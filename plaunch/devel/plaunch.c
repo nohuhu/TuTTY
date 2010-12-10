@@ -865,7 +865,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmdline, int show)
 
     DestroyMenu(config->systray_menu);
 
-    ses_finish_session_root(&config->sessionroot, NULL, 0);
+    ses_finish_session_root(&config->sessionroot);
 
     /*
      * clean up the config

@@ -23,7 +23,7 @@
 
 #pragma comment(linker,"/merge:.rdata=.data")
 #pragma comment(linker,"/merge:.text=.data")
-//#pragma comment(linker,"/merge:.reloc=.data")
+#pragma comment(linker,"/merge:.reloc=.data")
 #pragma comment(linker,"/FILEALIGN:0x200")
 
 //
@@ -166,7 +166,7 @@ char *minirtl_getenv(const char *option)
     return envbuf;
 };
 
-int minirtl_snprintf(char *buffer, size_t count, const char *format, ...) {
+int __cdecl minirtl_snprintf(char *buffer, size_t count, const char *format, ...) {
     int ret;
     va_list arg;
 
