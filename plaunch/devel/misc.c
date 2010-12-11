@@ -381,8 +381,8 @@ HMENU menu_refresh(HMENU menu, char *root)
 
     m = CreatePopupMenu();
 //      AppendMenu(m, MF_ENABLED, IDM_BACKREST, "&Backup/Restore...");
-    AppendMenu(m, MF_ENABLED, IDM_LAUNCHBOX, "&Session manager...");
-    AppendMenu(m, MF_ENABLED, IDM_WINDOWLIST, "&Window list...");
+    AppendMenu(m, MF_ENABLED, IDM_LAUNCHBOX, "&Session Manager...");
+    AppendMenu(m, MF_ENABLED, IDM_WINDOWLIST, "&Running Sessions...");
     AppendMenu(m, MF_ENABLED, IDM_OPTIONSBOX, "&Options...");
     AppendMenu(m, MF_ENABLED, IDM_ABOUT, "&About...");
 
@@ -401,7 +401,7 @@ HMENU menu_refresh(HMENU menu, char *root)
 
 	running = CreatePopupMenu();
 	running = menu_addrunning(running);
-	AppendMenu(menu, MF_POPUP, (UINT) running, "&Running instances");
+	AppendMenu(menu, MF_POPUP, (UINT) running, "&Running sessions");
     } else
 	menu = menu_addrunning(menu);
     AppendMenu(menu, MF_SEPARATOR, 0, 0);
@@ -424,6 +424,8 @@ HMENU menu_refresh(HMENU menu, char *root)
  * 4. The 16-bit system directory, which is C:\WIN(NT|DOWS)\system.
  * 5. The Windows directory, C:\WIN(NT|DOWS).
  * 6. The directories listed in the PATH environment variable.
+ * 7. Well-known directories like C:\Program Files\PuTTY or
+ *    C:\Program Files (x86)\TuTTY or a combination.
  * If search was unsuccessful, it tries the same steps for 
  * puttytel.exe. If this search is also unsuccessful, it simply 
  * returns NULL and relies on the user to set the correct path 
@@ -433,18 +435,20 @@ HMENU menu_refresh(HMENU menu, char *root)
  */
 unsigned int get_putty_path(char *buf, unsigned int bufsize)
 {
-    char *file;
+    char *exe[4] = {"tutty.exe", "tuttytel.exe", "putty.exe", "puttytel.exe"};
+    int i;
 
-    if (SearchPath(NULL, "tutty.exe", NULL, bufsize, buf, &file))
-	return TRUE;
-    else if (SearchPath(NULL, "tuttytel.exe", NULL, bufsize, buf, &file))
-	return TRUE;
-    else if (SearchPath(NULL, "putty.exe", NULL, bufsize, buf, &file))
-	return TRUE;
-    else if (SearchPath(NULL, "puttytel.exe", NULL, bufsize, buf, &file))
-	return TRUE;
-    else
-	return FALSE;
+    for (i = 0; i < 4; i++) {
+	if (SearchPath(NULL, exe[i], NULL, bufsize, buf, NULL) ||
+	    SearchPath("C:\\Program Files (x86)\\PuTTY;"
+	    	       "C:\\Program Files (x86)\\TuTTY;"
+		       "C:\\Program Files\\PuTTY;"
+		       "C:\\Program Files\\TuTTY", 
+		       exe[i], NULL, bufsize, buf, NULL))
+	    return TRUE;
+    };
+
+    return FALSE;
 };
 
 static void hotkeys_callback(session_callback_t *scb)
