@@ -202,7 +202,7 @@ SOURCE=..\..\putty.ico
 # End Group
 # Begin Source File
 
-SOURCE=..\..\plaunch.manifest
+SOURCE=..\..\plaunch.mft
 # End Source File
 # End Target
 # End Project
