@@ -426,6 +426,45 @@ terminal (see \k{reset-terminal}). However, if you modify this
 option in mid-session using \q{Change Settings}, it will take effect
 immediately.
 
+It is also useful to know that TuTTY supports Linux-compatible OSC P
+"set palette" escape codes. The code itself looks like this: "ESC ] P
+n rr gg bb" with optional ST or BEL for compatibility with other terminals.
+Besides standard 7-color normal and bright palette, TuTTY supports redefining
+other colors as well:
+
+\c 0      Normal black
+\c 1      Normal red
+\c 2      Normal green
+\c 3      Normal yellow
+\c 4      Normal blue
+\c 5      Normal magenta
+\c 6      Normal cyan
+\c 7      Normal white (light gray)
+\c 8      Bright black (dark gray)
+\c 9      Bright red
+\c a      Bright green
+\c b      Bright yellow
+\c c      Bright blue
+\c d      Bright magenta
+\c e      Bright cyan
+\c f      Bright white
+\c g      Default foreground
+\c h      Default bold foreground
+\c i      Default background
+\c j      Default bold background
+\c k      Cursor foreground
+\c l      Cursor background
+
+Knowing this is very useful if you need to distinguish easily between some sets
+of hosts, i.e. development and production. Solution is one easy line: 
+
+\c echo -e "\E]Pi660000"
+
+Put it in your login script on development server and you'll never confuse it
+with production server. You can always reset custom colors by using OSC R:
+
+\c echo -e "\e]R"
+
 \S{config-blink} \q{Enable \i{blinking text}}
 
 \cfg{winhelp-topic}{terminal.blink}

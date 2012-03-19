@@ -3600,7 +3600,7 @@ static void term_out(Terminal *term)
 				cline->chars[i] = term->last_printable;
 			    }
 			    //fix_cpos;
-			    term->seen_disp_event = TRUE;
+			    seen_disp_event(term);
 			}
 			break;
 		    case '|':	/* something weird used by at&t 513 */
